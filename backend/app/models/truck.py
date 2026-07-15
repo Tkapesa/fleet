@@ -24,6 +24,8 @@ class Truck(Base):
     capacity_tons = Column(Float, nullable=False)
     status = Column(Enum(TruckStatus), default=TruckStatus.available, nullable=False)
     mileage_km = Column(Float, default=0.0)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     is_active = Column(Boolean, default=True)
 
     trips = relationship("Trip", back_populates="truck")

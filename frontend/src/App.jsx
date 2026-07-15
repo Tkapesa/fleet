@@ -1,9 +1,13 @@
-﻿import { useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
+const NEW_JERSEY_DEFAULT_ZOOM = 8
 const HERO_TRUCK_TOP_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/Truck-PNG.png'
 const HERO_TRUCK_VERTICAL_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/img-01-01.png'
 
@@ -12,7 +16,7 @@ const RESOURCE_CONFIG = [
     key: 'trucks',
     label: 'Trucks',
     path: '/trucks/',
-    template: { license_plate: 'AB-1234', make: 'Volvo', model: 'FH16', year: 2021, capacity_tons: 24 },
+    template: { license_plate: 'AB-1234', make: 'Volvo', model: 'FH16', year: 2021, capacity_tons: 24, latitude: 40.7357, longitude: -74.1724 },
   },
   {
     key: 'drivers',
@@ -42,6 +46,7 @@ const RESOURCE_CONFIG = [
 
 const DEFAULT_REGISTER = { email: '', full_name: '', password: '', account_type: 'individual', company_name: '' }
 const DEFAULT_LOGIN = { email: '', password: '' }
+const DUMMY_LOGIN = { email: 'demo@truckappdemo.com', password: 'Demo123!' }
 const DEFAULT_RESOURCE_STATE = { items: [], loading: false, error: '' }
 
 function buildHeaders(token, withJson = true) {
@@ -61,6 +66,25 @@ async function apiRequest(path, { method = 'GET', token, body } = {}) {
   const payload = await res.json().catch(() => null)
   if (!res.ok) throw new Error(payload?.detail ?? `Request failed ${res.status}`)
   return payload
+}
+
+function buildTruckLocation(truck, index, tick) {
+  const rawLat = Number(truck.latitude ?? truck.lat)
+  const rawLng = Number(truck.longitude ?? truck.lng ?? truck.lon)
+
+  if (Number.isFinite(rawLat) && Number.isFinite(rawLng)) {
+    return { lat: rawLat, lng: rawLng, simulated: false }
+  }
+
+  const seed = Number(truck.id ?? index + 1)
+  const baseLat = NEW_JERSEY_CENTER.lat + ((seed % 9) - 4) * 0.05
+  const baseLng = NEW_JERSEY_CENTER.lng + ((seed % 11) - 5) * 0.05
+  const drift = tick / 4
+  return {
+    lat: baseLat + Math.sin(drift + seed) * 0.01,
+    lng: baseLng + Math.cos(drift + seed * 1.7) * 0.01,
+    simulated: true,
+  }
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -450,85 +474,291 @@ function Landing({ token }) {
 
 // ─── Portal ───────────────────────────────────────────────────────────────────
 function Portal({
-  token, resources, createPayloads, setCreatePayloads,
-  spendingSummary, summaryError, fleetCount,
-  refreshAllResources, handleLogout, fetchResource, handleCreateResource, authMessage,
+  token, resources, fleetCount,
+  refreshAllResources, handleLogout, fetchResource,
 }) {
-  const [activeTab, setActiveTab] = useState('overview')
-  return (
-    <div className="portal-wrap">
-      <header className="portal-hdr">
-        <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
-        <div className="portal-hdr-actions">
-          <button className="p-btn" onClick={refreshAllResources} disabled={!token}>Sync</button>
-          {token
-            ? <button className="p-btn p-btn-sec" onClick={handleLogout}>Logout</button>
-            : <><Link className="p-btn p-btn-sec" to="/signup">Sign up</Link><Link className="p-btn" to="/login">Login</Link></>
+  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [mapError, setMapError] = useState('')
+  const [search, setSearch] = useState('')
+  const [tick, setTick] = useState(0)
+  const [selectedTruckId, setSelectedTruckId] = useState(null)
+
+  const mapElRef = useRef(null)
+  const mapRef = useRef(null)
+  const markersRef = useRef([])
+
+  const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const trucks = resources.trucks?.items ?? []
+  const railItems = [
+    { key: 'dash', icon: '[]', title: 'Dashboard' },
+    { key: 'fleet', icon: 'F', title: 'Fleet' },
+    { key: 'camera', icon: 'C', title: 'Cameras' },
+    { key: 'map', icon: 'M', title: 'Map' },
+    { key: 'route', icon: 'R', title: 'Routing' },
+    { key: 'service', icon: 'S', title: 'Service' },
+    { key: 'jobs', icon: 'J', title: 'Jobs' },
+    { key: 'alerts', icon: 'A', title: 'Alerts' },
+    { key: 'support', icon: '?', title: 'Support' },
+    { key: 'settings', icon: '*', title: 'Settings' },
+  ]
+
+  useEffect(() => {
+    if (!token || !truckResource) return
+    fetchResource(truckResource)
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return undefined
+    const id = window.setInterval(() => setTick((v) => v + 1), 6000)
+    return () => window.clearInterval(id)
+  }, [token])
+
+  const liveTrucks = useMemo(() => {
+    return trucks.map((truck, index) => {
+      const location = buildTruckLocation(truck, index, tick)
+      const speedKph = 62 + ((Number(truck.id ?? index) * 7 + tick * 3) % 26)
+      return {
+        ...truck,
+        location,
+        speedKph,
+        statusLabel: truck.status === 'on_trip' ? 'On route' : truck.status,
+      }
+    })
+  }, [trucks, tick])
+
+  const filteredTrucks = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return liveTrucks
+    return liveTrucks.filter((truck) => {
+      const text = `${truck.license_plate} ${truck.make} ${truck.model} ${truck.statusLabel}`.toLowerCase()
+      return text.includes(q)
+    })
+  }, [liveTrucks, search])
+
+  useEffect(() => {
+    if (!mapElRef.current || mapRef.current) return
+
+    try {
+      const map = L.map(mapElRef.current, {
+        zoomControl: true,
+        attributionControl: true,
+      }).setView([NEW_JERSEY_CENTER.lat, NEW_JERSEY_CENTER.lng], NEW_JERSEY_DEFAULT_ZOOM)
+
+      const layerCandidates = [
+        {
+          url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          options: { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' },
+        },
+        {
+          url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          options: { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors &copy; CARTO' },
+        },
+      ]
+
+      let activeLayer = null
+      let fallbackIndex = 0
+      let tileErrors = 0
+      let tileLoaded = false
+
+      const attachLayer = (index) => {
+        const source = layerCandidates[index]
+        if (!source) {
+          setMapError('Map tiles failed to load from all providers')
+          return
+        }
+
+        if (activeLayer) {
+          map.removeLayer(activeLayer)
+        }
+
+        tileErrors = 0
+        tileLoaded = false
+        activeLayer = L.tileLayer(source.url, source.options)
+        activeLayer.on('tileload', () => {
+          tileLoaded = true
+          setMapError('')
+        })
+        activeLayer.on('tileerror', () => {
+          tileErrors += 1
+          if (!tileLoaded && tileErrors >= 2) {
+            fallbackIndex += 1
+            attachLayer(fallbackIndex)
           }
+        })
+        activeLayer.addTo(map)
+      }
+
+      attachLayer(fallbackIndex)
+      window.setTimeout(() => map.invalidateSize(), 0)
+
+      mapRef.current = map
+      setMapError('')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to initialize map'
+      setMapError(msg)
+    }
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    markersRef.current.forEach((marker) => marker.remove())
+    markersRef.current = []
+
+    if (filteredTrucks.length === 0) {
+      mapRef.current.setView([NEW_JERSEY_CENTER.lat, NEW_JERSEY_CENTER.lng], NEW_JERSEY_DEFAULT_ZOOM)
+      return
+    }
+
+    const bounds = []
+    filteredTrucks.forEach((truck) => {
+      const isSelected = selectedTruckId === truck.id
+      const marker = L.circleMarker([truck.location.lat, truck.location.lng], {
+        radius: isSelected ? 9 : 7,
+        color: '#0f1628',
+        weight: 2,
+        fillColor: isSelected ? '#f7dc04' : '#2e74ff',
+        fillOpacity: 1,
+      })
+
+      marker.addTo(mapRef.current)
+      marker.bindTooltip(`${truck.license_plate} · ${truck.make} ${truck.model}`, {
+        direction: 'top',
+        offset: [0, -8],
+      })
+      marker.on('click', () => setSelectedTruckId(truck.id))
+
+      markersRef.current.push(marker)
+      bounds.push([truck.location.lat, truck.location.lng])
+    })
+
+    if (filteredTrucks.length === 1) {
+      mapRef.current.setView([filteredTrucks[0].location.lat, filteredTrucks[0].location.lng], 10)
+    } else {
+      mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
+    }
+  }, [filteredTrucks, selectedTruckId])
+
+  function focusTruck(truckId) {
+    setSelectedTruckId(truckId)
+    const target = filteredTrucks.find((t) => t.id === truckId)
+    if (!target || !mapRef.current) return
+    mapRef.current.setView([target.location.lat, target.location.lng], 10, { animate: true })
+  }
+
+  const selectedTruck = filteredTrucks.find((truck) => truck.id === selectedTruckId) ?? filteredTrucks[0]
+
+  return (
+    <div className="live-portal-wrap">
+      <header className="live-topbar">
+        <div className="live-top-left">
+          <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
+          <button className="live-square-btn" onClick={() => setRailCollapsed((v) => !v)}>
+            {railCollapsed ? '>' : '<'}
+          </button>
+        </div>
+        <div className="live-top-actions">
+          <button className="live-pill-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh Trucks</button>
+          <button className="live-pill-btn" onClick={refreshAllResources} disabled={!token}>Sync All</button>
+          <button className="live-pill-btn ghost" onClick={handleLogout}>Logout</button>
         </div>
       </header>
-      <div className="portal-body">
-        <div className="portal-stats">
-          <div className="p-stat"><strong>{fleetCount}</strong><span>Records</span></div>
-          <div className="p-stat"><strong>{token ? 'Auth' : 'Guest'}</strong><span>Status</span></div>
-          <div className="p-stat"><strong>{spendingSummary.length}</strong><span>IFTA Entries</span></div>
-        </div>
-        {authMessage && <p className="portal-msg">{authMessage}</p>}
-        <nav className="p-tabs">
-          <button className={activeTab === 'overview' ? 'p-tab active' : 'p-tab'} onClick={() => setActiveTab('overview')}>Overview</button>
-          {RESOURCE_CONFIG.map((r) => (
-            <button key={r.key} className={activeTab === r.key ? 'p-tab active' : 'p-tab'} onClick={() => setActiveTab(r.key)}>
-              {r.label}
+
+      <div className="live-main">
+        <aside className={`live-rail ${railCollapsed ? 'collapsed' : ''}`}>
+          {railItems.map((item, idx) => (
+            <button key={item.key} className={`live-rail-item ${idx === 0 ? 'active' : ''}`} title={item.title}>
+              <span>{item.icon}</span><em>{item.title}</em>
             </button>
           ))}
-        </nav>
-        {activeTab === 'overview' ? (
-          <div className="p-overview-grid">
-            <div className="p-box">
-              <h4>Truck Spending Summary</h4>
-              {summaryError && <p className="p-error">{summaryError}</p>}
-              {spendingSummary.length === 0
-                ? <p className="p-hint">No summary yet. Add maintenance or IFTA records first.</p>
-                : <pre>{JSON.stringify(spendingSummary, null, 2)}</pre>}
-            </div>
-            <div className="p-box">
-              <h4>Startup Checklist</h4>
-              <ul className="p-checklist">
-                <li>Register a user account.</li>
-                <li>Login and sync data.</li>
-                <li>Create at least one truck and one driver.</li>
-                <li>Add trips, maintenance, and IFTA entries.</li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          RESOURCE_CONFIG.filter((r) => r.key === activeTab).map((r) => {
-            const state = resources[r.key] ?? DEFAULT_RESOURCE_STATE
-            return (
-              <div key={r.key} className="p-resource">
-                <div className="p-resource-hdr">
-                  <h4>{r.label}</h4>
-                  <button className="p-btn p-btn-sec" onClick={() => fetchResource(r)} disabled={!token || state.loading}>
-                    {state.loading ? 'Loading...' : 'Refresh'}
-                  </button>
-                </div>
-                {state.error && <p className="p-error">{state.error}</p>}
-                <div className="p-resource-grid">
-                  <div>
-                    <h5>Create New {r.label}</h5>
-                    <textarea value={createPayloads[r.key]}
-                      onChange={(e) => setCreatePayloads((c) => ({ ...c, [r.key]: e.target.value }))} />
-                    <button className="p-btn" onClick={() => handleCreateResource(r)} disabled={!token}>Create Record</button>
-                  </div>
-                  <div>
-                    <h5>Loaded ({state.items.length})</h5>
-                    <pre>{JSON.stringify(state.items, null, 2)}</pre>
-                  </div>
-                </div>
+          <button className="live-rail-collapse-tip" onClick={() => setRailCollapsed((v) => !v)}>
+            {railCollapsed ? '>>' : '<<'}
+          </button>
+        </aside>
+
+        <section className="live-map-section">
+          <div className="live-map-shell">
+            {mapError && (
+              <div className="live-map-dummy" aria-label="Dummy map">
+                <div className="live-map-grid" />
+                <div className="live-map-road road-a" />
+                <div className="live-map-road road-b" />
+                <div className="live-map-road road-c" />
+                <div className="live-map-pin pin-a" />
+                <div className="live-map-pin pin-b" />
+                <div className="live-map-pin pin-c" />
+                <div className="live-map-label">New Jersey Demo Map</div>
               </div>
-            )
-          })
-        )}
+            )}
+
+            <div ref={mapElRef} className="live-map-canvas" />
+
+            <div className="live-map-top-controls">
+              <div className="live-map-control-group">
+                <button className="live-map-chip">Refresh</button>
+                <button className="live-map-chip">Fleet</button>
+                <button className="live-map-chip">Traffic</button>
+                <button className="live-map-chip">Fullscreen</button>
+              </div>
+              <div className="live-map-control-group right">
+                <button className="live-map-chip primary">Live Share</button>
+              </div>
+            </div>
+
+            <div className="live-fleet-panel">
+              <div className="live-fleet-tabs">
+                <button className="active">Vehicles</button>
+                <button>Drivers</button>
+                <button>Signals</button>
+              </div>
+              <input
+                className="live-search"
+                placeholder="Search by Driver, Vehicle ID or Trailer"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <div className="live-panel-summary">
+                <span>{filteredTrucks.length} active</span>
+                <span>{fleetCount} records</span>
+                <span>{selectedTruck ? `${selectedTruck.speedKph} km/h` : '--'}</span>
+              </div>
+              <div className="live-truck-list">
+                {filteredTrucks.length === 0 && <p className="live-empty">No trucks yet. Create one and click Refresh Trucks.</p>}
+                {filteredTrucks.map((truck) => (
+                  <button
+                    key={truck.id}
+                    className={`live-truck-card ${selectedTruckId === truck.id ? 'selected' : ''}`}
+                    onClick={() => focusTruck(truck.id)}
+                  >
+                    <div className="live-card-top">
+                      <strong>{truck.license_plate}</strong>
+                      <span>{truck.speedKph} km/h</span>
+                    </div>
+                    <p>{truck.make} {truck.model} • {String(truck.statusLabel).replace('_', ' ')}</p>
+                    <small>
+                      {truck.location.lat.toFixed(4)}, {truck.location.lng.toFixed(4)}
+                      {truck.location.simulated ? ' (simulated)' : ''}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {mapError && (
+              <div className="live-map-note">
+                <strong>Fallback map active</strong>
+                <p>{mapError}. Showing built-in dummy map until map tiles are reachable.</p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   )
@@ -648,6 +878,14 @@ function App() {
         element={
           <AuthPage title="Sign in" subtitle="Access your existing fleet portal account." message={authMessage}>
             <form className="auth-form" onSubmit={handleLogin}>
+              <p className="auth-footer-text">Quick test login: demo@truckappdemo.com / Demo123!</p>
+              <button
+                type="button"
+                className="p-btn p-btn-sec"
+                onClick={() => setLoginForm(DUMMY_LOGIN)}
+              >
+                Use dummy login
+              </button>
               <input required type="email" placeholder="Email" value={loginForm.email}
                 onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
               <input required type="password" placeholder="Password" value={loginForm.password}

@@ -8,6 +8,8 @@ class TruckCreate(BaseModel):
     model: str
     year: int
     capacity_tons: float
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class TruckUpdate(BaseModel):
@@ -15,6 +17,8 @@ class TruckUpdate(BaseModel):
     model: str | None = None
     year: int | None = None
     capacity_tons: float | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     status: TruckStatus | None = None
     mileage_km: float | None = None
     is_active: bool | None = None
@@ -29,6 +33,8 @@ class TruckRead(BaseModel):
     capacity_tons: float
     status: TruckStatus
     mileage_km: float
+    latitude: float | None
+    longitude: float | None
     is_active: bool
 
     model_config = {"from_attributes": True}

@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-from app.database import engine, Base, ensure_sqlite_columns
+from app.database import engine, Base, ensure_sqlite_columns, SessionLocal
+from app.core.security import hash_password
+from app.models.user import AccountType, User
 from app.routers import auth, trucks, drivers, trips, maintenance, ifta
 
 # Import models so SQLAlchemy registers them before create_all
@@ -22,10 +25,34 @@ app.add_middleware(
 )
 
 
+def ensure_demo_user(db: Session) -> None:
+    demo_email = "demo@truckappdemo.com"
+    existing = db.query(User).filter(User.email == demo_email).first()
+    if existing:
+        return
+
+    demo_user = User(
+        email=demo_email,
+        full_name="Demo Driver",
+        hashed_password=hash_password("Demo123!"),
+        account_type=AccountType.individual,
+        company_name=None,
+        is_active=True,
+        is_admin=False,
+    )
+    db.add(demo_user)
+    db.commit()
+
+
 @app.on_event("startup")
 def create_tables():
     Base.metadata.create_all(bind=engine)
     ensure_sqlite_columns()
+    db = SessionLocal()
+    try:
+        ensure_demo_user(db)
+    finally:
+        db.close()
 
 
 app.include_router(auth.router)

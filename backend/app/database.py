@@ -35,6 +35,8 @@ def ensure_sqlite_columns() -> None:
         ],
         "trucks": [
             "owner_user_id INTEGER",
+            "latitude REAL",
+            "longitude REAL",
         ],
         "trips": [
             "owner_user_id INTEGER",
