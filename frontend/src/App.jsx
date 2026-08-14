@@ -1,15 +1,48 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+const DASHCAM_DEMO_SHARE_URL = 'https://share.google/1zIXgLKIZpyQ06f7H'
+const DASHCAM_DEMO_YOUTUBE_ID = '7d3eIrwz9Ws'
+const DASHCAM_DEMO_IMAGE_CANDIDATES = [
+  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/hqdefault.jpg`,
+  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/mqdefault.jpg`,
+  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/default.jpg`,
+]
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
 const HERO_TRUCK_TOP_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/Truck-PNG.png'
 const HERO_TRUCK_VERTICAL_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/img-01-01.png'
+
+const FLEET_VIEW_DEMO_SEEDS = [
+  { id: 901, plate: 'NJ-7421', make: 'Volvo', model: 'VNL 760', baseLat: 40.7357, baseLng: -74.1724, baseSpeed: 82, variance: 12, stopped: false, stopReason: '' },
+  { id: 902, plate: 'PA-1184', make: 'Freightliner', model: 'Cascadia', baseLat: 40.2732, baseLng: -76.8867, baseSpeed: 76, variance: 10, stopped: false, stopReason: '' },
+  { id: 903, plate: 'NY-3309', make: 'Kenworth', model: 'T680', baseLat: 40.7128, baseLng: -74.006, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Fuel stop' },
+  { id: 904, plate: 'OH-5510', make: 'Peterbilt', model: '579', baseLat: 39.9612, baseLng: -82.9988, baseSpeed: 68, variance: 11, stopped: false, stopReason: '' },
+  { id: 905, plate: 'MD-2742', make: 'Mack', model: 'Anthem', baseLat: 39.2904, baseLng: -76.6122, baseSpeed: 72, variance: 9, stopped: false, stopReason: '' },
+  { id: 906, plate: 'VA-8044', make: 'International', model: 'LT', baseLat: 37.5407, baseLng: -77.436, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Loading dock' },
+  { id: 907, plate: 'CT-4437', make: 'Volvo', model: 'VNR 640', baseLat: 41.7658, baseLng: -72.6734, baseSpeed: 64, variance: 8, stopped: false, stopReason: '' },
+  { id: 908, plate: 'MA-9012', make: 'Freightliner', model: 'M2 106', baseLat: 42.3601, baseLng: -71.0589, baseSpeed: 58, variance: 7, stopped: false, stopReason: '' },
+  { id: 909, plate: 'DE-6681', make: 'Kenworth', model: 'T880', baseLat: 39.1582, baseLng: -75.5244, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Driver break' },
+  { id: 910, plate: 'WV-2195', make: 'Peterbilt', model: '567', baseLat: 38.3498, baseLng: -81.6326, baseSpeed: 52, variance: 9, stopped: false, stopReason: '' },
+]
+
+const FLEET_VIEW_DEMO_DRIVERS = [
+  { id: 1201, full_name: 'Evan Rios', assigned_truck_id: 901 },
+  { id: 1202, full_name: 'Nora Patel', assigned_truck_id: 902 },
+  { id: 1203, full_name: 'Chris Hale', assigned_truck_id: 903 },
+  { id: 1204, full_name: 'Tariq Boone', assigned_truck_id: 904 },
+  { id: 1205, full_name: 'Jenna Costa', assigned_truck_id: 905 },
+  { id: 1206, full_name: 'Luis Maren', assigned_truck_id: 906 },
+  { id: 1207, full_name: 'Mila Chen', assigned_truck_id: 907 },
+  { id: 1208, full_name: 'Damon Ellis', assigned_truck_id: 908 },
+  { id: 1209, full_name: 'Riley Shah', assigned_truck_id: 909 },
+  { id: 1210, full_name: 'Ava Kline', assigned_truck_id: 910 },
+]
 
 const RESOURCE_CONFIG = [
   {
@@ -22,7 +55,22 @@ const RESOURCE_CONFIG = [
     key: 'drivers',
     label: 'Drivers',
     path: '/drivers/',
-    template: { full_name: 'Alex Driver', email: 'alex.driver@example.com', phone: '+1-555-0100', license_number: 'D1234567', license_class: 'class_a', license_expiry: '2030-12-31' },
+    template: {
+      full_name: 'Alex Driver',
+      email: 'alex.driver@example.com',
+      phone: '+1-555-0100',
+      license_number: 'D1234567',
+      license_class: 'C',
+      license_state: 'NJ',
+      license_issue_date: '2024-01-10',
+      license_expiry: '2030-12-31',
+      date_of_birth: '1992-04-18',
+      address: '123 Fleet Ave, Newark, NJ',
+      emergency_contact_name: 'Sam Driver',
+      emergency_contact_phone: '+1-555-0101',
+      notes: 'Prefers regional routes',
+      assigned_truck_id: null,
+    },
   },
   {
     key: 'trips',
@@ -68,6 +116,18 @@ async function apiRequest(path, { method = 'GET', token, body } = {}) {
   return payload
 }
 
+async function apiMultipartRequest(path, { method = 'POST', token, formData } = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method,
+    headers: buildHeaders(token, false),
+    body: formData,
+  })
+  if (res.status === 204) return null
+  const payload = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(payload?.detail ?? `Request failed ${res.status}`)
+  return payload
+}
+
 function buildTruckLocation(truck, index, tick) {
   const rawLat = Number(truck.latitude ?? truck.lat)
   const rawLng = Number(truck.longitude ?? truck.lng ?? truck.lon)
@@ -85,6 +145,20 @@ function buildTruckLocation(truck, index, tick) {
     lng: baseLng + Math.cos(drift + seed * 1.7) * 0.01,
     simulated: true,
   }
+}
+
+function formatDaysUntilExpiry(days) {
+  if (days === null || days === undefined) return 'Unknown'
+  if (days < 0) return `${Math.abs(days)} days overdue`
+  if (days === 0) return 'Expires today'
+  return `${days} days left`
+}
+
+function humanizeLicenseStatus(status) {
+  if (status === 'expired') return 'Expired'
+  if (status === 'expiring_soon') return 'Expiring Soon'
+  if (status === 'valid') return 'Valid'
+  return 'Unknown'
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -173,6 +247,14 @@ function BenefitCard({ title, desc }) {
   )
 }
 
+function ComplianceStatusPill({ label, status }) {
+  return (
+    <span className={`fleet-pill ${status}`}>
+      {label}
+    </span>
+  )
+}
+
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 function Landing({ token }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -201,6 +283,7 @@ function Landing({ token }) {
           <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
             <a href="#about" onClick={closeMenu}>About</a>
             <a href="#features" onClick={closeMenu}>Features</a>
+            <Link to="/fleet" onClick={closeMenu}>Fleet Compliance</Link>
             <a href="#testimonials" onClick={closeMenu}>Testimonials</a>
             <a href="#contact" onClick={closeMenu}>Contact</a>
             <span className="nav-sep" />
@@ -209,9 +292,9 @@ function Landing({ token }) {
             </Link>
             <span className="nav-sep" />
             <div className="header-languages" aria-label="Language selector">
-              <a href="#" lang="en">EN</a>
-              <a href="#" lang="ru">RU</a>
-              <a href="#" lang="uk">UA</a>
+              <a href="#" lang="en" onClick={(e) => e.preventDefault()}>EN</a>
+              <a href="#" lang="ru" onClick={(e) => e.preventDefault()}>RU</a>
+              <a href="#" lang="uk" onClick={(e) => e.preventDefault()}>UA</a>
             </div>
           </nav>
           <button
@@ -472,40 +555,1673 @@ function Landing({ token }) {
   )
 }
 
+// ─── Fleet Compliance ────────────────────────────────────────────────────────
+function FleetCompliance({ token, resources, refreshAllResources }) {
+  const navigate = useNavigate()
+
+  const trucks = resources.trucks?.items ?? []
+  const drivers = resources.drivers?.items ?? []
+  const maintenance = resources.maintenance?.items ?? []
+  const ifta = resources.ifta?.items ?? []
+
+  const now = new Date()
+  const msPerDay = 24 * 60 * 60 * 1000
+
+  const expiringDrivers = drivers.filter((driver) => {
+    if (!driver.license_expiry) return false
+    const expiry = new Date(driver.license_expiry)
+    const diff = (expiry.getTime() - now.getTime()) / msPerDay
+    return diff >= 0 && diff <= 30
+  })
+
+  const expiredDrivers = drivers.filter((driver) => {
+    if (!driver.license_expiry) return false
+    const expiry = new Date(driver.license_expiry)
+    return expiry.getTime() < now.getTime()
+  })
+
+  const overdueMaintenance = maintenance.filter((entry) => {
+    if (!entry.service_date) return false
+    const serviceDate = new Date(entry.service_date)
+    const diff = (now.getTime() - serviceDate.getTime()) / msPerDay
+    return diff > 120
+  })
+
+  const totalRiskItems = expiredDrivers.length + expiringDrivers.length + overdueMaintenance.length
+
+  const iftaCoverage = trucks.length === 0
+    ? 0
+    : Math.round((Math.min(ifta.length, trucks.length) / trucks.length) * 100)
+
+  return (
+    <div className="fleet-page-wrap">
+      <header className="fleet-header">
+        <div className="fleet-header-inner">
+          <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
+          <div className="fleet-header-actions">
+            <button className="p-btn" onClick={refreshAllResources} disabled={!token}>Sync Compliance Data</button>
+            <button className="p-btn p-btn-sec" onClick={() => navigate('/portal')}>Back to Portal</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="fleet-main">
+        <section className="fleet-hero-card">
+          <EyebrowRow label="FLEET COMPLIANCE" />
+          <h1>Stay audit-ready with a clear compliance command center</h1>
+          <p>
+            Track driver license status, maintenance risk, and IFTA record coverage in one place.
+            Designed with the same visual language as the rest of your ATONDA experience.
+          </p>
+        </section>
+
+        <section className="fleet-kpi-grid">
+          <article className="fleet-kpi-card">
+            <p>Fleet Units</p>
+            <strong>{trucks.length}</strong>
+            <ComplianceStatusPill
+              status={trucks.length > 0 ? 'ok' : 'warn'}
+              label={trucks.length > 0 ? 'Active' : 'No vehicles'}
+            />
+          </article>
+
+          <article className="fleet-kpi-card">
+            <p>Driver Licensing</p>
+            <strong>{drivers.length}</strong>
+            <ComplianceStatusPill
+              status={expiredDrivers.length === 0 ? 'ok' : 'risk'}
+              label={expiredDrivers.length === 0 ? 'Valid' : `${expiredDrivers.length} expired`}
+            />
+          </article>
+
+          <article className="fleet-kpi-card">
+            <p>IFTA Record Coverage</p>
+            <strong>{iftaCoverage}%</strong>
+            <ComplianceStatusPill
+              status={iftaCoverage >= 80 ? 'ok' : 'warn'}
+              label={iftaCoverage >= 80 ? 'Healthy' : 'Needs attention'}
+            />
+          </article>
+
+          <article className="fleet-kpi-card">
+            <p>Open Risks</p>
+            <strong>{totalRiskItems}</strong>
+            <ComplianceStatusPill
+              status={totalRiskItems === 0 ? 'ok' : 'risk'}
+              label={totalRiskItems === 0 ? 'No blockers' : 'Action required'}
+            />
+          </article>
+        </section>
+
+        <section className="fleet-content-grid">
+          <article className="compliance-list-card">
+            <div className="fleet-card-head">
+              <h3>Driver License Watchlist</h3>
+              <button className="fleet-link-btn" onClick={() => navigate('/portal')}>Open Drivers</button>
+            </div>
+            <div className="fleet-list-wrap">
+              {drivers.length === 0 && <p className="fleet-empty">No driver records yet.</p>}
+
+              {expiredDrivers.map((driver) => (
+                <div className="fleet-list-row" key={`expired-${driver.id}`}>
+                  <div>
+                    <strong>{driver.full_name ?? 'Unknown Driver'}</strong>
+                    <p>{driver.license_number ?? 'No license number'}</p>
+                  </div>
+                  <ComplianceStatusPill status="risk" label="Expired" />
+                </div>
+              ))}
+
+              {expiringDrivers.map((driver) => (
+                <div className="fleet-list-row" key={`expiring-${driver.id}`}>
+                  <div>
+                    <strong>{driver.full_name ?? 'Unknown Driver'}</strong>
+                    <p>Expires {driver.license_expiry}</p>
+                  </div>
+                  <ComplianceStatusPill status="warn" label="Expiring soon" />
+                </div>
+              ))}
+
+              {expiredDrivers.length === 0 && expiringDrivers.length === 0 && drivers.length > 0 && (
+                <p className="fleet-ok-line">All tracked licenses are currently in good standing.</p>
+              )}
+            </div>
+          </article>
+
+          <article className="compliance-list-card">
+            <div className="fleet-card-head">
+              <h3>Maintenance + IFTA Health</h3>
+              <button className="fleet-link-btn" onClick={() => navigate('/portal')}>Open Records</button>
+            </div>
+            <div className="fleet-list-wrap">
+              <div className="fleet-check-row">
+                <span>Overdue maintenance items</span>
+                <ComplianceStatusPill
+                  status={overdueMaintenance.length === 0 ? 'ok' : 'risk'}
+                  label={`${overdueMaintenance.length} open`}
+                />
+              </div>
+              <div className="fleet-check-row">
+                <span>IFTA records logged</span>
+                <ComplianceStatusPill
+                  status={ifta.length >= trucks.length && trucks.length > 0 ? 'ok' : 'warn'}
+                  label={`${ifta.length} entries`}
+                />
+              </div>
+              <div className="fleet-check-row">
+                <span>Total maintenance logs</span>
+                <ComplianceStatusPill status={maintenance.length > 0 ? 'ok' : 'warn'} label={`${maintenance.length} logs`} />
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+// ─── Vehicles Page ───────────────────────────────────────────────────────────
+function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [queryFleet, setQueryFleet] = useState('')
+  const [queryVin, setQueryVin] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [assetType, setAssetType] = useState('vehicles')
+
+  const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const driverResource = RESOURCE_CONFIG.find((r) => r.key === 'drivers')
+  const trucks = resources.trucks?.items ?? []
+  const drivers = resources.drivers?.items ?? []
+
+  const driversByTruckId = useMemo(() => {
+    const map = new Map()
+    drivers.forEach((driver) => {
+      if (driver.assigned_truck_id !== null && driver.assigned_truck_id !== undefined && !map.has(driver.assigned_truck_id)) {
+        map.set(driver.assigned_truck_id, driver)
+      }
+    })
+    return map
+  }, [drivers])
+
+  const railItems = [
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
+    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
+    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  ]
+
+  useEffect(() => {
+    if (!token || !truckResource || !driverResource) return
+    fetchResource(truckResource)
+    fetchResource(driverResource)
+  }, [token, truckResource, driverResource, fetchResource])
+
+  const vehicleRows = useMemo(() => {
+    return trucks.map((truck, index) => {
+      const seed = Number(truck.id ?? index + 1)
+      const truckCode = String(truck.license_plate ?? `TRK-${seed}`).replace(/\s+/g, '').toUpperCase()
+      const locationPoint = buildTruckLocation(truck, index, 0)
+      const driver = driversByTruckId.get(truck.id)?.full_name ?? 'Unassigned'
+      const status = truck.status === 'on_trip' || truck.status === 'active' ? 'active' : 'idle'
+
+      return {
+        id: seed,
+        vehicleId: truckCode,
+        driver,
+        location: `${locationPoint.lat.toFixed(2)}, ${locationPoint.lng.toFixed(2)}`,
+        vin: `VIN${String(seed).padStart(6, '0')}${truckCode.slice(0, 5)}`,
+        eldSn: `87A${String(seed * 113).padStart(8, '0')}`,
+        gpsSn: `GPS${String(seed * 89).padStart(9, '0')}`,
+        tabletSn: `TAB${String(seed * 57).padStart(8, '0')}`,
+        cameraSn: `CAM${String(seed * 41).padStart(8, '0')}`,
+        engineHours: 17000 + seed * 17,
+        odometer: 640000 + seed * 321,
+        status,
+      }
+    })
+  }, [trucks, driversByTruckId])
+
+  const filteredRows = useMemo(() => {
+    const fleetQuery = queryFleet.trim().toLowerCase()
+    const vinQuery = queryVin.trim().toLowerCase()
+
+    return vehicleRows.filter((row) => {
+      const fleetMatch = !fleetQuery
+        || `${row.vehicleId} ${row.driver} ${row.gpsSn} ${row.eldSn}`.toLowerCase().includes(fleetQuery)
+      const vinMatch = !vinQuery || row.vin.toLowerCase().includes(vinQuery)
+      const statusMatch = statusFilter === 'all' || row.status === statusFilter
+      return fleetMatch && vinMatch && statusMatch
+    })
+  }, [vehicleRows, queryFleet, queryVin, statusFilter])
+
+  const visibleRows = assetType === 'vehicles' ? filteredRows : []
+
+  function exportRows() {
+    const header = [
+      'Vehicle ID', 'Driver', 'Location', 'VIN', 'ELD S/N', 'GPS S/N',
+      'Tablet S/N', 'Camera S/N', 'Engine Hours', 'Odometer (mi)', 'Status',
+    ]
+    const lines = filteredRows.map((row) => [
+      row.vehicleId,
+      row.driver,
+      row.location,
+      row.vin,
+      row.eldSn,
+      row.gpsSn,
+      row.tabletSn,
+      row.cameraSn,
+      row.engineHours,
+      row.odometer,
+      row.status,
+    ].join(','))
+
+    const csv = [header.join(','), ...lines].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'vehicles-export.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+          <LogoIcon />
+        </button>
+        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
+          {railCollapsed ? '>' : '<'}
+        </button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => {
+            const isActive = Boolean(item.to) && location.pathname === item.to
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => item.to && navigate(item.to)}
+              >
+                <span className="fleet-rail-icon">{item.icon}</span>
+                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>{assetType === 'vehicles' ? `Vehicles (${visibleRows.length})` : 'Trailers (0)'}</h1>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button className="vehicles-chip">Liberte Trucking</button>
+            <button className="vehicles-chip">All Groups</button>
+            <button className="vehicles-icon-btn" aria-label="Add">+</button>
+            <button className="vehicles-icon-btn" aria-label="Notifications">o</button>
+            <span className="vehicles-user">Bourlaye Coulibaly</span>
+          </div>
+        </header>
+
+        <div className="vehicles-filter-row">
+          <input
+            className="vehicles-search"
+            placeholder="Search by Vehicle ID, ELD S/N or GPS S/N"
+            value={queryFleet}
+            onChange={(e) => setQueryFleet(e.target.value)}
+          />
+          <input
+            className="vehicles-search"
+            placeholder="Search by VIN"
+            value={queryVin}
+            onChange={(e) => setQueryVin(e.target.value)}
+          />
+          <select
+            className="vehicles-status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="idle">Idle</option>
+          </select>
+
+          <div className="vehicles-filter-actions">
+            <button className="vehicles-action-btn" onClick={exportRows}>Export</button>
+            <button className="vehicles-action-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
+            <button className="vehicles-action-btn primary" onClick={refreshAllResources} disabled={!token}>Sync</button>
+          </div>
+        </div>
+
+        <div className="vehicles-grid-wrap">
+          <aside className="vehicles-type-card">
+            <button type="button" className={assetType === 'vehicles' ? 'active' : ''} onClick={() => setAssetType('vehicles')}>Vehicles</button>
+            <button type="button" className={assetType === 'trailers' ? 'active' : ''} onClick={() => setAssetType('trailers')}>Trailers</button>
+          </aside>
+
+          <div className="vehicles-table-wrap">
+            <table className="vehicles-table">
+              <thead>
+                <tr>
+                  <th>Vehicle ID</th>
+                  <th>Drivers</th>
+                  <th>Location</th>
+                  <th>VIN</th>
+                  <th>ELD S/N</th>
+                  <th>GPS S/N</th>
+                  <th>Tablet S/N</th>
+                  <th>Camera S/N</th>
+                  <th>Engine Hours</th>
+                  <th>Odometer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="vehicles-empty">
+                      {assetType === 'vehicles' ? 'No vehicles match current filters.' : 'Trailer view is ready. Connect trailer data to display records.'}
+                    </td>
+                  </tr>
+                )}
+                {visibleRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.vehicleId}</td>
+                    <td>{row.driver}</td>
+                    <td>{row.location}</td>
+                    <td>{row.vin}</td>
+                    <td>{row.eldSn}</td>
+                    <td>{row.gpsSn}</td>
+                    <td>{row.tabletSn}</td>
+                    <td>{row.cameraSn}</td>
+                    <td>{row.engineHours.toLocaleString()} hrs</td>
+                    <td>{row.odometer.toLocaleString()} mi</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// ─── History Page ───────────────────────────────────────────────────────────
+function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [queryText, setQueryText] = useState('')
+  const [eventType, setEventType] = useState('all')
+
+  const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const tripResource = RESOURCE_CONFIG.find((r) => r.key === 'trips')
+  const maintenanceResource = RESOURCE_CONFIG.find((r) => r.key === 'maintenance')
+  const iftaResource = RESOURCE_CONFIG.find((r) => r.key === 'ifta')
+
+  const trucks = resources.trucks?.items ?? []
+  const trips = resources.trips?.items ?? []
+  const maintenance = resources.maintenance?.items ?? []
+  const ifta = resources.ifta?.items ?? []
+
+  const railItems = [
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
+    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
+    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  ]
+
+  useEffect(() => {
+    if (!token) return
+    if (truckResource) fetchResource(truckResource)
+    if (tripResource) fetchResource(tripResource)
+    if (maintenanceResource) fetchResource(maintenanceResource)
+    if (iftaResource) fetchResource(iftaResource)
+  }, [token, fetchResource, truckResource, tripResource, maintenanceResource, iftaResource])
+
+  const truckById = useMemo(() => {
+    const map = new Map()
+    trucks.forEach((truck) => {
+      map.set(Number(truck.id), truck)
+    })
+    return map
+  }, [trucks])
+
+  const historyRows = useMemo(() => {
+    const tripRows = trips.map((trip, index) => {
+      const truck = truckById.get(Number(trip.truck_id))
+      const plate = truck?.license_plate ?? `TRIP-${trip.id ?? index + 1}`
+      const when = trip.actual_departure ?? trip.scheduled_departure ?? trip.created_at ?? ''
+      return {
+        id: `trip-${trip.id ?? index}`,
+        at: when,
+        event: 'Trip',
+        vehicle: plate,
+        details: `${trip.origin ?? 'Unknown'} -> ${trip.destination ?? 'Unknown'}`,
+        status: trip.status ?? 'scheduled',
+        reference: `TRP-${trip.id ?? index + 1}`,
+      }
+    })
+
+    const maintenanceRows = maintenance.map((entry, index) => {
+      const truck = truckById.get(Number(entry.truck_id))
+      const plate = truck?.license_plate ?? `MNT-${entry.id ?? index + 1}`
+      return {
+        id: `maintenance-${entry.id ?? index}`,
+        at: entry.service_date ?? entry.created_at ?? '',
+        event: 'Maintenance',
+        vehicle: plate,
+        details: `${entry.service_type ?? 'Service'} at ${entry.vendor ?? 'Vendor N/A'}`,
+        status: 'completed',
+        reference: `MNT-${entry.id ?? index + 1}`,
+      }
+    })
+
+    const iftaRows = ifta.map((report, index) => {
+      const truck = truckById.get(Number(report.truck_id))
+      const plate = truck?.license_plate ?? `IFTA-${report.id ?? index + 1}`
+      return {
+        id: `ifta-${report.id ?? index}`,
+        at: report.period_end ?? report.created_at ?? '',
+        event: 'IFTA',
+        vehicle: plate,
+        details: `${report.jurisdiction ?? 'N/A'} | ${Number(report.miles_driven ?? 0).toLocaleString()} mi`,
+        status: 'filed',
+        reference: `IFT-${report.id ?? index + 1}`,
+      }
+    })
+
+    return [...tripRows, ...maintenanceRows, ...iftaRows]
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+  }, [trips, maintenance, ifta, truckById])
+
+  const filteredRows = useMemo(() => {
+    const q = queryText.trim().toLowerCase()
+    return historyRows.filter((row) => {
+      const matchesQuery = !q
+        || `${row.vehicle} ${row.event} ${row.details} ${row.reference}`.toLowerCase().includes(q)
+      const matchesType = eventType === 'all' || row.event.toLowerCase() === eventType
+      return matchesQuery && matchesType
+    })
+  }, [historyRows, queryText, eventType])
+
+  function formatAt(value) {
+    if (!value) return 'N/A'
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return value
+    return d.toLocaleString()
+  }
+
+  function exportRows() {
+    const header = ['Date / Time', 'Event', 'Vehicle', 'Details', 'Status', 'Reference']
+    const lines = filteredRows.map((row) => [
+      formatAt(row.at), row.event, row.vehicle, row.details, row.status, row.reference,
+    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+
+    const csv = [header.join(','), ...lines].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'history-export.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+          <LogoIcon />
+        </button>
+        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
+          {railCollapsed ? '>' : '<'}
+        </button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => {
+            const isActive = Boolean(item.to) && location.pathname === item.to
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => item.to && navigate(item.to)}
+              >
+                <span className="fleet-rail-icon">{item.icon}</span>
+                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>History ({filteredRows.length})</h1>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button type="button" className="vehicles-chip" onClick={() => navigate('/portal')}>Liberte Trucking</button>
+            <button type="button" className="vehicles-chip" onClick={() => setEventType('all')}>All Groups</button>
+            <button type="button" className="vehicles-icon-btn" aria-label="Add" onClick={() => navigate('/portal')}>+</button>
+            <button type="button" className="vehicles-icon-btn" aria-label="Notifications" onClick={() => setEventType('maintenance')}>o</button>
+            <span className="vehicles-user">Bourlaye Coulibaly</span>
+          </div>
+        </header>
+
+        <div className="vehicles-filter-row history-filter-row">
+          <input
+            className="vehicles-search"
+            placeholder="Search by vehicle, event, details, or reference"
+            value={queryText}
+            onChange={(e) => setQueryText(e.target.value)}
+          />
+          <select
+            className="vehicles-status"
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+          >
+            <option value="all">All Events</option>
+            <option value="trip">Trips</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="ifta">IFTA</option>
+          </select>
+          <div className="vehicles-filter-actions">
+            <button className="vehicles-action-btn" onClick={exportRows}>Export</button>
+            <button className="vehicles-action-btn" onClick={refreshAllResources} disabled={!token}>Sync</button>
+          </div>
+        </div>
+
+        <div className="vehicles-grid-wrap history-grid-wrap">
+          <aside className="vehicles-type-card">
+            <button className={eventType === 'all' ? 'active' : ''} onClick={() => setEventType('all')}>All</button>
+            <button className={eventType === 'trip' ? 'active' : ''} onClick={() => setEventType('trip')}>Trips</button>
+            <button className={eventType === 'maintenance' ? 'active' : ''} onClick={() => setEventType('maintenance')}>Maintenance</button>
+            <button className={eventType === 'ifta' ? 'active' : ''} onClick={() => setEventType('ifta')}>IFTA</button>
+          </aside>
+
+          <div className="vehicles-table-wrap">
+            <table className="vehicles-table history-table">
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>Event</th>
+                  <th>Vehicle</th>
+                  <th>Details</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="vehicles-empty">No history records match current filters.</td>
+                  </tr>
+                )}
+                {filteredRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{formatAt(row.at)}</td>
+                    <td>{row.event}</td>
+                    <td>{row.vehicle}</td>
+                    <td>{row.details}</td>
+                    <td className="history-status-cell">
+                      <span className={`history-badge ${String(row.status).toLowerCase().replace(/\s+/g, '-')}`}>{row.status}</span>
+                    </td>
+                    <td>{row.reference}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// ─── Drivers Page ────────────────────────────────────────────────────────────
+function DriversPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
+  const emptyDriverForm = {
+    full_name: '',
+    email: '',
+    phone: '',
+    license_number: '',
+    license_class: 'C',
+    license_state: 'NJ',
+    license_issue_date: '',
+    license_expiry: '',
+    date_of_birth: '',
+    address: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    notes: '',
+    assigned_truck_id: '',
+    license_document_url: '',
+    medical_card_document_url: '',
+    additional_document_notes: '',
+  }
+
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [queryText, setQueryText] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [message, setMessage] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [toolbarBusy, setToolbarBusy] = useState(false)
+  const [assignmentSavingId, setAssignmentSavingId] = useState(null)
+  const [deleteSavingId, setDeleteSavingId] = useState(null)
+  const [driverForm, setDriverForm] = useState(emptyDriverForm)
+
+  const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const driverResource = RESOURCE_CONFIG.find((r) => r.key === 'drivers')
+  const trucks = resources.trucks?.items ?? []
+  const drivers = resources.drivers?.items ?? []
+
+  const railItems = [
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
+    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
+    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  ]
+
+  useEffect(() => {
+    if (!token || !truckResource || !driverResource) return
+    fetchResource(truckResource)
+    fetchResource(driverResource)
+  }, [token, truckResource, driverResource, fetchResource])
+
+  async function handleCreateDriver(e) {
+    e.preventDefault()
+    if (!token) return
+    setSaving(true)
+    setMessage('')
+    try {
+      const payload = {
+        ...driverForm,
+        assigned_truck_id: driverForm.assigned_truck_id ? Number(driverForm.assigned_truck_id) : null,
+        license_issue_date: driverForm.license_issue_date || null,
+        date_of_birth: driverForm.date_of_birth || null,
+        notes: driverForm.notes || null,
+        address: driverForm.address || null,
+        emergency_contact_name: driverForm.emergency_contact_name || null,
+        emergency_contact_phone: driverForm.emergency_contact_phone || null,
+        license_document_url: driverForm.license_document_url || null,
+        medical_card_document_url: driverForm.medical_card_document_url || null,
+        additional_document_notes: driverForm.additional_document_notes || null,
+      }
+      await apiRequest('/drivers/', { method: 'POST', token, body: payload })
+      setMessage('Driver saved successfully.')
+      setDriverForm(emptyDriverForm)
+      if (driverResource) await fetchResource(driverResource)
+      if (truckResource) await fetchResource(truckResource)
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function assignDriverToTruck(driverId, truckId) {
+    if (!token || !driverResource) return
+    setAssignmentSavingId(driverId)
+    setMessage('')
+    try {
+      await apiRequest(`/drivers/${driverId}`, {
+        method: 'PATCH',
+        token,
+        body: {
+          assigned_truck_id: truckId ? Number(truckId) : null,
+        },
+      })
+      await fetchResource(driverResource)
+      setMessage('Driver assignment updated.')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setAssignmentSavingId(null)
+    }
+  }
+
+  async function runToolbarAction(action) {
+    if (toolbarBusy) return
+    setToolbarBusy(true)
+    setMessage('')
+    try {
+      await action()
+    } finally {
+      setToolbarBusy(false)
+    }
+  }
+
+  async function handleDeleteDriver(driver) {
+    if (!token || !driverResource) return
+    const confirmed = window.confirm(`Delete driver ${driver.full_name}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeleteSavingId(driver.id)
+    setMessage('')
+    try {
+      await apiRequest(`/drivers/${driver.id}`, { method: 'DELETE', token })
+      await fetchResource(driverResource)
+      if (truckResource) await fetchResource(truckResource)
+      setMessage('Driver deleted successfully.')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setDeleteSavingId(null)
+    }
+  }
+
+
+  const expiredCount = drivers.filter((d) => d.license_status === 'expired').length
+  const expiringSoonCount = drivers.filter((d) => d.license_status === 'expiring_soon').length
+
+  const criticalLicenseAlerts = useMemo(() => {
+    return drivers
+      .filter((driver) => Number.isFinite(driver.license_days_until_expiry) && driver.license_days_until_expiry <= 30)
+      .sort((a, b) => a.license_days_until_expiry - b.license_days_until_expiry)
+  }, [drivers])
+
+  const filteredDrivers = useMemo(() => {
+    const q = queryText.trim().toLowerCase()
+    return drivers.filter((driver) => {
+      const statusMatch = statusFilter === 'all' || driver.license_status === statusFilter
+      const textMatch = !q
+        || `${driver.full_name} ${driver.email} ${driver.phone} ${driver.license_number} ${driver.assigned_truck_label ?? ''}`.toLowerCase().includes(q)
+      return statusMatch && textMatch
+    })
+  }, [drivers, queryText, statusFilter])
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+          <LogoIcon />
+        </button>
+        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
+          {railCollapsed ? '>' : '<'}
+        </button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => {
+            const isActive = Boolean(item.to) && location.pathname === item.to
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => item.to && navigate(item.to)}
+              >
+                <span className="fleet-rail-icon">{item.icon}</span>
+                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel drivers-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>Drivers ({filteredDrivers.length})</h1>
+            <p className="drivers-subtitle">Create driver profiles, link each driver to a truck, and monitor expiry status.</p>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button type="button" className="vehicles-chip">Driver Center</button>
+            <button type="button" className="vehicles-chip">Compliance Focus</button>
+            <button type="button" className="vehicles-icon-btn" aria-label="Drivers">DR</button>
+            <span className="vehicles-user">Fleet Team</span>
+          </div>
+        </header>
+
+        <div className="vehicles-filter-row drivers-filter-row">
+          <input
+            className="vehicles-search"
+            placeholder="Search by name, email, phone, license, or assigned truck"
+            value={queryText}
+            onChange={(e) => setQueryText(e.target.value)}
+          />
+          <select
+            className="vehicles-status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All License Status</option>
+            <option value="valid">Valid</option>
+            <option value="expiring_soon">Expiring Soon</option>
+            <option value="expired">Expired</option>
+          </select>
+          <div className="vehicles-filter-actions">
+            <button
+              type="button"
+              className="vehicles-action-btn"
+              onClick={() => runToolbarAction(async () => {
+                if (driverResource) await fetchResource(driverResource)
+              })}
+              disabled={!token || !driverResource || toolbarBusy}
+            >
+              {toolbarBusy ? 'Working...' : 'Refresh Drivers'}
+            </button>
+            <button
+              type="button"
+              className="vehicles-action-btn"
+              onClick={() => runToolbarAction(async () => {
+                if (truckResource) await fetchResource(truckResource)
+              })}
+              disabled={!token || !truckResource || toolbarBusy}
+            >
+              {toolbarBusy ? 'Working...' : 'Refresh Trucks'}
+            </button>
+            <button
+              type="button"
+              className="vehicles-action-btn primary"
+              onClick={() => runToolbarAction(refreshAllResources)}
+              disabled={!token || toolbarBusy}
+            >
+              {toolbarBusy ? 'Syncing...' : 'Sync'}
+            </button>
+          </div>
+        </div>
+
+        <div className="drivers-kpi-row">
+          <div className="drivers-kpi-card">
+            <small>Total Drivers</small>
+            <strong>{drivers.length}</strong>
+          </div>
+          <div className="drivers-kpi-card warn">
+            <small>Expiring Soon</small>
+            <strong>{expiringSoonCount}</strong>
+          </div>
+          <div className="drivers-kpi-card risk">
+            <small>Expired</small>
+            <strong>{expiredCount}</strong>
+          </div>
+        </div>
+
+        <section className="drivers-alert-panel" aria-live="polite">
+          <div className="drivers-alert-head">
+            <h3>Important Expiry Notifications</h3>
+            <span>{criticalLicenseAlerts.length} alerts</span>
+          </div>
+          {criticalLicenseAlerts.length === 0 && (
+            <p className="drivers-alert-ok">No urgent license expiry risks in the next 30 days.</p>
+          )}
+          {criticalLicenseAlerts.length > 0 && (
+            <div className="drivers-alert-list">
+              {criticalLicenseAlerts.slice(0, 8).map((driver) => {
+                const days = driver.license_days_until_expiry
+                const level = days < 0 ? 'expired' : days <= 7 ? 'urgent' : 'warning'
+                const label = days < 0
+                  ? `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
+                  : days === 0
+                    ? 'Expires today'
+                    : `Expires in ${days} day${days === 1 ? '' : 's'}`
+
+                return (
+                  <div className={`drivers-alert-item ${level}`} key={`alert-${driver.id}`}>
+                    <div>
+                      <strong>{driver.full_name}</strong>
+                      <p>{driver.license_number} · {driver.license_state ?? 'State N/A'} · {driver.license_expiry}</p>
+                    </div>
+                    <span className="drivers-alert-badge">{label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        <div className="vehicles-grid-wrap drivers-grid-wrap">
+          <aside className="vehicles-type-card drivers-type-card">
+            <button type="button" className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>All Drivers</button>
+            <button type="button" className={statusFilter === 'valid' ? 'active' : ''} onClick={() => setStatusFilter('valid')}>Valid</button>
+            <button type="button" className={statusFilter === 'expiring_soon' ? 'active' : ''} onClick={() => setStatusFilter('expiring_soon')}>Expiring</button>
+            <button type="button" className={statusFilter === 'expired' ? 'active' : ''} onClick={() => setStatusFilter('expired')}>Expired</button>
+          </aside>
+
+          <div className="drivers-content-stack">
+            <form className="drivers-form-card" onSubmit={handleCreateDriver}>
+            <h3>Add Driver</h3>
+            <div className="drivers-form-grid">
+              <input required placeholder="Full name" value={driverForm.full_name} onChange={(e) => setDriverForm((f) => ({ ...f, full_name: e.target.value }))} />
+              <input required type="email" placeholder="Email" value={driverForm.email} onChange={(e) => setDriverForm((f) => ({ ...f, email: e.target.value }))} />
+              <input required placeholder="Phone" value={driverForm.phone} onChange={(e) => setDriverForm((f) => ({ ...f, phone: e.target.value }))} />
+              <input required placeholder="License number" value={driverForm.license_number} onChange={(e) => setDriverForm((f) => ({ ...f, license_number: e.target.value }))} />
+              <select value={driverForm.license_class} onChange={(e) => setDriverForm((f) => ({ ...f, license_class: e.target.value }))}>
+                <option value="C">CDL Class C (Commercial)</option>
+                <option value="B">CDL Class B</option>
+                <option value="A">CDL Class A</option>
+              </select>
+              <input placeholder="License state (e.g. NJ)" value={driverForm.license_state} onChange={(e) => setDriverForm((f) => ({ ...f, license_state: e.target.value }))} />
+              <label>
+                License issue date
+                <input type="date" value={driverForm.license_issue_date} onChange={(e) => setDriverForm((f) => ({ ...f, license_issue_date: e.target.value }))} />
+              </label>
+              <label>
+                License expiry
+                <input required type="date" value={driverForm.license_expiry} onChange={(e) => setDriverForm((f) => ({ ...f, license_expiry: e.target.value }))} />
+              </label>
+              <label>
+                Date of birth
+                <input type="date" value={driverForm.date_of_birth} onChange={(e) => setDriverForm((f) => ({ ...f, date_of_birth: e.target.value }))} />
+              </label>
+              <input placeholder="Address" value={driverForm.address} onChange={(e) => setDriverForm((f) => ({ ...f, address: e.target.value }))} />
+              <input placeholder="Emergency contact name" value={driverForm.emergency_contact_name} onChange={(e) => setDriverForm((f) => ({ ...f, emergency_contact_name: e.target.value }))} />
+              <input placeholder="Emergency contact phone" value={driverForm.emergency_contact_phone} onChange={(e) => setDriverForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
+              <select value={driverForm.assigned_truck_id} onChange={(e) => setDriverForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
+                <option value="">Unassigned truck</option>
+                {trucks.map((truck) => (
+                  <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
+                ))}
+              </select>
+              <input placeholder="License document URL" value={driverForm.license_document_url} onChange={(e) => setDriverForm((f) => ({ ...f, license_document_url: e.target.value }))} />
+              <input placeholder="Medical card document URL" value={driverForm.medical_card_document_url} onChange={(e) => setDriverForm((f) => ({ ...f, medical_card_document_url: e.target.value }))} />
+            </div>
+            <textarea placeholder="Notes" rows={3} value={driverForm.notes} onChange={(e) => setDriverForm((f) => ({ ...f, notes: e.target.value }))} />
+            <textarea placeholder="Additional document notes" rows={2} value={driverForm.additional_document_notes} onChange={(e) => setDriverForm((f) => ({ ...f, additional_document_notes: e.target.value }))} />
+            <div className="drivers-form-actions">
+              <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver'}</button>
+              {message && <p className="drivers-message">{message}</p>}
+            </div>
+            </form>
+
+            <div className="drivers-table-card vehicles-table-wrap">
+              <table className="vehicles-table drivers-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>License</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                    <th>Assigned Truck</th>
+                    <th>Update Assignment</th>
+                    <th>Documents</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDrivers.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="vehicles-empty">No drivers match current filters.</td>
+                    </tr>
+                  )}
+                  {filteredDrivers.map((driver) => (
+                    <tr
+                      key={driver.id}
+                      className={driver.license_status === 'expired' ? 'driver-row-expired' : driver.license_status === 'expiring_soon' ? 'driver-row-expiring' : ''}
+                    >
+                      <td>
+                        <strong>{driver.full_name}</strong>
+                        <div>{driver.email}</div>
+                      </td>
+                      <td>{driver.license_number} · Class {driver.license_class}</td>
+                      <td>
+                        <div>{driver.license_expiry}</div>
+                        <small>{formatDaysUntilExpiry(driver.license_days_until_expiry)}</small>
+                      </td>
+                      <td>
+                        <span className={`driver-status-pill ${driver.license_status}`}>{humanizeLicenseStatus(driver.license_status)}</span>
+                      </td>
+                      <td>{driver.assigned_truck_label ?? 'Unassigned'}</td>
+                      <td>
+                        <select
+                          value={driver.assigned_truck_id ?? ''}
+                          onChange={(e) => assignDriverToTruck(driver.id, e.target.value)}
+                          disabled={assignmentSavingId === driver.id || deleteSavingId === driver.id}
+                        >
+                          <option value="">Unassigned</option>
+                          {trucks.map((truck) => (
+                            <option key={truck.id} value={String(truck.id)}>{truck.license_plate}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <div className="drivers-doc-links">
+                          {driver.license_document_url && (
+                            <a href={driver.license_document_url} target="_blank" rel="noreferrer">License Doc</a>
+                          )}
+                          {driver.medical_card_document_url && (
+                            <a href={driver.medical_card_document_url} target="_blank" rel="noreferrer">Medical Card</a>
+                          )}
+                          {!driver.license_document_url && !driver.medical_card_document_url && (
+                            <span className="drivers-doc-empty">No docs</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="drivers-row-actions">
+                          <button type="button" className="vehicles-action-btn" onClick={() => navigate(`/drivers/${driver.id}`)}>
+                            View / Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="vehicles-action-btn danger"
+                            onClick={() => handleDeleteDriver(driver)}
+                            disabled={deleteSavingId === driver.id}
+                          >
+                            {deleteSavingId === driver.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
+  const documentFieldConfig = [
+    { key: 'license', label: 'License PDF' },
+    { key: 'passport', label: 'Passport PDF' },
+    { key: 'medical_report', label: 'Medical Report PDF' },
+    { key: 'health_report', label: 'Health Report PDF' },
+    { key: 'drug_test', label: 'Drug Test PDF' },
+    { key: 'other', label: 'Other PDF' },
+  ]
+
+  const { driverId } = useParams()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [toolbarBusy, setToolbarBusy] = useState(false)
+  const [deleteSaving, setDeleteSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const [documents, setDocuments] = useState([])
+  const [pendingFiles, setPendingFiles] = useState({})
+  const [uploadingDocType, setUploadingDocType] = useState('')
+  const [deletingDocType, setDeletingDocType] = useState('')
+
+  const emptyDriverEditForm = {
+    full_name: '',
+    email: '',
+    phone: '',
+    license_number: '',
+    license_class: 'C',
+    license_state: 'NJ',
+    license_issue_date: '',
+    license_expiry: '',
+    date_of_birth: '',
+    address: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    notes: '',
+    assigned_truck_id: '',
+    license_document_url: '',
+    medical_card_document_url: '',
+    additional_document_notes: '',
+    is_active: true,
+  }
+
+  const [driverEditForm, setDriverEditForm] = useState(emptyDriverEditForm)
+
+  const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const driverResource = RESOURCE_CONFIG.find((r) => r.key === 'drivers')
+  const trucks = resources.trucks?.items ?? []
+  const drivers = resources.drivers?.items ?? []
+  const parsedDriverId = Number(driverId)
+  const selectedDriver = drivers.find((driver) => driver.id === parsedDriverId) ?? null
+  const documentsByType = useMemo(() => {
+    const map = new Map()
+    documents.forEach((doc) => {
+      if (!map.has(doc.doc_type)) {
+        map.set(doc.doc_type, doc)
+      }
+    })
+    return map
+  }, [documents])
+
+  const railItems = [
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
+    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
+    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  ]
+
+  useEffect(() => {
+    if (!token || !truckResource || !driverResource) return
+    fetchResource(truckResource)
+    fetchResource(driverResource)
+  }, [token, truckResource, driverResource, fetchResource])
+
+  useEffect(() => {
+    if (!selectedDriver) {
+      setDriverEditForm(emptyDriverEditForm)
+      return
+    }
+    setDriverEditForm({
+      full_name: selectedDriver.full_name ?? '',
+      email: selectedDriver.email ?? '',
+      phone: selectedDriver.phone ?? '',
+      license_number: selectedDriver.license_number ?? '',
+      license_class: selectedDriver.license_class ?? 'C',
+      license_state: selectedDriver.license_state ?? '',
+      license_issue_date: selectedDriver.license_issue_date ?? '',
+      license_expiry: selectedDriver.license_expiry ?? '',
+      date_of_birth: selectedDriver.date_of_birth ?? '',
+      address: selectedDriver.address ?? '',
+      emergency_contact_name: selectedDriver.emergency_contact_name ?? '',
+      emergency_contact_phone: selectedDriver.emergency_contact_phone ?? '',
+      notes: selectedDriver.notes ?? '',
+      assigned_truck_id: selectedDriver.assigned_truck_id ? String(selectedDriver.assigned_truck_id) : '',
+      license_document_url: selectedDriver.license_document_url ?? '',
+      medical_card_document_url: selectedDriver.medical_card_document_url ?? '',
+      additional_document_notes: selectedDriver.additional_document_notes ?? '',
+      is_active: selectedDriver.is_active ?? true,
+    })
+  }, [selectedDriver])
+
+  useEffect(() => {
+    if (!token || !selectedDriver) {
+      setDocuments([])
+      return
+    }
+
+    let active = true
+    apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
+      .then((items) => {
+        if (active) setDocuments(Array.isArray(items) ? items : [])
+      })
+      .catch(() => {
+        if (active) setDocuments([])
+      })
+
+    return () => {
+      active = false
+    }
+  }, [token, selectedDriver])
+
+  async function handleUpdateDriver(e) {
+    e.preventDefault()
+    if (!token || !driverResource || !selectedDriver) return
+    setSaving(true)
+    setMessage('')
+    try {
+      const payload = {
+        ...driverEditForm,
+        assigned_truck_id: driverEditForm.assigned_truck_id ? Number(driverEditForm.assigned_truck_id) : null,
+        license_issue_date: driverEditForm.license_issue_date || null,
+        date_of_birth: driverEditForm.date_of_birth || null,
+        address: driverEditForm.address || null,
+        emergency_contact_name: driverEditForm.emergency_contact_name || null,
+        emergency_contact_phone: driverEditForm.emergency_contact_phone || null,
+        notes: driverEditForm.notes || null,
+        license_document_url: driverEditForm.license_document_url || null,
+        medical_card_document_url: driverEditForm.medical_card_document_url || null,
+        additional_document_notes: driverEditForm.additional_document_notes || null,
+      }
+      await apiRequest(`/drivers/${selectedDriver.id}`, { method: 'PATCH', token, body: payload })
+      await fetchResource(driverResource)
+      if (truckResource) await fetchResource(truckResource)
+      setMessage('Driver details updated successfully.')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function runToolbarAction(action) {
+    if (toolbarBusy) return
+    setToolbarBusy(true)
+    setMessage('')
+    try {
+      await action()
+    } finally {
+      setToolbarBusy(false)
+    }
+  }
+
+  async function handleDeleteDriver() {
+    if (!token || !driverResource || !selectedDriver) return
+    const confirmed = window.confirm(`Delete driver ${selectedDriver.full_name}? This cannot be undone.`)
+    if (!confirmed) return
+
+    setDeleteSaving(true)
+    setMessage('')
+    try {
+      await apiRequest(`/drivers/${selectedDriver.id}`, { method: 'DELETE', token })
+      await fetchResource(driverResource)
+      if (truckResource) await fetchResource(truckResource)
+      navigate('/drivers')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setDeleteSaving(false)
+    }
+  }
+
+  async function handleUploadDocument(docType) {
+    const selectedPdf = pendingFiles[docType]
+    if (!token || !selectedDriver || !selectedPdf) {
+      setMessage(`Choose a PDF file for ${docType.replace(/_/g, ' ')} before upload.`)
+      return
+    }
+
+    const filename = String(selectedPdf.name || '').toLowerCase()
+    if (!filename.endsWith('.pdf')) {
+      setMessage('Only PDF files are allowed.')
+      return
+    }
+
+    setUploadingDocType(docType)
+    setMessage('')
+    try {
+      const formData = new FormData()
+      formData.append('doc_type', docType)
+      formData.append('file', selectedPdf)
+
+      await apiMultipartRequest(`/drivers/${selectedDriver.id}/documents`, {
+        method: 'POST',
+        token,
+        formData,
+      })
+
+      const docs = await apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
+      setDocuments(Array.isArray(docs) ? docs : [])
+      setPendingFiles((prev) => ({ ...prev, [docType]: null }))
+      setMessage('Document uploaded successfully.')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setUploadingDocType('')
+    }
+  }
+
+  async function handleDeleteDocument(doc) {
+    if (!token || !selectedDriver) return
+    setDeletingDocType(doc.doc_type)
+    setMessage('')
+    try {
+      await apiRequest(`/drivers/${selectedDriver.id}/documents/${doc.id}`, { method: 'DELETE', token })
+      const docs = await apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
+      setDocuments(Array.isArray(docs) ? docs : [])
+      setMessage('Document deleted.')
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setDeletingDocType('')
+    }
+  }
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+          <LogoIcon />
+        </button>
+        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
+          {railCollapsed ? '>' : '<'}
+        </button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => {
+            const isActive = Boolean(item.to) && location.pathname === item.to
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => item.to && navigate(item.to)}
+              >
+                <span className="fleet-rail-icon">{item.icon}</span>
+                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              </button>
+            )
+          })}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel drivers-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>Driver Details</h1>
+            <p className="drivers-subtitle">View and edit complete information for one driver profile.</p>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button type="button" className="vehicles-chip">Driver Center</button>
+            <button type="button" className="vehicles-chip">Profile Editor</button>
+            <button type="button" className="vehicles-icon-btn" aria-label="Drivers">DR</button>
+            <span className="vehicles-user">Fleet Team</span>
+          </div>
+        </header>
+
+        <div className="vehicles-filter-row drivers-filter-row">
+          <button type="button" className="vehicles-action-btn" onClick={() => navigate('/drivers')}>Back to Drivers</button>
+          <div className="driver-detail-meta">
+            {selectedDriver ? (
+              <span>{selectedDriver.full_name} · {selectedDriver.license_number}</span>
+            ) : (
+              <span>Driver not found</span>
+            )}
+          </div>
+          <div className="vehicles-filter-actions">
+            <button
+              type="button"
+              className="vehicles-action-btn"
+              onClick={() => runToolbarAction(async () => {
+                if (driverResource) await fetchResource(driverResource)
+              })}
+              disabled={!token || !driverResource || toolbarBusy}
+            >
+              {toolbarBusy ? 'Working...' : 'Refresh Drivers'}
+            </button>
+            <button
+              type="button"
+              className="vehicles-action-btn"
+              onClick={() => runToolbarAction(async () => {
+                if (truckResource) await fetchResource(truckResource)
+              })}
+              disabled={!token || !truckResource || toolbarBusy}
+            >
+              {toolbarBusy ? 'Working...' : 'Refresh Trucks'}
+            </button>
+            <button
+              type="button"
+              className="vehicles-action-btn primary"
+              onClick={() => runToolbarAction(refreshAllResources)}
+              disabled={!token || toolbarBusy}
+            >
+              {toolbarBusy ? 'Syncing...' : 'Sync'}
+            </button>
+          </div>
+        </div>
+
+        {!selectedDriver && (
+          <div className="drivers-form-card">
+            <h3>Driver Not Available</h3>
+            <p className="drivers-message">This driver record could not be found. Try returning to Drivers and opening the record again.</p>
+          </div>
+        )}
+
+        {selectedDriver && (
+          <div className="driver-profile-layout">
+            <aside className="driver-profile-summary drivers-form-card">
+              <h3>{selectedDriver.full_name}</h3>
+              <p className="driver-profile-line">Email: {selectedDriver.email}</p>
+              <p className="driver-profile-line">Phone: {selectedDriver.phone}</p>
+              <p className="driver-profile-line">License: {selectedDriver.license_number} · Class {selectedDriver.license_class}</p>
+              <p className="driver-profile-line">Status: {humanizeLicenseStatus(selectedDriver.license_status)} ({formatDaysUntilExpiry(selectedDriver.license_days_until_expiry)})</p>
+              <p className="driver-profile-line">Assigned Truck: {selectedDriver.assigned_truck_label ?? 'Unassigned'}</p>
+              <p className="driver-profile-line">Record ID: {selectedDriver.id}</p>
+            </aside>
+
+            <div className="driver-profile-editor-stack">
+              <form className="drivers-form-card" onSubmit={handleUpdateDriver}>
+                <h3>Edit Driver</h3>
+                <div className="drivers-form-grid">
+                  <input required placeholder="Full name" value={driverEditForm.full_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, full_name: e.target.value }))} />
+                  <input required type="email" placeholder="Email" value={driverEditForm.email} onChange={(e) => setDriverEditForm((f) => ({ ...f, email: e.target.value }))} />
+                  <input required placeholder="Phone" value={driverEditForm.phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, phone: e.target.value }))} />
+                  <input required placeholder="License number" value={driverEditForm.license_number} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_number: e.target.value }))} />
+                  <select value={driverEditForm.license_class} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_class: e.target.value }))}>
+                    <option value="C">CDL Class C (Commercial)</option>
+                    <option value="B">CDL Class B</option>
+                    <option value="A">CDL Class A</option>
+                  </select>
+                  <input placeholder="License state (e.g. NJ)" value={driverEditForm.license_state} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_state: e.target.value }))} />
+                  <label>
+                    License issue date
+                    <input type="date" value={driverEditForm.license_issue_date} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_issue_date: e.target.value }))} />
+                  </label>
+                  <label>
+                    License expiry
+                    <input required type="date" value={driverEditForm.license_expiry} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_expiry: e.target.value }))} />
+                  </label>
+                  <label>
+                    Date of birth
+                    <input type="date" value={driverEditForm.date_of_birth} onChange={(e) => setDriverEditForm((f) => ({ ...f, date_of_birth: e.target.value }))} />
+                  </label>
+                  <input placeholder="Address" value={driverEditForm.address} onChange={(e) => setDriverEditForm((f) => ({ ...f, address: e.target.value }))} />
+                  <input placeholder="Emergency contact name" value={driverEditForm.emergency_contact_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_name: e.target.value }))} />
+                  <input placeholder="Emergency contact phone" value={driverEditForm.emergency_contact_phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
+                  <select value={driverEditForm.assigned_truck_id} onChange={(e) => setDriverEditForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
+                    <option value="">Unassigned truck</option>
+                    {trucks.map((truck) => (
+                      <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
+                    ))}
+                  </select>
+                  <input placeholder="License document URL" value={driverEditForm.license_document_url} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_document_url: e.target.value }))} />
+                  <input placeholder="Medical card document URL" value={driverEditForm.medical_card_document_url} onChange={(e) => setDriverEditForm((f) => ({ ...f, medical_card_document_url: e.target.value }))} />
+                  <label className="drivers-active-toggle">
+                    Active driver
+                    <input type="checkbox" checked={driverEditForm.is_active} onChange={(e) => setDriverEditForm((f) => ({ ...f, is_active: e.target.checked }))} />
+                  </label>
+                </div>
+                <textarea placeholder="Notes" rows={3} value={driverEditForm.notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, notes: e.target.value }))} />
+                <textarea placeholder="Additional document notes" rows={2} value={driverEditForm.additional_document_notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, additional_document_notes: e.target.value }))} />
+                <div className="drivers-form-actions">
+                  <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver Changes'}</button>
+                  {message && <p className="drivers-message">{message}</p>}
+                </div>
+              </form>
+
+              <section className="drivers-form-card driver-docs-card">
+                <h3>Upload Driver Documents (PDF)</h3>
+                <div className="driver-doc-upload-grid">
+                  {documentFieldConfig.map((field) => {
+                    const existingDoc = documentsByType.get(field.key)
+                    const pendingFile = pendingFiles[field.key]
+                    const isUploading = uploadingDocType === field.key
+                    const isDeleting = deletingDocType === field.key
+
+                    return (
+                      <div key={field.key} className="driver-doc-field-row">
+                        <div>
+                          <strong>{field.label}</strong>
+                          {existingDoc ? (
+                            <p>{existingDoc.original_filename}</p>
+                          ) : (
+                            <p className="drivers-doc-empty">No file uploaded</p>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] ?? null
+                            setPendingFiles((prev) => ({ ...prev, [field.key]: file }))
+                          }}
+                        />
+                        <div className="drivers-row-actions">
+                          <button
+                            type="button"
+                            className="vehicles-action-btn primary"
+                            onClick={() => handleUploadDocument(field.key)}
+                            disabled={!pendingFile || isUploading}
+                          >
+                            {isUploading ? 'Uploading...' : 'Upload'}
+                          </button>
+                          {existingDoc && (
+                            <>
+                              <a className="vehicles-action-btn" href={`${API_BASE_URL}${existingDoc.file_url}`} target="_blank" rel="noreferrer">Open</a>
+                              <button
+                                type="button"
+                                className="vehicles-action-btn danger"
+                                onClick={() => handleDeleteDocument(existingDoc)}
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="driver-doc-list">
+                  {documents.length === 0 && <p className="drivers-doc-empty">No uploaded documents yet.</p>}
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="driver-doc-item">
+                      <div>
+                        <strong>{doc.doc_type.replace(/_/g, ' ')}</strong>
+                        <p>{doc.original_filename}</p>
+                      </div>
+                      <div className="drivers-row-actions">
+                        <a className="vehicles-action-btn" href={`${API_BASE_URL}${doc.file_url}`} target="_blank" rel="noreferrer">Open</a>
+                        <button
+                          type="button"
+                          className="vehicles-action-btn danger"
+                          onClick={() => handleDeleteDocument(doc)}
+                          disabled={deletingDocType === doc.doc_type}
+                        >
+                          {deletingDocType === doc.doc_type ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
 // ─── Portal ───────────────────────────────────────────────────────────────────
 function Portal({
   token, resources, fleetCount,
-  refreshAllResources, handleLogout, fetchResource,
+  refreshAllResources, handleLogout, fetchResource, managerMode = false,
 }) {
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [mapError, setMapError] = useState('')
   const [search, setSearch] = useState('')
   const [tick, setTick] = useState(0)
+  const [dashcamImageIdx, setDashcamImageIdx] = useState(0)
   const [selectedTruckId, setSelectedTruckId] = useState(null)
+  const [trackSelectedTruck, setTrackSelectedTruck] = useState(false)
 
   const mapElRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const fetchResourceRef = useRef(fetchResource)
 
   const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
+  const driverResource = RESOURCE_CONFIG.find((r) => r.key === 'drivers')
+  const liveRefreshMs = 10000
   const trucks = resources.trucks?.items ?? []
+  const drivers = resources.drivers?.items ?? []
+  const useDemoFleetView = !managerMode || trucks.length === 0
+  const sourceTrucks = useMemo(() => {
+    if (!useDemoFleetView) return trucks
+    return FLEET_VIEW_DEMO_SEEDS.map((seed) => ({
+      id: seed.id,
+      license_plate: seed.plate,
+      make: seed.make,
+      model: seed.model,
+      status: seed.stopped ? 'available' : 'on_trip',
+      latitude: seed.baseLat,
+      longitude: seed.baseLng,
+      base_speed: seed.baseSpeed,
+      speed_variance: seed.variance,
+      is_stopped: seed.stopped,
+      stop_reason: seed.stopReason,
+      is_demo: true,
+    }))
+  }, [useDemoFleetView, trucks])
+  const sourceDrivers = useMemo(() => {
+    if (!useDemoFleetView) return drivers
+    return FLEET_VIEW_DEMO_DRIVERS
+  }, [useDemoFleetView, drivers])
+  const driverByTruckId = useMemo(() => {
+    const map = new Map()
+    sourceDrivers.forEach((driver) => {
+      if (driver.assigned_truck_id !== null && driver.assigned_truck_id !== undefined && !map.has(driver.assigned_truck_id)) {
+        map.set(driver.assigned_truck_id, driver)
+      }
+    })
+    return map
+  }, [sourceDrivers])
   const railItems = [
-    { key: 'dash', icon: '[]', title: 'Dashboard' },
-    { key: 'fleet', icon: 'F', title: 'Fleet' },
-    { key: 'camera', icon: 'C', title: 'Cameras' },
-    { key: 'map', icon: 'M', title: 'Map' },
-    { key: 'route', icon: 'R', title: 'Routing' },
-    { key: 'service', icon: 'S', title: 'Service' },
-    { key: 'jobs', icon: 'J', title: 'Jobs' },
-    { key: 'alerts', icon: 'A', title: 'Alerts' },
-    { key: 'support', icon: '?', title: 'Support' },
-    { key: 'settings', icon: '*', title: 'Settings' },
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
+    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
+    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
   useEffect(() => {
-    if (!token || !truckResource) return
+    fetchResourceRef.current = fetchResource
+  }, [fetchResource])
+
+  useEffect(() => {
+    if (!token || !truckResource || !driverResource) return
     fetchResource(truckResource)
-  }, [token])
+    fetchResource(driverResource)
+  }, [token, truckResource, driverResource, fetchResource])
+
+  useEffect(() => {
+    if (!token || !truckResource) return undefined
+    const timerId = window.setInterval(() => {
+      fetchResourceRef.current(truckResource)
+    }, liveRefreshMs)
+    return () => window.clearInterval(timerId)
+  }, [token, truckResource, liveRefreshMs])
 
   useEffect(() => {
     if (!token) return undefined
@@ -514,7 +2230,31 @@ function Portal({
   }, [token])
 
   const liveTrucks = useMemo(() => {
-    return trucks.map((truck, index) => {
+    return sourceTrucks.map((truck, index) => {
+      if (truck.is_demo) {
+        const phase = tick + index * 3
+        const baseLat = Number(truck.latitude)
+        const baseLng = Number(truck.longitude)
+        const isStopped = Boolean(truck.is_stopped)
+        const location = {
+          lat: isStopped ? baseLat : baseLat + Math.sin(phase / 5) * 0.018,
+          lng: isStopped ? baseLng : baseLng + Math.cos(phase / 5) * 0.018,
+          simulated: true,
+        }
+        const speedKph = isStopped
+          ? 0
+          : Math.max(
+              18,
+              Math.round((Number(truck.base_speed) || 60) + Math.sin(phase / 3) * (Number(truck.speed_variance) || 8)),
+            )
+        return {
+          ...truck,
+          location,
+          speedKph,
+          statusLabel: isStopped ? `Stopped · ${truck.stop_reason || 'Idle'}` : 'On route',
+        }
+      }
+
       const location = buildTruckLocation(truck, index, tick)
       const speedKph = 62 + ((Number(truck.id ?? index) * 7 + tick * 3) % 26)
       return {
@@ -524,7 +2264,7 @@ function Portal({
         statusLabel: truck.status === 'on_trip' ? 'On route' : truck.status,
       }
     })
-  }, [trucks, tick])
+  }, [sourceTrucks, tick])
 
   const filteredTrucks = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -606,19 +2346,24 @@ function Portal({
     }
   }, [token])
 
+  const selectedTruck = filteredTrucks.find((truck) => truck.id === selectedTruckId) ?? filteredTrucks[0]
+  const mapTrucks = managerMode
+    ? (selectedTruck ? [selectedTruck] : [])
+    : filteredTrucks
+
   useEffect(() => {
     if (!mapRef.current) return
 
     markersRef.current.forEach((marker) => marker.remove())
     markersRef.current = []
 
-    if (filteredTrucks.length === 0) {
+    if (mapTrucks.length === 0) {
       mapRef.current.setView([NEW_JERSEY_CENTER.lat, NEW_JERSEY_CENTER.lng], NEW_JERSEY_DEFAULT_ZOOM)
       return
     }
 
     const bounds = []
-    filteredTrucks.forEach((truck) => {
+    mapTrucks.forEach((truck) => {
       const isSelected = selectedTruckId === truck.id
       const marker = L.circleMarker([truck.location.lat, truck.location.lng], {
         radius: isSelected ? 9 : 7,
@@ -633,133 +2378,367 @@ function Portal({
         direction: 'top',
         offset: [0, -8],
       })
-      marker.on('click', () => setSelectedTruckId(truck.id))
+      marker.on('click', () => focusTruck(truck.id))
 
       markersRef.current.push(marker)
       bounds.push([truck.location.lat, truck.location.lng])
     })
 
-    if (filteredTrucks.length === 1) {
-      mapRef.current.setView([filteredTrucks[0].location.lat, filteredTrucks[0].location.lng], 10)
+    const trackedTruck = trackSelectedTruck && selectedTruckId !== null
+      ? mapTrucks.find((truck) => truck.id === selectedTruckId) ?? null
+      : null
+
+    if (trackedTruck) {
+      mapRef.current.setView([trackedTruck.location.lat, trackedTruck.location.lng], 10, { animate: true })
+    } else if (mapTrucks.length === 1) {
+      mapRef.current.setView([mapTrucks[0].location.lat, mapTrucks[0].location.lng], 10)
     } else {
       mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
     }
-  }, [filteredTrucks, selectedTruckId])
+  }, [mapTrucks, selectedTruckId, trackSelectedTruck])
 
   function focusTruck(truckId) {
     setSelectedTruckId(truckId)
+    setTrackSelectedTruck(true)
     const target = filteredTrucks.find((t) => t.id === truckId)
     if (!target || !mapRef.current) return
     mapRef.current.setView([target.location.lat, target.location.lng], 10, { animate: true })
   }
 
-  const selectedTruck = filteredTrucks.find((truck) => truck.id === selectedTruckId) ?? filteredTrucks[0]
+  useEffect(() => {
+    if (filteredTrucks.length === 0) {
+      setSelectedTruckId(null)
+      setTrackSelectedTruck(false)
+      return
+    }
+    if (!filteredTrucks.some((truck) => truck.id === selectedTruckId)) {
+      setSelectedTruckId(filteredTrucks[0].id)
+      setTrackSelectedTruck(false)
+    }
+  }, [filteredTrucks, selectedTruckId])
+
+  const selectedIndex = filteredTrucks.findIndex((truck) => truck.id === selectedTruck?.id)
+  const currentDriver = selectedTruck
+    ? driverByTruckId.get(selectedTruck.id) ?? null
+    : null
+  const speedMph = selectedTruck ? Math.round(selectedTruck.speedKph * 0.621371) : 0
+  const movingMinutes = selectedTruck ? 8 + ((Number(selectedTruck.id ?? 1) * 3 + tick) % 68) : 0
+  const fuelPct = selectedTruck ? 48 + ((Number(selectedTruck.id ?? 1) * 7 + tick * 2) % 43) : 0
+  const engineLoad = selectedTruck ? 15 + ((Number(selectedTruck.id ?? 1) * 5 + tick) % 65) : 0
+  const batteryV = selectedTruck ? (12 + ((Number(selectedTruck.id ?? 1) * 11 + tick) % 21) / 10).toFixed(1) : '12.0'
+  const avgSpeedKph = filteredTrucks.length > 0
+    ? Math.round(filteredTrucks.reduce((sum, truck) => sum + truck.speedKph, 0) / filteredTrucks.length)
+    : 0
+  const inMotionCount = filteredTrucks.filter((truck) => truck.speedKph > 0).length
+  const topMovers = [...filteredTrucks]
+    .sort((a, b) => b.speedKph - a.speedKph)
+    .slice(0, 5)
+  const attentionUnits = filteredTrucks
+    .map((truck) => {
+      const seed = Number(truck.id ?? 1)
+      const unitFuel = 48 + ((seed * 7 + tick * 2) % 43)
+      const unitEngine = 15 + ((seed * 5 + tick) % 65)
+      return { ...truck, unitFuel, unitEngine }
+    })
+    .filter((truck) => truck.unitFuel < 60 || truck.unitEngine > 70)
+    .slice(0, 5)
+  const streetViewPoint = selectedTruck
+    ? `${selectedTruck.location.lat},${selectedTruck.location.lng}`
+    : ''
+  const streetViewMapsUrl = selectedTruck
+    ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(streetViewPoint)}`
+    : ''
+  const dashcamImageUrl = DASHCAM_DEMO_IMAGE_CANDIDATES[Math.min(dashcamImageIdx, DASHCAM_DEMO_IMAGE_CANDIDATES.length - 1)]
+  const cameraFeeds = selectedTruck
+    ? [
+      { id: 'forward', label: 'Forward Road Cam', detail: `Unit ${selectedTruck.license_plate}` },
+      { id: 'driver', label: 'Driver Cam', detail: currentDriver?.full_name ?? 'Unassigned driver' },
+      { id: 'cargo', label: 'Cargo Cam', detail: `${selectedTruck.make} ${selectedTruck.model}` },
+    ]
+    : []
+
+  function handleShareLocation() {
+    if (!selectedTruck) return
+    if (streetViewMapsUrl) {
+      window.open(streetViewMapsUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    const fallbackUrl = `https://maps.google.com/?q=${selectedTruck.location.lat},${selectedTruck.location.lng}`
+    window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+  }
 
   return (
-    <div className="live-portal-wrap">
-      <header className="live-topbar">
-        <div className="live-top-left">
-          <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
-          <button className="live-square-btn" onClick={() => setRailCollapsed((v) => !v)}>
-            {railCollapsed ? '>' : '<'}
-          </button>
+    <div className={`live-portal-wrap fleet-monitor-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+          <LogoIcon />
+        </button>
+        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
+          {railCollapsed ? '>' : '<'}
+        </button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => {
+            const isActive = Boolean(item.to) && location.pathname === item.to
+            return (
+              <button
+                type="button"
+                key={item.key}
+                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+                title={item.title}
+                onClick={() => item.to && navigate(item.to)}
+              >
+                <span className="fleet-rail-icon">{item.icon}</span>
+                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              </button>
+            )
+          })}
         </div>
-        <div className="live-top-actions">
-          <button className="live-pill-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh Trucks</button>
-          <button className="live-pill-btn" onClick={refreshAllResources} disabled={!token}>Sync All</button>
-          <button className="live-pill-btn ghost" onClick={handleLogout}>Logout</button>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
-      </header>
+      </aside>
 
-      <div className="live-main">
-        <aside className={`live-rail ${railCollapsed ? 'collapsed' : ''}`}>
-          {railItems.map((item, idx) => (
-            <button key={item.key} className={`live-rail-item ${idx === 0 ? 'active' : ''}`} title={item.title}>
-              <span>{item.icon}</span><em>{item.title}</em>
-            </button>
-          ))}
-          <button className="live-rail-collapse-tip" onClick={() => setRailCollapsed((v) => !v)}>
-            {railCollapsed ? '>>' : '<<'}
-          </button>
-        </aside>
+      <section className="fleet-details-panel">
+        <div className="fleet-panel-topline">
+          <p>{managerMode ? 'Fleet Manager' : 'Fleet View'}</p>
+          <p>{managerMode ? 'Focused Unit Monitoring' : 'Company Operations Monitoring'}</p>
+          <strong>{managerMode ? (selectedTruck ? selectedTruck.license_plate : 'No truck selected') : 'Company Live'}</strong>
+        </div>
 
-        <section className="live-map-section">
-          <div className="live-map-shell">
-            {mapError && (
-              <div className="live-map-dummy" aria-label="Dummy map">
-                <div className="live-map-grid" />
-                <div className="live-map-road road-a" />
-                <div className="live-map-road road-b" />
-                <div className="live-map-road road-c" />
-                <div className="live-map-pin pin-a" />
-                <div className="live-map-pin pin-b" />
-                <div className="live-map-pin pin-c" />
-                <div className="live-map-label">New Jersey Demo Map</div>
+        {managerMode && filteredTrucks.length > 0 && (
+          <div className="fleet-manager-picker">
+            <label htmlFor="fleet-manager-unit">Managed fleet unit</label>
+            <select
+              id="fleet-manager-unit"
+              value={selectedTruck ? String(selectedTruck.id) : ''}
+              onChange={(e) => {
+                const target = filteredTrucks.find((truck) => String(truck.id) === e.target.value)
+                if (target) focusTruck(target.id)
+              }}
+            >
+              {filteredTrucks.map((truck) => (
+                <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {managerMode && (
+          <div className="fleet-panel-tabs">
+            <button type="button" className="active" onClick={() => navigate('/fleet-manager')}>Live</button>
+            <button type="button" onClick={() => navigate('/history')}>History</button>
+            <button type="button" onClick={() => navigate('/drivers')}>Profile</button>
+          </div>
+        )}
+
+        {managerMode && selectedTruck ? (
+          <>
+            <article className="fleet-status-card">
+              <div className="fleet-status-head">
+                <h3>Status</h3>
+                <span>Now</span>
               </div>
-            )}
-
-            <div ref={mapElRef} className="live-map-canvas" />
-
-            <div className="live-map-top-controls">
-              <div className="live-map-control-group">
-                <button className="live-map-chip">Refresh</button>
-                <button className="live-map-chip">Fleet</button>
-                <button className="live-map-chip">Traffic</button>
-                <button className="live-map-chip">Fullscreen</button>
+              <p className="fleet-speed-line">{speedMph} mph in motion for {movingMinutes}m</p>
+              <p className="fleet-address-line">{selectedTruck.location.lat.toFixed(4)}, {selectedTruck.location.lng.toFixed(4)} · New Jersey</p>
+              <div className="fleet-driver-block">
+                <small>Current Driver</small>
+                <strong>{currentDriver?.full_name ?? 'Unassigned'}</strong>
               </div>
-              <div className="live-map-control-group right">
-                <button className="live-map-chip primary">Live Share</button>
+            </article>
+
+            <article className="fleet-telematics-card">
+              <div className="fleet-status-head">
+                <h3>Telematics</h3>
+                <span>updated now</span>
+              </div>
+              <div className="fleet-telemetry-grid">
+                <div>
+                  <small>Fuel</small>
+                  <strong>{fuelPct}%</strong>
+                </div>
+                <div>
+                  <small>Engine Load</small>
+                  <strong>{engineLoad}%</strong>
+                </div>
+                <div>
+                  <small>Battery</small>
+                  <strong>{batteryV}V</strong>
+                </div>
+              </div>
+            </article>
+
+            <article className="fleet-cameras-card">
+              <div className="fleet-status-head">
+                <h3>Dash Camera Monitor</h3>
+                <button onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
+              </div>
+              <div className="fleet-camera-stream-panel">
+                <div className="fleet-camera-stream-head">
+                  <strong>Demo Dash-Cam Stream</strong>
+                  <a href={DASHCAM_DEMO_SHARE_URL} target="_blank" rel="noreferrer">Open source video</a>
+                </div>
+                <img
+                  className="fleet-camera-stream-image"
+                  src={dashcamImageUrl}
+                  alt="Fleet dash camera demo frame"
+                  loading="lazy"
+                  onError={() => {
+                    setDashcamImageIdx((currentIdx) => {
+                      if (currentIdx >= DASHCAM_DEMO_IMAGE_CANDIDATES.length - 1) return currentIdx
+                      return currentIdx + 1
+                    })
+                  }}
+                />
+                <div className="fleet-camera-stream-fallback">
+                  <p>Static preview loaded from the selected source video.</p>
+                  <a href={DASHCAM_DEMO_SHARE_URL} target="_blank" rel="noreferrer">Open dash-cam demo</a>
+                </div>
+              </div>
+              <div className="fleet-camera-grid">
+                {cameraFeeds.map((feed) => (
+                  <div key={feed.id} className="fleet-camera-tile">
+                    <span className="fleet-camera-live">LIVE</span>
+                    <div className="fleet-camera-meta">
+                      <strong>{feed.label}</strong>
+                      <small>{feed.detail}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </>
+        ) : managerMode ? (
+          <p className="fleet-empty">No trucks yet. Create one and refresh trucks.</p>
+        ) : (
+          <article className="fleet-status-card fleet-view-summary-card">
+            <div className="fleet-status-head">
+              <h3>Company Live Overview</h3>
+              <span>Company wide</span>
+            </div>
+            <div className="fleet-company-kpis">
+              <div>
+                <small>Fleets on map</small>
+                <strong>{filteredTrucks.length}</strong>
+              </div>
+              <div>
+                <small>In motion</small>
+                <strong>{inMotionCount}</strong>
+              </div>
+              <div>
+                <small>Average speed</small>
+                <strong>{avgSpeedKph} km/h</strong>
               </div>
             </div>
+          </article>
+        )}
 
-            <div className="live-fleet-panel">
-              <div className="live-fleet-tabs">
-                <button className="active">Vehicles</button>
-                <button>Drivers</button>
-                <button>Signals</button>
-              </div>
-              <input
-                className="live-search"
-                placeholder="Search by Driver, Vehicle ID or Trailer"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <div className="live-panel-summary">
-                <span>{filteredTrucks.length} active</span>
-                <span>{fleetCount} records</span>
-                <span>{selectedTruck ? `${selectedTruck.speedKph} km/h` : '--'}</span>
-              </div>
-              <div className="live-truck-list">
-                {filteredTrucks.length === 0 && <p className="live-empty">No trucks yet. Create one and click Refresh Trucks.</p>}
-                {filteredTrucks.map((truck) => (
-                  <button
-                    key={truck.id}
-                    className={`live-truck-card ${selectedTruckId === truck.id ? 'selected' : ''}`}
-                    onClick={() => focusTruck(truck.id)}
-                  >
-                    <div className="live-card-top">
+        {!managerMode && (
+          <article className="fleet-list-card fleet-ops-board">
+            <div className="fleet-status-head">
+              <h3>Dispatch Board</h3>
+              <span>Company-level signals</span>
+            </div>
+            <div className="fleet-ops-columns">
+              <div>
+                <h4>Top Movers</h4>
+                {topMovers.length === 0 && <p className="fleet-empty">No units found.</p>}
+                {topMovers.map((truck) => (
+                  <div className="fleet-ops-row" key={`mover-${truck.id}`}>
+                    <div>
                       <strong>{truck.license_plate}</strong>
-                      <span>{truck.speedKph} km/h</span>
+                      <p>{truck.make} {truck.model}</p>
                     </div>
-                    <p>{truck.make} {truck.model} • {String(truck.statusLabel).replace('_', ' ')}</p>
-                    <small>
-                      {truck.location.lat.toFixed(4)}, {truck.location.lng.toFixed(4)}
-                      {truck.location.simulated ? ' (simulated)' : ''}
-                    </small>
-                  </button>
+                    <span>{truck.speedKph} km/h</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h4>Needs Attention</h4>
+                {attentionUnits.length === 0 && <p className="fleet-ok-line">No critical engine/fuel alerts right now.</p>}
+                {attentionUnits.map((truck) => (
+                  <div className="fleet-ops-row" key={`attention-${truck.id}`}>
+                    <div>
+                      <strong>{truck.license_plate}</strong>
+                      <p>Fuel {truck.unitFuel}% · Engine {truck.unitEngine}%</p>
+                    </div>
+                    <button className="fleet-jump-btn" onClick={() => focusTruck(truck.id)}>Track</button>
+                  </div>
                 ))}
               </div>
             </div>
+          </article>
+        )}
 
-            {mapError && (
-              <div className="live-map-note">
-                <strong>Fallback map active</strong>
-                <p>{mapError}. Showing built-in dummy map until map tiles are reachable.</p>
-              </div>
-            )}
+        <article className="fleet-list-card">
+          <div className="fleet-status-head">
+            <h3>{managerMode ? 'Fleet Units' : 'Company Fleet Roster'}</h3>
+            <span>{filteredTrucks.length} active</span>
           </div>
-        </section>
-      </div>
+          <input
+            className="live-search"
+            placeholder={managerMode ? 'Search selected fleet unit' : 'Search company fleet'}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="fleet-live-list">
+            {filteredTrucks.map((truck, index) => (
+              <button
+                key={truck.id}
+                className={`fleet-live-row ${selectedTruckId === truck.id ? 'selected' : ''}`}
+                onClick={() => focusTruck(truck.id)}
+              >
+                <div>
+                  <strong>{truck.license_plate}</strong>
+                  <p>{truck.make} {truck.model}</p>
+                  <small>
+                    Truck ID #{truck.id} · Driver ID #{driverByTruckId.get(truck.id)?.id ?? 'N/A'}
+                  </small>
+                </div>
+                <div>
+                  <span>{truck.speedKph} km/h</span>
+                  <small>{selectedTruckId === truck.id ? 'tracking' : `#${index + 1}`}</small>
+                  <small>{truck.location.lat.toFixed(4)}, {truck.location.lng.toFixed(4)}</small>
+                </div>
+              </button>
+            ))}
+          </div>
+        </article>
+      </section>
+
+      <section className="fleet-map-area">
+        <div className="fleet-map-header">
+          {!managerMode && <span className="fleet-live-badge">LIVE TRACKING · {Math.round(liveRefreshMs / 1000)}s refresh</span>}
+          <button className="fleet-header-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh Vehicles</button>
+          <button className="fleet-header-btn" onClick={refreshAllResources} disabled={!token}>Sync All</button>
+          <button className="fleet-header-btn primary" onClick={handleShareLocation} disabled={!selectedTruck}>Share Location</button>
+        </div>
+
+        <div className="fleet-map-shell">
+          {mapError && (
+            <div className="live-map-dummy" aria-label="Dummy map">
+              <div className="live-map-grid" />
+              <div className="live-map-road road-a" />
+              <div className="live-map-road road-b" />
+              <div className="live-map-road road-c" />
+              <div className="live-map-pin pin-a" />
+              <div className="live-map-pin pin-b" />
+              <div className="live-map-pin pin-c" />
+              <div className="live-map-label">New Jersey Demo Map</div>
+            </div>
+          )}
+          <div ref={mapElRef} className="fleet-map-canvas" />
+          {mapError && (
+            <div className="live-map-note">
+              <strong>Fallback map active</strong>
+              <p>{mapError}. Showing built-in dummy map until map tiles are reachable.</p>
+            </div>
+          )}
+          <div className="fleet-map-count-pill">
+            {managerMode ? `${mapTrucks.length} selected unit live` : `${filteredTrucks.length} company units live`} · {sourceTrucks.length} company trucks
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
@@ -801,34 +2780,34 @@ function App() {
     [resources],
   )
 
-  function saveToken(t) {
+  const saveToken = useCallback((t) => {
     if (!t) { localStorage.removeItem('truckAppToken'); setToken(''); return }
     localStorage.setItem('truckAppToken', t); setToken(t)
-  }
+  }, [])
 
-  function updRes(key, partial) {
+  const updRes = useCallback((key, partial) => {
     setResources((c) => ({ ...c, [key]: { ...c[key], ...partial } }))
-  }
+  }, [])
 
-  async function fetchResource(r) {
+  const fetchResource = useCallback(async (r) => {
     updRes(r.key, { loading: true, error: '' })
     try {
       updRes(r.key, { items: (await apiRequest(r.path, { token })) ?? [], loading: false, error: '' })
     } catch (err) { updRes(r.key, { loading: false, error: err.message }) }
-  }
+  }, [token, updRes])
 
-  async function fetchSpendingSummary() {
+  const fetchSpendingSummary = useCallback(async () => {
     setSummaryError('')
     try { setSpendingSummary((await apiRequest('/trucks/spending/summary', { token })) ?? []) }
     catch (err) { setSummaryError(err.message) }
-  }
+  }, [token])
 
-  async function refreshAllResources() {
+  const refreshAllResources = useCallback(async () => {
     if (!token) return
     await Promise.all(RESOURCE_CONFIG.map(fetchResource))
     await fetchSpendingSummary()
     setAuthMessage('Data synced.')
-  }
+  }, [token, fetchResource, fetchSpendingSummary])
 
   async function handleRegister(e) {
     e.preventDefault(); setAuthLoading(true); setAuthMessage('')
@@ -858,10 +2837,10 @@ function App() {
     } catch (err) { setAuthMessage(err.message) }
   }
 
-  function handleLogout() {
+  const handleLogout = useCallback(() => {
     saveToken(''); setAuthMessage(''); setSpendingSummary([])
     setResources(RESOURCE_CONFIG.reduce((a, r) => { a[r.key] = DEFAULT_RESOURCE_STATE; return a }, {}))
-  }
+  }, [saveToken])
 
   const portalProps = {
     token, resources, createPayloads, setCreatePayloads,
@@ -922,7 +2901,13 @@ function App() {
         }
       />
 
-      <Route path="/portal" element={<Portal {...portalProps} />} />
+      <Route path="/portal" element={<Portal {...portalProps} managerMode={false} />} />
+      <Route path="/fleet-manager" element={<Portal {...portalProps} managerMode />} />
+      <Route path="/vehicles" element={<VehiclesPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
+      <Route path="/drivers" element={<DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
+      <Route path="/drivers/:driverId" element={<DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
+      <Route path="/history" element={<HistoryPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
+      <Route path="/fleet" element={<FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} />} />
     </Routes>
   )
 }

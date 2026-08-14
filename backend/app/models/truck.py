@@ -29,5 +29,6 @@ class Truck(Base):
     is_active = Column(Boolean, default=True)
 
     trips = relationship("Trip", back_populates="truck")
+    assigned_drivers = relationship("Driver", back_populates="assigned_truck")
     maintenance_services = relationship("MaintenanceService", back_populates="truck")
     ifta_records = relationship("IFTARecord", back_populates="truck")

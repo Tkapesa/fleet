@@ -32,6 +32,17 @@ def ensure_sqlite_columns() -> None:
         ],
         "drivers": [
             "owner_user_id INTEGER",
+            "license_state VARCHAR",
+            "license_issue_date DATE",
+            "date_of_birth DATE",
+            "address VARCHAR",
+            "emergency_contact_name VARCHAR",
+            "emergency_contact_phone VARCHAR",
+            "notes TEXT",
+            "assigned_truck_id INTEGER",
+            "license_document_url VARCHAR",
+            "medical_card_document_url VARCHAR",
+            "additional_document_notes TEXT",
         ],
         "trucks": [
             "owner_user_id INTEGER",
