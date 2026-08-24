@@ -1,48 +1,16 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Link, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
-const DASHCAM_DEMO_SHARE_URL = 'https://share.google/1zIXgLKIZpyQ06f7H'
-const DASHCAM_DEMO_YOUTUBE_ID = '7d3eIrwz9Ws'
-const DASHCAM_DEMO_IMAGE_CANDIDATES = [
-  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/hqdefault.jpg`,
-  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/mqdefault.jpg`,
-  `https://img.youtube.com/vi/${DASHCAM_DEMO_YOUTUBE_ID}/default.jpg`,
-]
+const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY ?? ''
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
 const HERO_TRUCK_TOP_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/Truck-PNG.png'
 const HERO_TRUCK_VERTICAL_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/img-01-01.png'
-
-const FLEET_VIEW_DEMO_SEEDS = [
-  { id: 901, plate: 'NJ-7421', make: 'Volvo', model: 'VNL 760', baseLat: 40.7357, baseLng: -74.1724, baseSpeed: 82, variance: 12, stopped: false, stopReason: '' },
-  { id: 902, plate: 'PA-1184', make: 'Freightliner', model: 'Cascadia', baseLat: 40.2732, baseLng: -76.8867, baseSpeed: 76, variance: 10, stopped: false, stopReason: '' },
-  { id: 903, plate: 'NY-3309', make: 'Kenworth', model: 'T680', baseLat: 40.7128, baseLng: -74.006, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Fuel stop' },
-  { id: 904, plate: 'OH-5510', make: 'Peterbilt', model: '579', baseLat: 39.9612, baseLng: -82.9988, baseSpeed: 68, variance: 11, stopped: false, stopReason: '' },
-  { id: 905, plate: 'MD-2742', make: 'Mack', model: 'Anthem', baseLat: 39.2904, baseLng: -76.6122, baseSpeed: 72, variance: 9, stopped: false, stopReason: '' },
-  { id: 906, plate: 'VA-8044', make: 'International', model: 'LT', baseLat: 37.5407, baseLng: -77.436, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Loading dock' },
-  { id: 907, plate: 'CT-4437', make: 'Volvo', model: 'VNR 640', baseLat: 41.7658, baseLng: -72.6734, baseSpeed: 64, variance: 8, stopped: false, stopReason: '' },
-  { id: 908, plate: 'MA-9012', make: 'Freightliner', model: 'M2 106', baseLat: 42.3601, baseLng: -71.0589, baseSpeed: 58, variance: 7, stopped: false, stopReason: '' },
-  { id: 909, plate: 'DE-6681', make: 'Kenworth', model: 'T880', baseLat: 39.1582, baseLng: -75.5244, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Driver break' },
-  { id: 910, plate: 'WV-2195', make: 'Peterbilt', model: '567', baseLat: 38.3498, baseLng: -81.6326, baseSpeed: 52, variance: 9, stopped: false, stopReason: '' },
-]
-
-const FLEET_VIEW_DEMO_DRIVERS = [
-  { id: 1201, full_name: 'Evan Rios', assigned_truck_id: 901 },
-  { id: 1202, full_name: 'Nora Patel', assigned_truck_id: 902 },
-  { id: 1203, full_name: 'Chris Hale', assigned_truck_id: 903 },
-  { id: 1204, full_name: 'Tariq Boone', assigned_truck_id: 904 },
-  { id: 1205, full_name: 'Jenna Costa', assigned_truck_id: 905 },
-  { id: 1206, full_name: 'Luis Maren', assigned_truck_id: 906 },
-  { id: 1207, full_name: 'Mila Chen', assigned_truck_id: 907 },
-  { id: 1208, full_name: 'Damon Ellis', assigned_truck_id: 908 },
-  { id: 1209, full_name: 'Riley Shah', assigned_truck_id: 909 },
-  { id: 1210, full_name: 'Ava Kline', assigned_truck_id: 910 },
-]
 
 const RESOURCE_CONFIG = [
   {
@@ -79,6 +47,12 @@ const RESOURCE_CONFIG = [
     template: { truck_id: 1, driver_id: 1, origin: 'Dallas, TX', destination: 'Phoenix, AZ', cargo_description: 'Construction materials', cargo_weight_tons: 8, scheduled_departure: '2026-07-20T09:00:00', notes: 'Deliver before noon if possible' },
   },
   {
+    key: 'routes',
+    label: 'Routes',
+    path: '/routes/',
+    template: { reference: 'RT-3006', origin: 'Newark, NJ', destination: 'Boston, MA', truck_id: 1, driver_id: 1, cargo_description: 'Refrigerated produce', scheduled_departure: '2026-08-21T07:30:00', estimated_arrival: '2026-08-21T15:45:00', distance_miles: 392, notes: '' },
+  },
+  {
     key: 'maintenance',
     label: 'Maintenance',
     path: '/maintenance-services/',
@@ -97,6 +71,41 @@ const DEFAULT_LOGIN = { email: '', password: '' }
 const DUMMY_LOGIN = { email: 'demo@truckappdemo.com', password: 'Demo123!' }
 const DEFAULT_RESOURCE_STATE = { items: [], loading: false, error: '' }
 
+const FLEET_VIEW_DEMO_SEEDS = [
+  { id: 101, plate: 'ATD-101', make: 'Volvo', model: 'FH16', heightM: 4.05, lengthM: 18.5, baseLat: 40.7128, baseLng: -74.0060, baseSpeed: 64, variance: 8 },
+  { id: 102, plate: 'ATD-102', make: 'Freightliner', model: 'Cascadia', heightM: 4.18, lengthM: 20.0, baseLat: 39.9526, baseLng: -75.1652, baseSpeed: 58, variance: 11 },
+  { id: 103, plate: 'ATD-103', make: 'Kenworth', model: 'T680', heightM: 4.25, lengthM: 21.5, baseLat: 38.9072, baseLng: -77.0369, baseSpeed: 71, variance: 7 },
+  { id: 104, plate: 'ATD-104', make: 'Peterbilt', model: '579', heightM: 4.32, lengthM: 22.0, baseLat: 35.2271, baseLng: -80.8431, baseSpeed: 52, variance: 9 },
+  { id: 105, plate: 'ATD-105', make: 'Mack', model: 'Anthem', heightM: 4.10, lengthM: 19.0, baseLat: 33.4484, baseLng: -112.0740, baseSpeed: 67, variance: 12 },
+  { id: 106, plate: 'ATD-106', make: 'International', model: 'LT', heightM: 4.38, lengthM: 23.0, baseLat: 32.7767, baseLng: -96.7970, baseSpeed: 45, variance: 6 },
+  { id: 107, plate: 'ATD-107', make: 'Volvo', model: 'VNL', heightM: 4.00, lengthM: 18.0, baseLat: 29.7604, baseLng: -95.3698, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Rest stop' },
+  { id: 108, plate: 'ATD-108', make: 'Freightliner', model: 'Cascadia', heightM: 4.24, lengthM: 21.0, baseLat: 39.7392, baseLng: -104.9903, baseSpeed: 76, variance: 10 },
+  { id: 109, plate: 'ATD-109', make: 'Kenworth', model: 'T680', heightM: 4.45, lengthM: 24.0, baseLat: 47.6062, baseLng: -122.3321, baseSpeed: 0, variance: 0, stopped: true, stopReason: 'Loading' },
+  { id: 110, plate: 'ATD-110', make: 'Peterbilt', model: '579', heightM: 4.16, lengthM: 20.5, baseLat: 34.0522, baseLng: -118.2437, baseSpeed: 61, variance: 13 },
+  { id: 111, plate: 'ATD-111', make: 'Volvo', model: 'VNL', heightM: 3.60, lengthM: 21.0, baseLat: 40.2732, baseLng: -76.8867, baseSpeed: 59, variance: 9 },
+]
+
+const ROUTE_SUGGESTIONS = [
+  { name: 'I-95 Northeast Corridor', clearanceM: 4.57, maxLengthM: 25, distanceKm: 420, detail: 'Mainline route with standard truck clearances.' },
+  { name: 'I-81 Freight Corridor', clearanceM: 4.42, maxLengthM: 25, distanceKm: 510, detail: 'Good heavy-freight option with fewer urban restrictions.' },
+  { name: 'US-40 Commercial Route', clearanceM: 4.27, maxLengthM: 22, distanceKm: 465, detail: 'Suitable for standard combinations; check local delivery windows.' },
+  { name: 'State Route 17 Alternate', clearanceM: 4.05, maxLengthM: 20, distanceKm: 390, detail: 'Shorter alternate with tighter bridge and length limits.' },
+]
+
+const DEMO_ROUTES = [
+  { id: 3001, reference: 'RT-3001', status: 'In Transit', origin: 'Newark, NJ', destination: 'Boston, MA', departure: 'Aug 20, 07:30', eta: 'Aug 20, 15:45', distance: '392 mi', truck: 'ATD-101', driver: 'Jordan Lee', cargo: 'Refrigerated produce' },
+  { id: 3002, reference: 'RT-3002', status: 'Scheduled', origin: 'Philadelphia, PA', destination: 'Richmond, VA', departure: 'Aug 21, 06:00', eta: 'Aug 21, 12:30', distance: '250 mi', truck: 'ATD-102', driver: 'Morgan Diaz', cargo: 'Building materials' },
+  { id: 3003, reference: 'RT-3003', status: 'Delayed', origin: 'Baltimore, MD', destination: 'Charlotte, NC', departure: 'Aug 20, 05:15', eta: 'Aug 20, 19:20', distance: '410 mi', truck: 'ATD-104', driver: 'Casey Brooks', cargo: 'Automotive parts' },
+  { id: 3004, reference: 'RT-3004', status: 'Completed', origin: 'Albany, NY', destination: 'Newark, NJ', departure: 'Aug 19, 08:00', eta: 'Aug 19, 13:10', distance: '170 mi', truck: 'ATD-103', driver: 'Taylor Reed', cargo: 'Packaged goods' },
+  { id: 3005, reference: 'RT-3005', status: 'Scheduled', origin: 'Pittsburgh, PA', destination: 'Columbus, OH', departure: 'Aug 22, 09:00', eta: 'Aug 22, 12:45', distance: '185 mi', truck: 'ATD-105', driver: 'Riley Morgan', cargo: 'Industrial equipment' },
+]
+
+const FLEET_VIEW_DEMO_DRIVERS = FLEET_VIEW_DEMO_SEEDS.map((truck, index) => ({
+  id: 201 + index,
+  full_name: ['Jordan Lee', 'Morgan Diaz', 'Taylor Reed', 'Casey Brooks', 'Riley Morgan', 'Avery Smith', 'Cameron Hall', 'Drew Wilson', 'Quinn Davis', 'Parker Clark', 'Jamie Foster'][index],
+  assigned_truck_id: truck.id,
+}))
+
 function buildHeaders(token, withJson = true) {
   const h = {}
   if (withJson) h['Content-Type'] = 'application/json'
@@ -112,19 +121,11 @@ async function apiRequest(path, { method = 'GET', token, body } = {}) {
   })
   if (res.status === 204) return null
   const payload = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(payload?.detail ?? `Request failed ${res.status}`)
-  return payload
-}
-
-async function apiMultipartRequest(path, { method = 'POST', token, formData } = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: buildHeaders(token, false),
-    body: formData,
-  })
-  if (res.status === 204) return null
-  const payload = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(payload?.detail ?? `Request failed ${res.status}`)
+  if (!res.ok) {
+    const error = new Error(payload?.detail ?? `Request failed ${res.status}`)
+    error.status = res.status
+    throw error
+  }
   return payload
 }
 
@@ -145,6 +146,21 @@ function buildTruckLocation(truck, index, tick) {
     lng: baseLng + Math.cos(drift + seed * 1.7) * 0.01,
     simulated: true,
   }
+}
+
+function distanceInKm(pointA, pointB) {
+  const earthRadiusKm = 6371
+  const latDelta = (pointB.lat - pointA.lat) * Math.PI / 180
+  const lngDelta = (pointB.lng - pointA.lng) * Math.PI / 180
+  const latA = pointA.lat * Math.PI / 180
+  const latB = pointB.lat * Math.PI / 180
+  const haversine = Math.sin(latDelta / 2) ** 2
+    + Math.sin(lngDelta / 2) ** 2 * Math.cos(latA) * Math.cos(latB)
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+}
+
+function metersToFeet(value) {
+  return Number(value) * 3.28084
 }
 
 function formatDaysUntilExpiry(days) {
@@ -724,7 +740,7 @@ function FleetCompliance({ token, resources, refreshAllResources }) {
 function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [queryFleet, setQueryFleet] = useState('')
   const [queryVin, setQueryVin] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -754,7 +770,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
     { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
     { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
     { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
     { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
@@ -966,7 +982,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
 function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [queryText, setQueryText] = useState('')
   const [eventType, setEventType] = useState('all')
 
@@ -989,7 +1005,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
     { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
     { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
     { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
     { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
@@ -1223,21 +1239,17 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
     emergency_contact_phone: '',
     notes: '',
     assigned_truck_id: '',
-    license_document_url: '',
-    medical_card_document_url: '',
-    additional_document_notes: '',
   }
 
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [queryText, setQueryText] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [toolbarBusy, setToolbarBusy] = useState(false)
   const [assignmentSavingId, setAssignmentSavingId] = useState(null)
-  const [deleteSavingId, setDeleteSavingId] = useState(null)
   const [driverForm, setDriverForm] = useState(emptyDriverForm)
 
   const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
@@ -1254,7 +1266,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
     { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
     { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
     { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
     { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
@@ -1279,9 +1291,6 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
         address: driverForm.address || null,
         emergency_contact_name: driverForm.emergency_contact_name || null,
         emergency_contact_phone: driverForm.emergency_contact_phone || null,
-        license_document_url: driverForm.license_document_url || null,
-        medical_card_document_url: driverForm.medical_card_document_url || null,
-        additional_document_notes: driverForm.additional_document_notes || null,
       }
       await apiRequest('/drivers/', { method: 'POST', token, body: payload })
       setMessage('Driver saved successfully.')
@@ -1324,25 +1333,6 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
       await action()
     } finally {
       setToolbarBusy(false)
-    }
-  }
-
-  async function handleDeleteDriver(driver) {
-    if (!token || !driverResource) return
-    const confirmed = window.confirm(`Delete driver ${driver.full_name}? This cannot be undone.`)
-    if (!confirmed) return
-
-    setDeleteSavingId(driver.id)
-    setMessage('')
-    try {
-      await apiRequest(`/drivers/${driver.id}`, { method: 'DELETE', token })
-      await fetchResource(driverResource)
-      if (truckResource) await fetchResource(truckResource)
-      setMessage('Driver deleted successfully.')
-    } catch (err) {
-      setMessage(err.message)
-    } finally {
-      setDeleteSavingId(null)
     }
   }
 
@@ -1552,11 +1542,8 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                   <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
                 ))}
               </select>
-              <input placeholder="License document URL" value={driverForm.license_document_url} onChange={(e) => setDriverForm((f) => ({ ...f, license_document_url: e.target.value }))} />
-              <input placeholder="Medical card document URL" value={driverForm.medical_card_document_url} onChange={(e) => setDriverForm((f) => ({ ...f, medical_card_document_url: e.target.value }))} />
             </div>
             <textarea placeholder="Notes" rows={3} value={driverForm.notes} onChange={(e) => setDriverForm((f) => ({ ...f, notes: e.target.value }))} />
-            <textarea placeholder="Additional document notes" rows={2} value={driverForm.additional_document_notes} onChange={(e) => setDriverForm((f) => ({ ...f, additional_document_notes: e.target.value }))} />
             <div className="drivers-form-actions">
               <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver'}</button>
               {message && <p className="drivers-message">{message}</p>}
@@ -1573,14 +1560,13 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                     <th>Status</th>
                     <th>Assigned Truck</th>
                     <th>Update Assignment</th>
-                    <th>Documents</th>
-                    <th>Actions</th>
+                    <th>Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDrivers.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="vehicles-empty">No drivers match current filters.</td>
+                      <td colSpan={7} className="vehicles-empty">No drivers match current filters.</td>
                     </tr>
                   )}
                   {filteredDrivers.map((driver) => (
@@ -1605,7 +1591,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                         <select
                           value={driver.assigned_truck_id ?? ''}
                           onChange={(e) => assignDriverToTruck(driver.id, e.target.value)}
-                          disabled={assignmentSavingId === driver.id || deleteSavingId === driver.id}
+                          disabled={assignmentSavingId === driver.id}
                         >
                           <option value="">Unassigned</option>
                           {trucks.map((truck) => (
@@ -1614,32 +1600,9 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                         </select>
                       </td>
                       <td>
-                        <div className="drivers-doc-links">
-                          {driver.license_document_url && (
-                            <a href={driver.license_document_url} target="_blank" rel="noreferrer">License Doc</a>
-                          )}
-                          {driver.medical_card_document_url && (
-                            <a href={driver.medical_card_document_url} target="_blank" rel="noreferrer">Medical Card</a>
-                          )}
-                          {!driver.license_document_url && !driver.medical_card_document_url && (
-                            <span className="drivers-doc-empty">No docs</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="drivers-row-actions">
-                          <button type="button" className="vehicles-action-btn" onClick={() => navigate(`/drivers/${driver.id}`)}>
-                            View / Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="vehicles-action-btn danger"
-                            onClick={() => handleDeleteDriver(driver)}
-                            disabled={deleteSavingId === driver.id}
-                          >
-                            {deleteSavingId === driver.id ? 'Deleting...' : 'Delete'}
-                          </button>
-                        </div>
+                        <button type="button" className="vehicles-action-btn" onClick={() => navigate(`/drivers/${driver.id}`)}>
+                          View / Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1654,27 +1617,13 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
 }
 
 function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
-  const documentFieldConfig = [
-    { key: 'license', label: 'License PDF' },
-    { key: 'passport', label: 'Passport PDF' },
-    { key: 'medical_report', label: 'Medical Report PDF' },
-    { key: 'health_report', label: 'Health Report PDF' },
-    { key: 'drug_test', label: 'Drug Test PDF' },
-    { key: 'other', label: 'Other PDF' },
-  ]
-
   const { driverId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toolbarBusy, setToolbarBusy] = useState(false)
-  const [deleteSaving, setDeleteSaving] = useState(false)
   const [message, setMessage] = useState('')
-  const [documents, setDocuments] = useState([])
-  const [pendingFiles, setPendingFiles] = useState({})
-  const [uploadingDocType, setUploadingDocType] = useState('')
-  const [deletingDocType, setDeletingDocType] = useState('')
 
   const emptyDriverEditForm = {
     full_name: '',
@@ -1691,9 +1640,6 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
     emergency_contact_phone: '',
     notes: '',
     assigned_truck_id: '',
-    license_document_url: '',
-    medical_card_document_url: '',
-    additional_document_notes: '',
     is_active: true,
   }
 
@@ -1705,15 +1651,6 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
   const drivers = resources.drivers?.items ?? []
   const parsedDriverId = Number(driverId)
   const selectedDriver = drivers.find((driver) => driver.id === parsedDriverId) ?? null
-  const documentsByType = useMemo(() => {
-    const map = new Map()
-    documents.forEach((doc) => {
-      if (!map.has(doc.doc_type)) {
-        map.set(doc.doc_type, doc)
-      }
-    })
-    return map
-  }, [documents])
 
   const railItems = [
     { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
@@ -1724,7 +1661,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
     { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
     { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
     { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
     { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
@@ -1754,32 +1691,9 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
       emergency_contact_phone: selectedDriver.emergency_contact_phone ?? '',
       notes: selectedDriver.notes ?? '',
       assigned_truck_id: selectedDriver.assigned_truck_id ? String(selectedDriver.assigned_truck_id) : '',
-      license_document_url: selectedDriver.license_document_url ?? '',
-      medical_card_document_url: selectedDriver.medical_card_document_url ?? '',
-      additional_document_notes: selectedDriver.additional_document_notes ?? '',
       is_active: selectedDriver.is_active ?? true,
     })
   }, [selectedDriver])
-
-  useEffect(() => {
-    if (!token || !selectedDriver) {
-      setDocuments([])
-      return
-    }
-
-    let active = true
-    apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
-      .then((items) => {
-        if (active) setDocuments(Array.isArray(items) ? items : [])
-      })
-      .catch(() => {
-        if (active) setDocuments([])
-      })
-
-    return () => {
-      active = false
-    }
-  }, [token, selectedDriver])
 
   async function handleUpdateDriver(e) {
     e.preventDefault()
@@ -1796,9 +1710,6 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
         emergency_contact_name: driverEditForm.emergency_contact_name || null,
         emergency_contact_phone: driverEditForm.emergency_contact_phone || null,
         notes: driverEditForm.notes || null,
-        license_document_url: driverEditForm.license_document_url || null,
-        medical_card_document_url: driverEditForm.medical_card_document_url || null,
-        additional_document_notes: driverEditForm.additional_document_notes || null,
       }
       await apiRequest(`/drivers/${selectedDriver.id}`, { method: 'PATCH', token, body: payload })
       await fetchResource(driverResource)
@@ -1819,78 +1730,6 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
       await action()
     } finally {
       setToolbarBusy(false)
-    }
-  }
-
-  async function handleDeleteDriver() {
-    if (!token || !driverResource || !selectedDriver) return
-    const confirmed = window.confirm(`Delete driver ${selectedDriver.full_name}? This cannot be undone.`)
-    if (!confirmed) return
-
-    setDeleteSaving(true)
-    setMessage('')
-    try {
-      await apiRequest(`/drivers/${selectedDriver.id}`, { method: 'DELETE', token })
-      await fetchResource(driverResource)
-      if (truckResource) await fetchResource(truckResource)
-      navigate('/drivers')
-    } catch (err) {
-      setMessage(err.message)
-    } finally {
-      setDeleteSaving(false)
-    }
-  }
-
-  async function handleUploadDocument(docType) {
-    const selectedPdf = pendingFiles[docType]
-    if (!token || !selectedDriver || !selectedPdf) {
-      setMessage(`Choose a PDF file for ${docType.replace(/_/g, ' ')} before upload.`)
-      return
-    }
-
-    const filename = String(selectedPdf.name || '').toLowerCase()
-    if (!filename.endsWith('.pdf')) {
-      setMessage('Only PDF files are allowed.')
-      return
-    }
-
-    setUploadingDocType(docType)
-    setMessage('')
-    try {
-      const formData = new FormData()
-      formData.append('doc_type', docType)
-      formData.append('file', selectedPdf)
-
-      await apiMultipartRequest(`/drivers/${selectedDriver.id}/documents`, {
-        method: 'POST',
-        token,
-        formData,
-      })
-
-      const docs = await apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
-      setDocuments(Array.isArray(docs) ? docs : [])
-      setPendingFiles((prev) => ({ ...prev, [docType]: null }))
-      setMessage('Document uploaded successfully.')
-    } catch (err) {
-      setMessage(err.message)
-    } finally {
-      setUploadingDocType('')
-    }
-  }
-
-  async function handleDeleteDocument(doc) {
-    if (!token || !selectedDriver) return
-    setDeletingDocType(doc.doc_type)
-    setMessage('')
-    try {
-      await apiRequest(`/drivers/${selectedDriver.id}/documents/${doc.id}`, { method: 'DELETE', token })
-      const docs = await apiRequest(`/drivers/${selectedDriver.id}/documents`, { token })
-      setDocuments(Array.isArray(docs) ? docs : [])
-      setMessage('Document deleted.')
-    } catch (err) {
-      setMessage(err.message)
-    } finally {
-      setDeletingDocType('')
     }
   }
 
@@ -2000,135 +1839,51 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
               <p className="driver-profile-line">Record ID: {selectedDriver.id}</p>
             </aside>
 
-            <div className="driver-profile-editor-stack">
-              <form className="drivers-form-card" onSubmit={handleUpdateDriver}>
-                <h3>Edit Driver</h3>
-                <div className="drivers-form-grid">
-                  <input required placeholder="Full name" value={driverEditForm.full_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, full_name: e.target.value }))} />
-                  <input required type="email" placeholder="Email" value={driverEditForm.email} onChange={(e) => setDriverEditForm((f) => ({ ...f, email: e.target.value }))} />
-                  <input required placeholder="Phone" value={driverEditForm.phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, phone: e.target.value }))} />
-                  <input required placeholder="License number" value={driverEditForm.license_number} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_number: e.target.value }))} />
-                  <select value={driverEditForm.license_class} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_class: e.target.value }))}>
-                    <option value="C">CDL Class C (Commercial)</option>
-                    <option value="B">CDL Class B</option>
-                    <option value="A">CDL Class A</option>
-                  </select>
-                  <input placeholder="License state (e.g. NJ)" value={driverEditForm.license_state} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_state: e.target.value }))} />
-                  <label>
-                    License issue date
-                    <input type="date" value={driverEditForm.license_issue_date} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_issue_date: e.target.value }))} />
-                  </label>
-                  <label>
-                    License expiry
-                    <input required type="date" value={driverEditForm.license_expiry} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_expiry: e.target.value }))} />
-                  </label>
-                  <label>
-                    Date of birth
-                    <input type="date" value={driverEditForm.date_of_birth} onChange={(e) => setDriverEditForm((f) => ({ ...f, date_of_birth: e.target.value }))} />
-                  </label>
-                  <input placeholder="Address" value={driverEditForm.address} onChange={(e) => setDriverEditForm((f) => ({ ...f, address: e.target.value }))} />
-                  <input placeholder="Emergency contact name" value={driverEditForm.emergency_contact_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_name: e.target.value }))} />
-                  <input placeholder="Emergency contact phone" value={driverEditForm.emergency_contact_phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
-                  <select value={driverEditForm.assigned_truck_id} onChange={(e) => setDriverEditForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
-                    <option value="">Unassigned truck</option>
-                    {trucks.map((truck) => (
-                      <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
-                    ))}
-                  </select>
-                  <input placeholder="License document URL" value={driverEditForm.license_document_url} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_document_url: e.target.value }))} />
-                  <input placeholder="Medical card document URL" value={driverEditForm.medical_card_document_url} onChange={(e) => setDriverEditForm((f) => ({ ...f, medical_card_document_url: e.target.value }))} />
-                  <label className="drivers-active-toggle">
-                    Active driver
-                    <input type="checkbox" checked={driverEditForm.is_active} onChange={(e) => setDriverEditForm((f) => ({ ...f, is_active: e.target.checked }))} />
-                  </label>
-                </div>
-                <textarea placeholder="Notes" rows={3} value={driverEditForm.notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, notes: e.target.value }))} />
-                <textarea placeholder="Additional document notes" rows={2} value={driverEditForm.additional_document_notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, additional_document_notes: e.target.value }))} />
-                <div className="drivers-form-actions">
-                  <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver Changes'}</button>
-                  {message && <p className="drivers-message">{message}</p>}
-                </div>
-              </form>
-
-              <section className="drivers-form-card driver-docs-card">
-                <h3>Upload Driver Documents (PDF)</h3>
-                <div className="driver-doc-upload-grid">
-                  {documentFieldConfig.map((field) => {
-                    const existingDoc = documentsByType.get(field.key)
-                    const pendingFile = pendingFiles[field.key]
-                    const isUploading = uploadingDocType === field.key
-                    const isDeleting = deletingDocType === field.key
-
-                    return (
-                      <div key={field.key} className="driver-doc-field-row">
-                        <div>
-                          <strong>{field.label}</strong>
-                          {existingDoc ? (
-                            <p>{existingDoc.original_filename}</p>
-                          ) : (
-                            <p className="drivers-doc-empty">No file uploaded</p>
-                          )}
-                        </div>
-                        <input
-                          type="file"
-                          accept="application/pdf,.pdf"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0] ?? null
-                            setPendingFiles((prev) => ({ ...prev, [field.key]: file }))
-                          }}
-                        />
-                        <div className="drivers-row-actions">
-                          <button
-                            type="button"
-                            className="vehicles-action-btn primary"
-                            onClick={() => handleUploadDocument(field.key)}
-                            disabled={!pendingFile || isUploading}
-                          >
-                            {isUploading ? 'Uploading...' : 'Upload'}
-                          </button>
-                          {existingDoc && (
-                            <>
-                              <a className="vehicles-action-btn" href={`${API_BASE_URL}${existingDoc.file_url}`} target="_blank" rel="noreferrer">Open</a>
-                              <button
-                                type="button"
-                                className="vehicles-action-btn danger"
-                                onClick={() => handleDeleteDocument(existingDoc)}
-                                disabled={isDeleting}
-                              >
-                                {isDeleting ? 'Deleting...' : 'Delete'}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                <div className="driver-doc-list">
-                  {documents.length === 0 && <p className="drivers-doc-empty">No uploaded documents yet.</p>}
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="driver-doc-item">
-                      <div>
-                        <strong>{doc.doc_type.replace(/_/g, ' ')}</strong>
-                        <p>{doc.original_filename}</p>
-                      </div>
-                      <div className="drivers-row-actions">
-                        <a className="vehicles-action-btn" href={`${API_BASE_URL}${doc.file_url}`} target="_blank" rel="noreferrer">Open</a>
-                        <button
-                          type="button"
-                          className="vehicles-action-btn danger"
-                          onClick={() => handleDeleteDocument(doc)}
-                          disabled={deletingDocType === doc.doc_type}
-                        >
-                          {deletingDocType === doc.doc_type ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
-                    </div>
+            <form className="drivers-form-card" onSubmit={handleUpdateDriver}>
+              <h3>Edit Driver</h3>
+              <div className="drivers-form-grid">
+                <input required placeholder="Full name" value={driverEditForm.full_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, full_name: e.target.value }))} />
+                <input required type="email" placeholder="Email" value={driverEditForm.email} onChange={(e) => setDriverEditForm((f) => ({ ...f, email: e.target.value }))} />
+                <input required placeholder="Phone" value={driverEditForm.phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, phone: e.target.value }))} />
+                <input required placeholder="License number" value={driverEditForm.license_number} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_number: e.target.value }))} />
+                <select value={driverEditForm.license_class} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_class: e.target.value }))}>
+                  <option value="C">CDL Class C (Commercial)</option>
+                  <option value="B">CDL Class B</option>
+                  <option value="A">CDL Class A</option>
+                </select>
+                <input placeholder="License state (e.g. NJ)" value={driverEditForm.license_state} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_state: e.target.value }))} />
+                <label>
+                  License issue date
+                  <input type="date" value={driverEditForm.license_issue_date} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_issue_date: e.target.value }))} />
+                </label>
+                <label>
+                  License expiry
+                  <input required type="date" value={driverEditForm.license_expiry} onChange={(e) => setDriverEditForm((f) => ({ ...f, license_expiry: e.target.value }))} />
+                </label>
+                <label>
+                  Date of birth
+                  <input type="date" value={driverEditForm.date_of_birth} onChange={(e) => setDriverEditForm((f) => ({ ...f, date_of_birth: e.target.value }))} />
+                </label>
+                <input placeholder="Address" value={driverEditForm.address} onChange={(e) => setDriverEditForm((f) => ({ ...f, address: e.target.value }))} />
+                <input placeholder="Emergency contact name" value={driverEditForm.emergency_contact_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_name: e.target.value }))} />
+                <input placeholder="Emergency contact phone" value={driverEditForm.emergency_contact_phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
+                <select value={driverEditForm.assigned_truck_id} onChange={(e) => setDriverEditForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
+                  <option value="">Unassigned truck</option>
+                  {trucks.map((truck) => (
+                    <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
                   ))}
-                </div>
-              </section>
-            </div>
+                </select>
+                <label className="drivers-active-toggle">
+                  Active driver
+                  <input type="checkbox" checked={driverEditForm.is_active} onChange={(e) => setDriverEditForm((f) => ({ ...f, is_active: e.target.checked }))} />
+                </label>
+              </div>
+              <textarea placeholder="Notes" rows={3} value={driverEditForm.notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, notes: e.target.value }))} />
+              <div className="drivers-form-actions">
+                <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver Changes'}</button>
+                {message && <p className="drivers-message">{message}</p>}
+              </div>
+            </form>
           </div>
         )}
       </section>
@@ -2137,23 +1892,128 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
 }
 
 // ─── Portal ───────────────────────────────────────────────────────────────────
+function RoutesPage({ handleLogout }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [query, setQuery] = useState('')
+
+  const railItems = [
+    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
+    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  ]
+
+  const filteredRoutes = DEMO_ROUTES.filter((route) => {
+    const statusMatch = statusFilter === 'all' || route.status === statusFilter
+    const queryMatch = !query.trim() || `${route.reference} ${route.origin} ${route.destination} ${route.truck} ${route.driver} ${route.cargo}`.toLowerCase().includes(query.trim().toLowerCase())
+    return statusMatch && queryMatch
+  })
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell routes-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
+        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((value) => !value)}>{railCollapsed ? '>' : '<'}</button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => (
+            <button type="button" key={item.key} className={`fleet-rail-item ${location.pathname === item.to ? 'active' : ''}`} title={item.title} onClick={() => navigate(item.to)}>
+              <span className="fleet-rail-icon">{item.icon}</span>
+              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+            </button>
+          ))}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel routes-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>Routes ({filteredRoutes.length})</h1>
+            <p className="drivers-subtitle">Plan, monitor, and review active fleet routes.</p>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button type="button" className="vehicles-chip">Route Center</button>
+            <button type="button" className="vehicles-icon-btn" aria-label="Routes">RT</button>
+            <span className="vehicles-user">Fleet Team</span>
+          </div>
+        </header>
+
+        <div className="routes-toolbar">
+          <input className="vehicles-search" placeholder="Search route, location, truck, driver, or cargo" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <select className="vehicles-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">All Route Statuses</option>
+            <option value="In Transit">In Transit</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Delayed">Delayed</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <button type="button" className="vehicles-action-btn primary" onClick={() => setQuery('')}>Reset View</button>
+        </div>
+
+        <div className="drivers-kpi-row routes-kpi-row">
+          <div className="drivers-kpi-card"><small>Total Routes</small><strong>{DEMO_ROUTES.length}</strong></div>
+          <div className="drivers-kpi-card warn"><small>In Transit</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'In Transit').length}</strong></div>
+          <div className="drivers-kpi-card risk"><small>Needs Attention</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'Delayed').length}</strong></div>
+        </div>
+
+        <div className="routes-data-panel">
+          <div className="fleet-status-head">
+            <h3>Route Schedule</h3>
+            <span>Demo data</span>
+          </div>
+          <div className="routes-table-wrap">
+            <table className="vehicles-table routes-table">
+              <thead><tr><th>Route</th><th>Status</th><th>From / To</th><th>Schedule</th><th>Truck / Driver</th><th>Cargo</th></tr></thead>
+              <tbody>
+                {filteredRoutes.length === 0 && <tr><td colSpan={6} className="vehicles-empty">No routes match the current filters.</td></tr>}
+                {filteredRoutes.map((route) => (
+                  <tr key={route.id}>
+                    <td><strong>{route.reference}</strong><small>{route.distance}</small></td>
+                    <td><span className={`route-status route-status-${route.status.toLowerCase().replace(' ', '-')}`}>{route.status}</span></td>
+                    <td><strong>{route.origin}</strong><small>to {route.destination}</small></td>
+                    <td><strong>{route.departure}</strong><small>ETA {route.eta}</small></td>
+                    <td><strong>{route.truck}</strong><small>{route.driver}</small></td>
+                    <td>{route.cargo}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function Portal({
   token, resources, fleetCount,
   refreshAllResources, handleLogout, fetchResource, managerMode = false,
 }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(false)
+  const [railCollapsed, setRailCollapsed] = useState(true)
   const [mapError, setMapError] = useState('')
   const [search, setSearch] = useState('')
   const [tick, setTick] = useState(0)
-  const [dashcamImageIdx, setDashcamImageIdx] = useState(0)
   const [selectedTruckId, setSelectedTruckId] = useState(null)
-  const [trackSelectedTruck, setTrackSelectedTruck] = useState(false)
+  const [geofenceEnabled, setGeofenceEnabled] = useState(true)
+  const [geofenceRadiusKm, setGeofenceRadiusKm] = useState(25)
 
   const mapElRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
+  const geofenceRef = useRef(null)
+  const mapViewportInitializedRef = useRef(false)
+  const lastMapSelectionRef = useRef(null)
   const fetchResourceRef = useRef(fetchResource)
 
   const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
@@ -2161,28 +2021,19 @@ function Portal({
   const liveRefreshMs = 10000
   const trucks = resources.trucks?.items ?? []
   const drivers = resources.drivers?.items ?? []
-  const useDemoFleetView = !managerMode || trucks.length === 0
-  const sourceTrucks = useMemo(() => {
-    if (!useDemoFleetView) return trucks
-    return FLEET_VIEW_DEMO_SEEDS.map((seed) => ({
-      id: seed.id,
+  const useDemoFleetView = true
+  const sourceTrucks = useDemoFleetView
+    ? FLEET_VIEW_DEMO_SEEDS.map((seed) => ({
+      ...seed,
       license_plate: seed.plate,
-      make: seed.make,
-      model: seed.model,
-      status: seed.stopped ? 'available' : 'on_trip',
       latitude: seed.baseLat,
       longitude: seed.baseLng,
-      base_speed: seed.baseSpeed,
-      speed_variance: seed.variance,
-      is_stopped: seed.stopped,
-      stop_reason: seed.stopReason,
+      height_m: seed.heightM,
+      length_m: seed.lengthM,
       is_demo: true,
     }))
-  }, [useDemoFleetView, trucks])
-  const sourceDrivers = useMemo(() => {
-    if (!useDemoFleetView) return drivers
-    return FLEET_VIEW_DEMO_DRIVERS
-  }, [useDemoFleetView, drivers])
+    : trucks
+  const sourceDrivers = useDemoFleetView ? FLEET_VIEW_DEMO_DRIVERS : drivers
   const driverByTruckId = useMemo(() => {
     const map = new Map()
     sourceDrivers.forEach((driver) => {
@@ -2201,7 +2052,7 @@ function Portal({
     { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
     { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
     { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/portal' },
+    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
     { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
   ]
 
@@ -2232,26 +2083,17 @@ function Portal({
   const liveTrucks = useMemo(() => {
     return sourceTrucks.map((truck, index) => {
       if (truck.is_demo) {
-        const phase = tick + index * 3
-        const baseLat = Number(truck.latitude)
-        const baseLng = Number(truck.longitude)
-        const isStopped = Boolean(truck.is_stopped)
-        const location = {
-          lat: isStopped ? baseLat : baseLat + Math.sin(phase / 5) * 0.018,
-          lng: isStopped ? baseLng : baseLng + Math.cos(phase / 5) * 0.018,
-          simulated: true,
-        }
-        const speedKph = isStopped
-          ? 0
-          : Math.max(
-              18,
-              Math.round((Number(truck.base_speed) || 60) + Math.sin(phase / 3) * (Number(truck.speed_variance) || 8)),
-            )
+        const phase = tick + index * 2.7
+        const stopped = Boolean(truck.stopped)
         return {
           ...truck,
-          location,
-          speedKph,
-          statusLabel: isStopped ? `Stopped · ${truck.stop_reason || 'Idle'}` : 'On route',
+          location: {
+            lat: stopped ? truck.baseLat : truck.baseLat + Math.sin(phase / 4) * 0.018,
+            lng: stopped ? truck.baseLng : truck.baseLng + Math.cos(phase / 4) * 0.018,
+            simulated: true,
+          },
+          speedKph: stopped ? 0 : Math.max(25, Math.round(truck.baseSpeed + Math.sin(phase / 3) * truck.variance)),
+          statusLabel: stopped ? `Stopped · ${truck.stopReason}` : 'On route',
         }
       }
 
@@ -2343,6 +2185,8 @@ function Portal({
         mapRef.current.remove()
         mapRef.current = null
       }
+      mapViewportInitializedRef.current = false
+      lastMapSelectionRef.current = null
     }
   }, [token])
 
@@ -2350,12 +2194,33 @@ function Portal({
   const mapTrucks = managerMode
     ? (selectedTruck ? [selectedTruck] : [])
     : filteredTrucks
+  const selectedGeofenceCenter = selectedTruck
+    ? selectedTruck.is_demo
+      ? { lat: selectedTruck.baseLat, lng: selectedTruck.baseLng }
+      : selectedTruck.location
+    : null
+  const selectedGeofenceDistance = selectedTruck && selectedGeofenceCenter
+    ? distanceInKm(selectedGeofenceCenter, selectedTruck.location)
+    : 0
+  const selectedGeofenceInside = selectedGeofenceDistance <= geofenceRadiusKm
+  const selectedTruckHeightM = Number(selectedTruck?.heightM ?? selectedTruck?.height_m ?? 4.2)
+  const selectedTruckLengthM = Number(selectedTruck?.lengthM ?? selectedTruck?.length_m ?? 20)
+  const routeRecommendations = useMemo(() => {
+    return ROUTE_SUGGESTIONS.map((route) => ({
+      ...route,
+      safe: route.clearanceM >= selectedTruckHeightM && route.maxLengthM >= selectedTruckLengthM,
+    })).sort((a, b) => Number(b.safe) - Number(a.safe) || a.distanceKm - b.distanceKm)
+  }, [selectedTruckHeightM, selectedTruckLengthM])
 
   useEffect(() => {
     if (!mapRef.current) return
 
     markersRef.current.forEach((marker) => marker.remove())
     markersRef.current = []
+    if (geofenceRef.current) {
+      geofenceRef.current.remove()
+      geofenceRef.current = null
+    }
 
     if (mapTrucks.length === 0) {
       mapRef.current.setView([NEW_JERSEY_CENTER.lat, NEW_JERSEY_CENTER.lng], NEW_JERSEY_DEFAULT_ZOOM)
@@ -2363,6 +2228,20 @@ function Portal({
     }
 
     const bounds = []
+    if (geofenceEnabled && selectedTruck && selectedGeofenceCenter) {
+      geofenceRef.current = L.circle(
+        [selectedGeofenceCenter.lat, selectedGeofenceCenter.lng],
+        {
+          radius: geofenceRadiusKm * 1000,
+          color: selectedGeofenceInside ? '#22a06b' : '#d04437',
+          weight: 2,
+          dashArray: '7 6',
+          fillColor: selectedGeofenceInside ? '#62c59a' : '#ef8f84',
+          fillOpacity: 0.12,
+        },
+      ).addTo(mapRef.current)
+    }
+
     mapTrucks.forEach((truck) => {
       const isSelected = selectedTruckId === truck.id
       const marker = L.circleMarker([truck.location.lat, truck.location.lng], {
@@ -2378,28 +2257,28 @@ function Portal({
         direction: 'top',
         offset: [0, -8],
       })
-      marker.on('click', () => focusTruck(truck.id))
+      marker.on('click', () => setSelectedTruckId(truck.id))
 
       markersRef.current.push(marker)
       bounds.push([truck.location.lat, truck.location.lng])
     })
 
-    const trackedTruck = trackSelectedTruck && selectedTruckId !== null
-      ? mapTrucks.find((truck) => truck.id === selectedTruckId) ?? null
-      : null
+    const selectionChanged = lastMapSelectionRef.current !== selectedTruckId
+    const shouldSetViewport = !mapViewportInitializedRef.current || selectionChanged
 
-    if (trackedTruck) {
-      mapRef.current.setView([trackedTruck.location.lat, trackedTruck.location.lng], 10, { animate: true })
-    } else if (mapTrucks.length === 1) {
-      mapRef.current.setView([mapTrucks[0].location.lat, mapTrucks[0].location.lng], 10)
-    } else {
-      mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
+    if (shouldSetViewport) {
+      if (mapTrucks.length === 1) {
+        mapRef.current.setView([mapTrucks[0].location.lat, mapTrucks[0].location.lng], 10)
+      } else {
+        mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 })
+      }
+      mapViewportInitializedRef.current = true
     }
-  }, [mapTrucks, selectedTruckId, trackSelectedTruck])
+    lastMapSelectionRef.current = selectedTruckId
+  }, [geofenceEnabled, geofenceRadiusKm, mapTrucks, selectedGeofenceCenter, selectedGeofenceInside, selectedTruck, selectedTruckId])
 
   function focusTruck(truckId) {
     setSelectedTruckId(truckId)
-    setTrackSelectedTruck(true)
     const target = filteredTrucks.find((t) => t.id === truckId)
     if (!target || !mapRef.current) return
     mapRef.current.setView([target.location.lat, target.location.lng], 10, { animate: true })
@@ -2408,12 +2287,10 @@ function Portal({
   useEffect(() => {
     if (filteredTrucks.length === 0) {
       setSelectedTruckId(null)
-      setTrackSelectedTruck(false)
       return
     }
     if (!filteredTrucks.some((truck) => truck.id === selectedTruckId)) {
       setSelectedTruckId(filteredTrucks[0].id)
-      setTrackSelectedTruck(false)
     }
   }, [filteredTrucks, selectedTruckId])
 
@@ -2445,15 +2322,16 @@ function Portal({
   const streetViewPoint = selectedTruck
     ? `${selectedTruck.location.lat},${selectedTruck.location.lng}`
     : ''
+  const streetViewEmbedUrl = selectedTruck && GOOGLE_MAPS_EMBED_API_KEY
+    ? `https://www.google.com/maps/embed/v1/streetview?key=${GOOGLE_MAPS_EMBED_API_KEY}&location=${encodeURIComponent(streetViewPoint)}&heading=${(tick * 18) % 360}&pitch=0&fov=80`
+    : ''
   const streetViewMapsUrl = selectedTruck
     ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(streetViewPoint)}`
     : ''
-  const dashcamImageUrl = DASHCAM_DEMO_IMAGE_CANDIDATES[Math.min(dashcamImageIdx, DASHCAM_DEMO_IMAGE_CANDIDATES.length - 1)]
   const cameraFeeds = selectedTruck
     ? [
-      { id: 'forward', label: 'Forward Road Cam', detail: `Unit ${selectedTruck.license_plate}` },
-      { id: 'driver', label: 'Driver Cam', detail: currentDriver?.full_name ?? 'Unassigned driver' },
-      { id: 'cargo', label: 'Cargo Cam', detail: `${selectedTruck.make} ${selectedTruck.model}` },
+      { id: 'driver', label: 'Driver Cam', detail: currentDriver?.full_name ?? 'Unassigned driver', image: 'https://images.unsplash.com/photo-1471478331149-c72f17e33c73?auto=format&fit=crop&w=900&q=60' },
+      { id: 'cargo', label: 'Cargo Cam', detail: `${selectedTruck.make} ${selectedTruck.model}`, image: 'https://images.unsplash.com/photo-1556122071-e404cb6f31d3?auto=format&fit=crop&w=900&q=60' },
     ]
     : []
 
@@ -2541,9 +2419,53 @@ function Portal({
               </div>
               <p className="fleet-speed-line">{speedMph} mph in motion for {movingMinutes}m</p>
               <p className="fleet-address-line">{selectedTruck.location.lat.toFixed(4)}, {selectedTruck.location.lng.toFixed(4)} · New Jersey</p>
+              <p className="fleet-dimensions-line">Height {metersToFeet(selectedTruckHeightM).toFixed(1)} ft · Length {metersToFeet(selectedTruckLengthM).toFixed(1)} ft</p>
               <div className="fleet-driver-block">
                 <small>Current Driver</small>
                 <strong>{currentDriver?.full_name ?? 'Unassigned'}</strong>
+              </div>
+              <div className="fleet-geofence-block">
+                <div className="fleet-geofence-head">
+                  <strong>Geofence</strong>
+                  <span className={selectedGeofenceInside ? 'geofence-inside' : 'geofence-outside'}>
+                    {selectedGeofenceInside ? 'Inside zone' : 'Outside zone'}
+                  </span>
+                </div>
+                <div className="fleet-geofence-controls">
+                  <label>
+                    Radius (km)
+                    <input
+                      type="number"
+                      min="1"
+                      max="500"
+                      value={geofenceRadiusKm}
+                      onChange={(e) => setGeofenceRadiusKm(Math.max(1, Number(e.target.value) || 1))}
+                    />
+                  </label>
+                  <button type="button" onClick={() => setGeofenceEnabled((enabled) => !enabled)}>
+                    {geofenceEnabled ? 'Hide Fence' : 'Show Fence'}
+                  </button>
+                </div>
+                <small>{selectedGeofenceDistance.toFixed(1)} km from zone center</small>
+              </div>
+            </article>
+
+            <article className="fleet-routes-card">
+              <div className="fleet-status-head">
+                <h3>Suggested Routes</h3>
+                <span>Clearance checked</span>
+              </div>
+              <div className="fleet-route-list">
+                {routeRecommendations.map((route) => (
+                  <div className={`fleet-route-row ${route.safe ? 'route-safe' : 'route-blocked'}`} key={route.name}>
+                    <div>
+                      <strong>{route.name}</strong>
+                      <p>{route.detail}</p>
+                      <small>Bridge {metersToFeet(route.clearanceM).toFixed(1)} ft · Max length {metersToFeet(route.maxLengthM).toFixed(1)} ft · {route.distanceKm} km</small>
+                    </div>
+                    <span>{route.safe ? 'Recommended' : 'Avoid'}</span>
+                  </div>
+                ))}
               </div>
             </article>
 
@@ -2570,34 +2492,33 @@ function Portal({
 
             <article className="fleet-cameras-card">
               <div className="fleet-status-head">
-                <h3>Dash Camera Monitor</h3>
+                <h3>Cameras</h3>
                 <button onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
               </div>
-              <div className="fleet-camera-stream-panel">
-                <div className="fleet-camera-stream-head">
-                  <strong>Demo Dash-Cam Stream</strong>
-                  <a href={DASHCAM_DEMO_SHARE_URL} target="_blank" rel="noreferrer">Open source video</a>
+              <div className="fleet-streetview-panel">
+                <div className="fleet-streetview-head">
+                  <strong>Google Street View</strong>
+                  <a href={streetViewMapsUrl} target="_blank" rel="noreferrer">Open full view</a>
                 </div>
-                <img
-                  className="fleet-camera-stream-image"
-                  src={dashcamImageUrl}
-                  alt="Fleet dash camera demo frame"
-                  loading="lazy"
-                  onError={() => {
-                    setDashcamImageIdx((currentIdx) => {
-                      if (currentIdx >= DASHCAM_DEMO_IMAGE_CANDIDATES.length - 1) return currentIdx
-                      return currentIdx + 1
-                    })
-                  }}
-                />
-                <div className="fleet-camera-stream-fallback">
-                  <p>Static preview loaded from the selected source video.</p>
-                  <a href={DASHCAM_DEMO_SHARE_URL} target="_blank" rel="noreferrer">Open dash-cam demo</a>
-                </div>
+                {streetViewEmbedUrl ? (
+                  <iframe
+                    className="fleet-streetview-frame"
+                    title="Fleet live street view"
+                    src={streetViewEmbedUrl}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="fleet-streetview-fallback">
+                    <p>Add VITE_GOOGLE_MAPS_EMBED_API_KEY in frontend/.env to embed Street View here.</p>
+                    <a href={streetViewMapsUrl} target="_blank" rel="noreferrer">Open Street View in Google Maps</a>
+                  </div>
+                )}
               </div>
               <div className="fleet-camera-grid">
                 {cameraFeeds.map((feed) => (
-                  <div key={feed.id} className="fleet-camera-tile">
+                  <div key={feed.id} className="fleet-camera-tile" style={{ backgroundImage: `linear-gradient(180deg, rgba(20, 36, 59, .24) 0%, rgba(20, 36, 59, .72) 100%), url('${feed.image}')` }}>
                     <span className="fleet-camera-live">LIVE</span>
                     <div className="fleet-camera-meta">
                       <strong>{feed.label}</strong>
@@ -2691,14 +2612,10 @@ function Portal({
                 <div>
                   <strong>{truck.license_plate}</strong>
                   <p>{truck.make} {truck.model}</p>
-                  <small>
-                    Truck ID #{truck.id} · Driver ID #{driverByTruckId.get(truck.id)?.id ?? 'N/A'}
-                  </small>
                 </div>
                 <div>
                   <span>{truck.speedKph} km/h</span>
-                  <small>{selectedTruckId === truck.id ? 'tracking' : `#${index + 1}`}</small>
-                  <small>{truck.location.lat.toFixed(4)}, {truck.location.lng.toFixed(4)}</small>
+                  <small>#{selectedIndex === index ? 'tracking' : index + 1}</small>
                 </div>
               </button>
             ))}
@@ -2762,6 +2679,7 @@ function AuthPage({ title, subtitle, children, message }) {
 function App() {
   const navigate = useNavigate()
   const [token, setToken] = useState(() => localStorage.getItem('truckAppToken') ?? '')
+  const authResetRef = useRef(false)
   const [registerForm, setRegisterForm] = useState(DEFAULT_REGISTER)
   const [loginForm, setLoginForm] = useState(DEFAULT_LOGIN)
   const [authMessage, setAuthMessage] = useState('')
@@ -2793,8 +2711,17 @@ function App() {
     updRes(r.key, { loading: true, error: '' })
     try {
       updRes(r.key, { items: (await apiRequest(r.path, { token })) ?? [], loading: false, error: '' })
-    } catch (err) { updRes(r.key, { loading: false, error: err.message }) }
-  }, [token, updRes])
+    } catch (err) {
+      updRes(r.key, { loading: false, error: err.message })
+      if (err.status === 401 && !authResetRef.current) {
+        authResetRef.current = true
+        saveToken('')
+        setAuthMessage('Your session expired. Please sign in again.')
+        navigate('/login', { replace: true })
+        window.setTimeout(() => { authResetRef.current = false }, 0)
+      }
+    }
+  }, [navigate, token, updRes])
 
   const fetchSpendingSummary = useCallback(async () => {
     setSummaryError('')
@@ -2807,7 +2734,7 @@ function App() {
     await Promise.all(RESOURCE_CONFIG.map(fetchResource))
     await fetchSpendingSummary()
     setAuthMessage('Data synced.')
-  }, [token, fetchResource, fetchSpendingSummary])
+  }, [fetchResource, fetchSpendingSummary, token])
 
   async function handleRegister(e) {
     e.preventDefault(); setAuthLoading(true); setAuthMessage('')
@@ -2901,13 +2828,14 @@ function App() {
         }
       />
 
-      <Route path="/portal" element={<Portal {...portalProps} managerMode={false} />} />
-      <Route path="/fleet-manager" element={<Portal {...portalProps} managerMode />} />
-      <Route path="/vehicles" element={<VehiclesPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
-      <Route path="/drivers" element={<DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
-      <Route path="/drivers/:driverId" element={<DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
-      <Route path="/history" element={<HistoryPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} />} />
-      <Route path="/fleet" element={<FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} />} />
+      <Route path="/portal" element={token ? <Portal {...portalProps} managerMode={false} /> : <Navigate to="/login" replace />} />
+      <Route path="/fleet-manager" element={token ? <Portal {...portalProps} managerMode /> : <Navigate to="/login" replace />} />
+      <Route path="/routes" element={token ? <RoutesPage handleLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+      <Route path="/vehicles" element={token ? <VehiclesPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
+      <Route path="/drivers" element={token ? <DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
+      <Route path="/drivers/:driverId" element={token ? <DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
+      <Route path="/history" element={token ? <HistoryPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
+      <Route path="/fleet" element={token ? <FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} /> : <Navigate to="/login" replace />} />
     </Routes>
   )
 }

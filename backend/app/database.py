@@ -29,9 +29,12 @@ def ensure_sqlite_columns() -> None:
         "users": [
             "account_type VARCHAR(20) DEFAULT 'individual'",
             "company_name VARCHAR",
+            "company_id INTEGER",
+            "role VARCHAR(20) DEFAULT 'user'",
         ],
         "drivers": [
             "owner_user_id INTEGER",
+            "company_id INTEGER",
             "license_state VARCHAR",
             "license_issue_date DATE",
             "date_of_birth DATE",
@@ -46,17 +49,35 @@ def ensure_sqlite_columns() -> None:
         ],
         "trucks": [
             "owner_user_id INTEGER",
+            "company_id INTEGER",
             "latitude REAL",
             "longitude REAL",
+            "last_telemetry_at DATETIME",
+            "last_movement_at DATETIME",
+            "height_m REAL",
+            "length_m REAL",
         ],
         "trips": [
             "owner_user_id INTEGER",
+            "company_id INTEGER",
         ],
         "maintenance_services": [
             "owner_user_id INTEGER",
+            "company_id INTEGER",
         ],
         "ifta_records": [
             "owner_user_id INTEGER",
+            "company_id INTEGER",
+        ],
+        "routes": [
+            "company_id INTEGER",
+            "hazard_level VARCHAR",
+            "hazard_summary VARCHAR",
+            "hazard_details TEXT",
+        ],
+        "driver_documents": [
+            "company_id INTEGER",
+            "expiry_date DATE",
         ],
     }
 

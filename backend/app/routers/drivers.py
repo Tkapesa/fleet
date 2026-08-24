@@ -2,7 +2,9 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from datetime import date
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.models.driver import Driver
@@ -32,13 +34,11 @@ def list_drivers(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return (
-        db.query(Driver)
-        .filter(Driver.owner_user_id == current_user.id)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    if current_user.company_id:
+        base_q = db.query(Driver).filter(Driver.company_id == current_user.company_id)
+    else:
+        base_q = db.query(Driver).filter(Driver.owner_user_id == current_user.id)
+    return base_q.offset(skip).limit(limit).all()
 
 
 @router.post("/", response_model=DriverRead, status_code=status.HTTP_201_CREATED)
@@ -53,15 +53,22 @@ def create_driver(
         raise HTTPException(status_code=409, detail="License number already registered")
 
     if payload.assigned_truck_id is not None:
-        truck = (
-            db.query(Truck)
-            .filter(Truck.id == payload.assigned_truck_id, Truck.owner_user_id == current_user.id)
-            .first()
-        )
+        if current_user.company_id:
+            truck = (
+                db.query(Truck)
+                .filter(Truck.id == payload.assigned_truck_id, Truck.company_id == current_user.company_id)
+                .first()
+            )
+        else:
+            truck = (
+                db.query(Truck)
+                .filter(Truck.id == payload.assigned_truck_id, Truck.owner_user_id == current_user.id)
+                .first()
+            )
         if not truck:
             raise HTTPException(status_code=404, detail="Assigned truck not found")
 
-    driver = Driver(**payload.model_dump(), owner_user_id=current_user.id)
+    driver = Driver(**payload.model_dump(), owner_user_id=current_user.id, company_id=current_user.company_id)
     db.add(driver)
     db.commit()
     db.refresh(driver)
@@ -74,11 +81,10 @@ def get_driver(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
     return driver
@@ -91,11 +97,10 @@ def update_driver(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
     update_data = payload.model_dump(exclude_unset=True)
@@ -115,11 +120,10 @@ def update_driver(
             raise HTTPException(status_code=409, detail="License number already registered")
 
     if "assigned_truck_id" in update_data and update_data["assigned_truck_id"] is not None:
-        truck = (
-            db.query(Truck)
-            .filter(Truck.id == update_data["assigned_truck_id"], Truck.owner_user_id == current_user.id)
-            .first()
-        )
+        if current_user.company_id:
+            truck = db.query(Truck).filter(Truck.id == update_data["assigned_truck_id"], Truck.company_id == current_user.company_id).first()
+        else:
+            truck = db.query(Truck).filter(Truck.id == update_data["assigned_truck_id"], Truck.owner_user_id == current_user.id).first()
         if not truck:
             raise HTTPException(status_code=404, detail="Assigned truck not found")
 
@@ -136,15 +140,17 @@ def delete_driver(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
 
-    docs = db.query(DriverDocument).filter(DriverDocument.driver_id == driver.id).all()
+    docs_query = db.query(DriverDocument).filter(DriverDocument.driver_id == driver.id)
+    if current_user.company_id:
+        docs_query = docs_query.filter(DriverDocument.company_id == current_user.company_id)
+    docs = docs_query.all()
     for doc in docs:
         file_path = UPLOADS_DIR / doc.stored_filename
         if file_path.exists():
@@ -160,37 +166,42 @@ def list_driver_documents(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
 
-    return (
-        db.query(DriverDocument)
-        .filter(DriverDocument.driver_id == driver_id)
-        .order_by(DriverDocument.uploaded_at.desc())
-        .all()
-    )
+    q = db.query(DriverDocument).filter(DriverDocument.driver_id == driver_id)
+    if current_user.company_id:
+        q = q.filter(DriverDocument.company_id == current_user.company_id)
+    return q.order_by(DriverDocument.uploaded_at.desc()).all()
 
 
 @router.post("/{driver_id}/documents", response_model=DriverDocumentRead, status_code=status.HTTP_201_CREATED)
 async def upload_driver_document(
     driver_id: int,
     doc_type: str = Form(...),
+    expiry_date: str | None = Form(None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
+
+    # parse expiry_date (YYYY-MM-DD) when provided
+    parsed_expiry: date | None = None
+    if expiry_date:
+        try:
+            parsed_expiry = date.fromisoformat(expiry_date)
+        except Exception:
+            raise HTTPException(status_code=400, detail="expiry_date must be YYYY-MM-DD")
 
     normalized_doc_type = (doc_type or "").strip().lower()
     if normalized_doc_type not in ALLOWED_DOCUMENT_TYPES:
@@ -228,6 +239,8 @@ async def upload_driver_document(
         stored_filename=stored_filename,
         file_url=f"/uploads/{stored_filename}",
         content_type="application/pdf",
+        company_id=current_user.company_id,
+        expiry_date=parsed_expiry,
     )
     db.add(document)
     db.commit()
@@ -242,19 +255,25 @@ def delete_driver_document(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
 
-    document = (
-        db.query(DriverDocument)
-        .filter(DriverDocument.id == document_id, DriverDocument.driver_id == driver_id)
-        .first()
-    )
+    if current_user.company_id:
+        document = (
+            db.query(DriverDocument)
+            .filter(DriverDocument.id == document_id, DriverDocument.driver_id == driver_id, DriverDocument.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        document = (
+            db.query(DriverDocument)
+            .filter(DriverDocument.id == document_id, DriverDocument.driver_id == driver_id,)
+            .first()
+        )
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

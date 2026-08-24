@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.db
+.env
+backend/venv/
+backend/venv312/
+frontend/node_modules/
+my-tres-project/node_modules/

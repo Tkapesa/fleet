@@ -7,7 +7,21 @@ from pathlib import Path
 from app.database import engine, Base, ensure_sqlite_columns, SessionLocal
 from app.core.security import hash_password
 from app.models.user import AccountType, User
-from app.routers import auth, trucks, drivers, trips, maintenance, ifta
+from app.routers import (
+    auth,
+    trucks,
+    drivers,
+    trips,
+    routes,
+    maintenance,
+    ifta,
+    alerts,
+    geofences,
+    telemetry,
+    maintenance_schedules,
+)
+import asyncio
+from app.tasks.expiry_checker import start_expiry_checker
 
 # Import models so SQLAlchemy registers them before create_all
 import app.models  # noqa: F401
@@ -62,13 +76,26 @@ def create_tables():
     finally:
         db.close()
 
+    # Ensure Alembic migrations are applied in test/dev when running programmatically
+    # For tests we attempt to apply the simple schema changes via ensure_sqlite_columns
+
+
+@app.on_event("startup")
+async def start_background_tasks():
+    asyncio.create_task(start_expiry_checker())
+
 
 app.include_router(auth.router)
 app.include_router(trucks.router)
 app.include_router(drivers.router)
 app.include_router(trips.router)
+app.include_router(routes.router)
 app.include_router(maintenance.router)
 app.include_router(ifta.router)
+app.include_router(alerts.router)
+app.include_router(geofences.router)
+app.include_router(telemetry.router)
+app.include_router(maintenance_schedules.router)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 

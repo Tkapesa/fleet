@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.models.ifta import IFTARecord
@@ -18,12 +19,17 @@ def get_truck_spending_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if current_user.company_id:
+        maint_filter = MaintenanceService.company_id == current_user.company_id
+    else:
+        maint_filter = MaintenanceService.owner_user_id == current_user.id
+
     maintenance_totals = (
         db.query(
             MaintenanceService.truck_id.label("truck_id"),
             func.coalesce(func.sum(MaintenanceService.cost), 0.0).label("maintenance_total"),
         )
-        .filter(MaintenanceService.owner_user_id == current_user.id)
+        .filter(maint_filter)
         .group_by(MaintenanceService.truck_id)
         .subquery()
     )
@@ -36,6 +42,11 @@ def get_truck_spending_summary(
         else_=0.0,
     )
 
+    if current_user.company_id:
+        ifta_filter = IFTARecord.company_id == current_user.company_id
+    else:
+        ifta_filter = IFTARecord.owner_user_id == current_user.id
+
     ifta_tax_totals = (
         db.query(
             IFTARecord.truck_id.label("truck_id"),
@@ -45,13 +56,18 @@ def get_truck_spending_summary(
             ).label("ifta_tax_total"),
         )
         .filter(
-            IFTARecord.owner_user_id == current_user.id,
+            ifta_filter,
             IFTARecord.fleet_mpg.is_not(None),
             IFTARecord.fleet_mpg > 0,
         )
         .group_by(IFTARecord.truck_id)
         .subquery()
     )
+
+    if current_user.company_id:
+        truck_filter = Truck.company_id == current_user.company_id
+    else:
+        truck_filter = Truck.owner_user_id == current_user.id
 
     rows = (
         db.query(
@@ -62,7 +78,7 @@ def get_truck_spending_summary(
         )
         .outerjoin(maintenance_totals, maintenance_totals.c.truck_id == Truck.id)
         .outerjoin(ifta_tax_totals, ifta_tax_totals.c.truck_id == Truck.id)
-        .filter(Truck.owner_user_id == current_user.id)
+        .filter(truck_filter)
         .all()
     )
 
@@ -88,13 +104,11 @@ def list_trucks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return (
-        db.query(Truck)
-        .filter(Truck.owner_user_id == current_user.id)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    if current_user.company_id:
+        base_q = db.query(Truck).filter(Truck.company_id == current_user.company_id)
+    else:
+        base_q = db.query(Truck).filter(Truck.owner_user_id == current_user.id)
+    return base_q.offset(skip).limit(limit).all()
 
 
 @router.post("/", response_model=TruckRead, status_code=status.HTTP_201_CREATED)
@@ -106,7 +120,7 @@ def create_truck(
     existing = db.query(Truck).filter(Truck.license_plate == payload.license_plate).first()
     if existing:
         raise HTTPException(status_code=409, detail="License plate already registered")
-    truck = Truck(**payload.model_dump(), owner_user_id=current_user.id)
+    truck = Truck(**payload.model_dump(), owner_user_id=current_user.id, company_id=current_user.company_id)
     db.add(truck)
     db.commit()
     db.refresh(truck)
@@ -119,11 +133,10 @@ def get_truck(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = db.query(Truck).filter(Truck.id == truck_id, Truck.company_id == current_user.company_id).first()
+    else:
+        truck = db.query(Truck).filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id).first()
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
     return truck
@@ -136,11 +149,18 @@ def update_truck(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = (
+            db.query(Truck)
+            .filter(Truck.id == truck_id, Truck.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        truck = (
+            db.query(Truck)
+            .filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id)
+            .first()
+        )
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
     for field, value in payload.model_dump(exclude_unset=True).items():
@@ -156,11 +176,18 @@ def delete_truck(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = (
+            db.query(Truck)
+            .filter(Truck.id == truck_id, Truck.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        truck = (
+            db.query(Truck)
+            .filter(Truck.id == truck_id, Truck.owner_user_id == current_user.id)
+            .first()
+        )
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
     db.delete(truck)

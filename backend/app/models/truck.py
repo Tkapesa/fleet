@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 import enum
+from datetime import datetime, timezone
 
 from app.database import Base
 
@@ -17,15 +18,20 @@ class Truck(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True, index=True)
     license_plate = Column(String, unique=True, index=True, nullable=False)
     make = Column(String, nullable=False)
     model = Column(String, nullable=False)
     year = Column(Integer, nullable=False)
     capacity_tons = Column(Float, nullable=False)
+    height_m = Column(Float, nullable=True)
+    length_m = Column(Float, nullable=True)
     status = Column(Enum(TruckStatus), default=TruckStatus.available, nullable=False)
     mileage_km = Column(Float, default=0.0)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    last_telemetry_at = Column(DateTime, nullable=True)
+    last_movement_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=True)
     is_active = Column(Boolean, default=True)
 
     trips = relationship("Trip", back_populates="truck")

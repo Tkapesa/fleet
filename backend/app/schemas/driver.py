@@ -80,5 +80,6 @@ class DriverDocumentRead(BaseModel):
     file_url: str
     content_type: str
     uploaded_at: datetime | None
+    expiry_date: date | None
 
     model_config = {"from_attributes": True}

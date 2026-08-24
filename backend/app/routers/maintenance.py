@@ -23,7 +23,10 @@ def list_maintenance_services(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = db.query(MaintenanceService).filter(MaintenanceService.owner_user_id == current_user.id)
+    if current_user.company_id:
+        query = db.query(MaintenanceService).filter(MaintenanceService.company_id == current_user.company_id)
+    else:
+        query = db.query(MaintenanceService).filter(MaintenanceService.owner_user_id == current_user.id)
     if truck_id is not None:
         query = query.filter(MaintenanceService.truck_id == truck_id)
     return query.order_by(MaintenanceService.service_date.desc()).offset(skip).limit(limit).all()
@@ -35,15 +38,14 @@ def create_maintenance_service(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.company_id == current_user.company_id).first()
+    else:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id).first()
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
 
-    service = MaintenanceService(**payload.model_dump(), owner_user_id=current_user.id)
+    service = MaintenanceService(**payload.model_dump(), owner_user_id=current_user.id, company_id=current_user.company_id)
     db.add(service)
     db.commit()
     db.refresh(service)
@@ -56,11 +58,10 @@ def get_maintenance_service(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    service = (
-        db.query(MaintenanceService)
-        .filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        service = db.query(MaintenanceService).filter(MaintenanceService.id == service_id, MaintenanceService.company_id == current_user.company_id).first()
+    else:
+        service = db.query(MaintenanceService).filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id).first()
     if not service:
         raise HTTPException(status_code=404, detail="Maintenance service not found")
     return service
@@ -73,11 +74,18 @@ def update_maintenance_service(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    service = (
-        db.query(MaintenanceService)
-        .filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        service = (
+            db.query(MaintenanceService)
+            .filter(MaintenanceService.id == service_id, MaintenanceService.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        service = (
+            db.query(MaintenanceService)
+            .filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id)
+            .first()
+        )
     if not service:
         raise HTTPException(status_code=404, detail="Maintenance service not found")
 
@@ -95,11 +103,18 @@ def delete_maintenance_service(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    service = (
-        db.query(MaintenanceService)
-        .filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        service = (
+            db.query(MaintenanceService)
+            .filter(MaintenanceService.id == service_id, MaintenanceService.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        service = (
+            db.query(MaintenanceService)
+            .filter(MaintenanceService.id == service_id, MaintenanceService.owner_user_id == current_user.id)
+            .first()
+        )
     if not service:
         raise HTTPException(status_code=404, detail="Maintenance service not found")
 

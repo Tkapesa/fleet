@@ -19,13 +19,11 @@ def list_trips(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return (
-        db.query(Trip)
-        .filter(Trip.owner_user_id == current_user.id)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    if current_user.company_id:
+        base_q = db.query(Trip).filter(Trip.company_id == current_user.company_id)
+    else:
+        base_q = db.query(Trip).filter(Trip.owner_user_id == current_user.id)
+    return base_q.offset(skip).limit(limit).all()
 
 
 @router.post("/", response_model=TripRead, status_code=status.HTTP_201_CREATED)
@@ -34,25 +32,23 @@ def create_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.company_id == current_user.company_id).first()
+    else:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id).first()
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
     if truck.status != TruckStatus.available:
         raise HTTPException(status_code=409, detail="Truck is not available")
 
-    driver = (
-        db.query(Driver)
-        .filter(Driver.id == payload.driver_id, Driver.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        driver = db.query(Driver).filter(Driver.id == payload.driver_id, Driver.company_id == current_user.company_id).first()
+    else:
+        driver = db.query(Driver).filter(Driver.id == payload.driver_id, Driver.owner_user_id == current_user.id).first()
     if not driver:
         raise HTTPException(status_code=404, detail="Driver not found")
 
-    trip = Trip(**payload.model_dump(), owner_user_id=current_user.id)
+    trip = Trip(**payload.model_dump(), owner_user_id=current_user.id, company_id=current_user.company_id)
     truck.status = TruckStatus.on_trip
     db.add(trip)
     db.commit()
@@ -66,11 +62,10 @@ def get_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.company_id == current_user.company_id).first()
+    else:
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     return trip
@@ -83,11 +78,10 @@ def update_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.company_id == current_user.company_id).first()
+    else:
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -113,11 +107,18 @@ def delete_trip(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    trip = (
-        db.query(Trip)
-        .filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        trip = (
+            db.query(Trip)
+            .filter(Trip.id == trip_id, Trip.company_id == current_user.company_id)
+            .first()
+        )
+    else:
+        trip = (
+            db.query(Trip)
+            .filter(Trip.id == trip_id, Trip.owner_user_id == current_user.id)
+            .first()
+        )
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
     db.delete(trip)

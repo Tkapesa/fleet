@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fleet Demo — Routes & Alerts</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 16px; }
+      #map { width: 100%; height: 400px; background: #eee; margin-bottom: 12px; }
+      pre { background:#f6f6f6; padding:12px; border-radius:6px; overflow:auto }
+      .cols { display:flex; gap:12px }
+      .col { flex:1 }
+    </style>
+  </head>
+  <body>
+    <h1>Fleet Demo — Routes & Alerts</h1>
+
+    <p>This demo shows raw JSON from the backend endpoints used by the frontend. It also includes a placeholder map area for Google Maps (add your API key to enable map rendering).</p>
+
+    <div id="map">Google Maps placeholder — add your API key to enable map.</div>
+
+    <!-- To enable Google Maps, uncomment the script below and replace YOUR_API_KEY -->
+    <!--
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <script>
+      function initMap() {
+        const map = new google.maps.Map(document.getElementById('map'), { center: { lat: 40, lng: -74 }, zoom: 8 });
+      }
+      window.initMap = initMap;
+    </script>
+    -->
+
+    <div class="cols">
+      <div class="col">
+        <h2>/routes/</h2>
+        <button id="refreshRoutes">Refresh routes</button>
+        <pre id="routes">loading...</pre>
+      </div>
+      <div class="col">
+        <h2>/alerts/</h2>
+        <button id="refreshAlerts">Refresh alerts</button>
+        <pre id="alerts">loading...</pre>
+      </div>
+    </div>
+
+    <script>
+      const apiBase = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+
+      async function fetchJson(path) {
+        try {
+          const res = await fetch(apiBase + path, { credentials: 'include' });
+          if (!res.ok) return { error: res.status + ' ' + res.statusText };
+          return await res.json();
+        } catch (err) {
+          return { error: String(err) };
+        }
+      }
+
+      async function loadRoutes() {
+        document.getElementById('routes').textContent = 'loading...';
+        const data = await fetchJson('/routes/');
+        document.getElementById('routes').textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function loadAlerts() {
+        document.getElementById('alerts').textContent = 'loading...';
+        const data = await fetchJson('/alerts/');
+        document.getElementById('alerts').textContent = JSON.stringify(data, null, 2);
+      }
+
+      document.getElementById('refreshRoutes').addEventListener('click', loadRoutes);
+      document.getElementById('refreshAlerts').addEventListener('click', loadAlerts);
+
+      // initial load
+      loadRoutes();
+      loadAlerts();
+    </script>
+  </body>
+</html>

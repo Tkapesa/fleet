@@ -1,0 +1,33 @@
+{
+  "name": "my-tres-project",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TresJS Vue application",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@tresjs/cientos": "^5.8.1",
+    "@tresjs/core": "^5.8.3",
+    "@tresjs/leches": "latest",
+    "@tresjs/post-processing": "^3.7.4",
+    "three": "^0.185.1",
+    "three-stdlib": "latest",
+    "vue": "latest"
+  },
+  "devDependencies": {
+    "@tresjs/eslint-config": "^1.4.0",
+    "@types/three": "^0.185.4",
+    "@vitejs/plugin-vue": "latest",
+    "eslint": "^9.36.0",
+    "typescript": "latest",
+    "vite": "latest",
+    "vite-plugin-glsl": "latest",
+    "vue-tsc": "latest"
+  }
+}

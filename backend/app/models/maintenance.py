@@ -11,6 +11,7 @@ class MaintenanceService(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True, index=True)
     truck_id = Column(Integer, ForeignKey("trucks.id"), nullable=False, index=True)
     service_date = Column(DateTime, nullable=False)
     service_type = Column(String, nullable=False)

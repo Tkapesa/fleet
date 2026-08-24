@@ -53,7 +53,10 @@ def list_ifta_records(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = db.query(IFTARecord).filter(IFTARecord.owner_user_id == current_user.id)
+    if current_user.company_id:
+        query = db.query(IFTARecord).filter(IFTARecord.company_id == current_user.company_id)
+    else:
+        query = db.query(IFTARecord).filter(IFTARecord.owner_user_id == current_user.id)
     if truck_id is not None:
         query = query.filter(IFTARecord.truck_id == truck_id)
 
@@ -70,15 +73,14 @@ def create_ifta_record(
     if payload.period_end < payload.period_start:
         raise HTTPException(status_code=400, detail="period_end must be on or after period_start")
 
-    truck = (
-        db.query(Truck)
-        .filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.company_id == current_user.company_id).first()
+    else:
+        truck = db.query(Truck).filter(Truck.id == payload.truck_id, Truck.owner_user_id == current_user.id).first()
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
 
-    record = IFTARecord(**payload.model_dump(), owner_user_id=current_user.id)
+    record = IFTARecord(**payload.model_dump(), owner_user_id=current_user.id, company_id=current_user.company_id)
     db.add(record)
     db.commit()
     db.refresh(record)
@@ -91,11 +93,10 @@ def get_ifta_record(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    record = (
-        db.query(IFTARecord)
-        .filter(IFTARecord.id == record_id, IFTARecord.owner_user_id == current_user.id)
-        .first()
-    )
+    if current_user.company_id:
+        record = db.query(IFTARecord).filter(IFTARecord.id == record_id, IFTARecord.company_id == current_user.company_id).first()
+    else:
+        record = db.query(IFTARecord).filter(IFTARecord.id == record_id, IFTARecord.owner_user_id == current_user.id).first()
     if not record:
         raise HTTPException(status_code=404, detail="IFTA record not found")
     return _serialize_record(record)
