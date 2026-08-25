@@ -62,6 +62,37 @@ class OpenWeatherProvider(RouteRiskProvider):
         except Exception:
             return []
 
+    def get_point_details(self, lat: float, lon: float) -> _dict:
+        """Return a small summary of current weather at a point."""
+        key = settings.OPENWEATHER_API_KEY
+        if not key:
+            return {"fetched": False}
+        try:
+            resp = httpx.get(self.ONECALL_URL, params={"lat": lat, "lon": lon, "exclude": "minutely,hourly,alerts", "appid": key, "units": "metric"}, timeout=5.0)
+            resp.raise_for_status()
+            data = resp.json()
+            current = data.get("current", {})
+            weather = current.get("weather", [])
+            summary = {}
+            if weather:
+                summary["main"] = weather[0].get("main")
+                summary["description"] = weather[0].get("description")
+            summary["temp_c"] = current.get("temp")
+            summary["feels_like_c"] = current.get("feels_like")
+            summary["wind_m_s"] = current.get("wind_speed") or current.get("wind", {}).get("speed")
+            summary["humidity_pct"] = current.get("humidity")
+            rain_1h = (current.get("rain") or {}).get("1h")
+            snow_1h = (current.get("snow") or {}).get("1h")
+            if rain_1h is not None:
+                summary["precip_mm"] = rain_1h
+            elif snow_1h is not None:
+                summary["precip_mm"] = snow_1h
+            summary["cloud_cover_pct"] = current.get("clouds")
+            summary["fetched"] = True
+            return summary
+        except Exception as e:
+            return {"fetched": False, "error": str(e)}
+
     def assess(self, origin: str, destination: str) -> dict:
         details: dict = {"provider": self.name, "fetched": False}
         if not settings.OPENWEATHER_API_KEY:

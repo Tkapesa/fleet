@@ -36,3 +36,17 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+
+class VerifyLoginCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class VerifyRegistrationCodeRequest(BaseModel):
+    email: EmailStr
+    code: str

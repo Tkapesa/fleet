@@ -132,6 +132,60 @@
   padding: 12px;
 }
 
+.drivers-assign-panel {
+  background: linear-gradient(135deg, rgba(8, 19, 37, 0.96), rgba(16, 34, 63, 0.9));
+  border: 1px solid rgba(138, 166, 220, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.drivers-assign-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.drivers-assign-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.drivers-assign-head span {
+  font-size: 12px;
+  color: rgba(220, 231, 255, 0.8);
+}
+
+.drivers-assign-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.drivers-assign-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.drivers-assign-grid select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(145, 171, 225, 0.28);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 9px 10px;
+}
+
+.drivers-assign-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: rgba(208, 221, 248, 0.82);
+}
+
 .drivers-alert-head {
   display: flex;
   justify-content: space-between;
@@ -374,6 +428,111 @@
   min-width: 120px;
 }
 
+/* Fleet weather floating window */
+.fleet-weather-window {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 300px;
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 48%),
+    linear-gradient(160deg, rgba(246, 250, 255, 0.96), rgba(232, 240, 251, 0.95));
+  border: 1px solid rgba(43, 63, 98, 0.18);
+  border-radius: 16px;
+  padding: 14px;
+  z-index: 1200;
+  box-shadow: 0 12px 30px rgba(23, 36, 66, 0.2);
+  backdrop-filter: blur(8px);
+  color: #0f172a;
+}
+.fleet-weather-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.fleet-weather-head strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.fleet-weather-head small {
+  color: rgba(15, 23, 42, 0.7);
+  font-size: 12px;
+}
+.fleet-weather-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.fleet-weather-meta small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #111827;
+}
+.fleet-weather-meta span {
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.78);
+  font-variant-numeric: tabular-nums;
+}
+.fleet-weather-temp {
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 700;
+  color: #0b1220;
+  margin-bottom: 10px;
+}
+.fleet-weather-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+.fleet-weather-grid > div {
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(43, 63, 98, 0.14);
+}
+.fleet-weather-grid strong {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 3px;
+  color: rgba(15, 23, 42, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.fleet-weather-body {
+  margin-bottom: 2px;
+}
+.fleet-weather-loading {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(15, 23, 42, 0.75);
+}
+
+.fleet-weather-error {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #a61b1b;
+}
+
+@media (max-width: 900px) {
+  .fleet-weather-window {
+    right: 10px;
+    top: 10px;
+    width: min(320px, calc(100% - 20px));
+  }
+}
+
+
 .drivers-table td:first-child div {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -444,6 +603,11 @@
   }
 }
 
+@media (max-width: 900px) {
+  .drivers-assign-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .dark-sect  { background: var(--dark); }
 .light-sect { background: var(--light-bg); }
 
@@ -1432,6 +1596,57 @@
 .auth-msg { margin-top: 12px; font-size: 13px; color: var(--blue-muted); }
 .auth-footer-text { font-size: 13px; color: var(--blue-muted); text-align: center; margin-top: 6px; }
 .auth-footer-text a { color: var(--yellow); font-weight: 600; }
+.google-signin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.google-signin > div:empty {
+  min-height: 40px;
+}
+.btn-google {
+  border: 1px solid rgba(247,220,4,.45);
+  background: transparent;
+  color: var(--yellow);
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+.btn-google:hover { border-color: var(--yellow); }
+.pw-strength {
+  min-height: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pw-bar {
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+}
+.pw-weak { background: rgba(240, 50, 50, .2); color: #ff8585; }
+.pw-fair { background: rgba(240, 140, 20, .2); color: #f5ba64; }
+.pw-good { background: rgba(20, 140, 240, .2); color: #8fc4ff; }
+.pw-strong { background: rgba(35, 170, 90, .2); color: #9ce5ba; }
+.pw-sugg { color: var(--blue-muted); font-size: 12px; }
+.pw-gen-btn {
+  border: 1px dashed rgba(247,220,4,.45);
+  background: transparent;
+  color: var(--yellow);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  width: fit-content;
+}
+.pw-gen-btn:hover {
+  border-color: var(--yellow);
+}
 
 /* ── LIVE MAP DASHBOARD ────────────────────────────────────────────────────── */
 .live-portal-wrap {
@@ -1613,7 +1828,10 @@
 .fleet-rail-ghost:active { transform: translateY(0); }
 
 .fleet-details-panel {
-  background: #f9fbfd;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(201, 224, 255, .45), transparent 34%),
+    radial-gradient(circle at 95% 10%, rgba(251, 228, 189, .35), transparent 38%),
+    #f9fbfd;
   border-right: 1px solid #dbe3ec;
   padding: 18px 16px 14px;
   display: flex;
@@ -1696,8 +1914,9 @@
 .fleet-list-card {
   background: #ffffff;
   border: 1px solid #d7e0eb;
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 13px;
+  box-shadow: 0 8px 16px rgba(15, 23, 42, .06);
 }
 
 .fleet-status-head {
@@ -1826,6 +2045,59 @@
   border-top: 1px solid #e5ebf2;
 }
 
+.fleet-driver-assignment {
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid #dde6f1;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+}
+
+.fleet-driver-assignment label {
+  display: block;
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.fleet-driver-assignment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.fleet-driver-assignment-row select {
+  border: 1px solid #cfdceb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.fleet-driver-assignment-row button {
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.fleet-driver-assignment-row button:disabled {
+  opacity: .55;
+  cursor: default;
+}
+
+.fleet-driver-assignment-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #5b6472;
+}
+
 .fleet-driver-block small {
   display: block;
   color: #6b7280;
@@ -1900,6 +2172,100 @@
 .fleet-geofence-block > small {
   color: #64748b;
   font-size: 11px;
+}
+
+.fleet-hazards-block {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e5ebf2;
+}
+
+.fleet-hazards-loading,
+.fleet-hazards-none,
+.fleet-hazards-error {
+  margin: 7px 0 0;
+  font-size: 12px;
+}
+
+.fleet-hazards-loading,
+.fleet-hazards-none {
+  color: #5f6b7b;
+}
+
+.fleet-hazards-error {
+  color: #b42318;
+  background: #fff1f1;
+  border: 1px solid #ffd3d3;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.fleet-hazards-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #1f2937;
+  font-size: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.fleet-hazards-weather-card {
+  margin-top: 8px;
+  border: 1px solid #dbe5f1;
+  border-radius: 10px;
+  padding: 9px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f8ff 100%);
+}
+
+.fleet-hazards-weather-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fleet-hazards-weather-head strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.fleet-hazards-weather-head span {
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #5f6b7b;
+}
+
+.fleet-hazards-weather-desc {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #475569;
+}
+
+.fleet-hazards-weather-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.fleet-hazards-weather-grid > div {
+  border: 1px solid #d9e4f1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 6px 8px;
+}
+
+.fleet-hazards-weather-grid small {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.fleet-hazards-weather-grid strong {
+  font-size: 13px;
+  color: #111827;
 }
 
 .fleet-telemetry-grid {
@@ -2331,6 +2697,92 @@
   font-weight: 600;
 }
 
+.fleet-weather-window {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  z-index: 4;
+  width: min(320px, calc(100% - 28px));
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, .18);
+  background: linear-gradient(165deg, rgba(255, 255, 255, .96) 0%, rgba(241, 247, 255, .95) 100%);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, .18);
+  backdrop-filter: blur(5px);
+  padding: 12px;
+}
+
+.fleet-weather-window-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.fleet-weather-window-head strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.fleet-weather-window-head span {
+  color: #475569;
+  font-size: 11px;
+}
+
+.fleet-weather-main {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fleet-weather-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+.fleet-weather-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fleet-weather-metrics > div {
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 7px 8px;
+}
+
+.fleet-weather-metrics small {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.fleet-weather-metrics strong {
+  font-size: 14px;
+  color: #1f2937;
+}
+
+.fleet-weather-source,
+.fleet-weather-loading,
+.fleet-weather-error {
+  margin: 10px 0 0;
+  font-size: 11px;
+}
+
+.fleet-weather-source,
+.fleet-weather-loading {
+  color: #475569;
+}
+
+.fleet-weather-error {
+  color: #b42318;
+}
+
 .live-map-note {
   position: absolute;
   left: 12px;
@@ -2342,6 +2794,21 @@
   background: rgba(20, 22, 31, .86);
   padding: 8px 10px;
   color: #ffdca0;
+}
+
+@media (max-width: 900px) {
+  .fleet-weather-window {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+  }
+
+  .fleet-map-count-pill {
+    top: 10px;
+    left: 10px;
+  }
 }
 
 .live-map-note strong {
@@ -2779,6 +3246,155 @@
   text-align: center;
   color: #afc2e7;
   padding: 24px;
+}
+
+/* Keep only sidebar dark; use off-white surfaces for content pages */
+.vehicles-shell {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(201, 224, 255, .42), transparent 36%),
+    radial-gradient(circle at 96% 8%, rgba(251, 228, 189, .3), transparent 38%),
+    #f9fbfd;
+}
+
+.vehicles-main-panel {
+  color: #1f2937;
+}
+
+.vehicles-header h1 {
+  color: #0f172a;
+}
+
+.vehicles-user,
+.drivers-subtitle,
+.drivers-message,
+.vehicles-empty {
+  color: #5f6b7b;
+}
+
+.vehicles-chip {
+  border: 1px solid #d4deea;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.vehicles-icon-btn {
+  border: 1px solid #d4deea;
+  background: #ffffff;
+  color: #334155;
+}
+
+.vehicles-search,
+.vehicles-status {
+  border: 1px solid #d1dae6;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.vehicles-search::placeholder {
+  color: #7a8698;
+}
+
+.vehicles-action-btn {
+  border: 1px solid #cfd9e7;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.vehicles-action-btn:hover:not(:disabled) {
+  border-color: #b9c7dc;
+  background: #f7fafe;
+  box-shadow: 0 8px 14px rgba(25, 39, 66, .1);
+}
+
+.vehicles-action-btn.primary {
+  border-color: #2a64d8;
+  color: #ffffff;
+  background: #2a64d8;
+}
+
+.vehicles-action-btn.primary:hover:not(:disabled) {
+  border-color: #1d4fb8;
+  background: #1d4fb8;
+}
+
+.vehicles-type-card,
+.vehicles-table-wrap,
+.drivers-form-card,
+.drivers-alert-panel,
+.drivers-assign-panel,
+.drivers-kpi-card,
+.routes-data-panel {
+  background: #ffffff;
+  border: 1px solid #d9e2ee;
+  box-shadow: 0 8px 24px rgba(31, 41, 55, .06);
+}
+
+.vehicles-type-card button {
+  border: 1px solid #d5deea;
+  background: #ffffff;
+  color: #334155;
+}
+
+.vehicles-type-card button.active {
+  border-color: #2a64d8;
+  color: #1d4fb8;
+  background: #eef4ff;
+}
+
+.vehicles-table thead th {
+  background: #f2f6fb;
+  color: #4b5a6f;
+  border-bottom: 1px solid #d8e1ee;
+}
+
+.vehicles-table tbody td {
+  color: #1f2937;
+  border-bottom: 1px solid #e7edf4;
+}
+
+.vehicles-table tbody tr:hover {
+  background: #f6faff;
+}
+
+.history-badge {
+  border: 1px solid #d5deea;
+  background: #eef3fb;
+  color: #334155;
+}
+
+.history-badge.completed,
+.history-badge.filed,
+.history-badge.scheduled,
+.history-badge.cancelled {
+  border-color: #d5deea;
+  background: #eef3fb;
+  color: #334155;
+}
+
+.vehicles-chip:hover {
+  transform: translateY(-1px);
+  border-color: #bfcedf;
+  background: #f7fafe;
+}
+
+.vehicles-icon-btn:hover {
+  transform: translateY(-1px);
+  border-color: #bfcedf;
+  background: #f7fafe;
+  color: #1f2937;
+}
+
+.vehicles-type-card button:hover:not(.active) {
+  transform: translateX(1px);
+  border-color: #bfcedf;
+  background: #f4f8ff;
+  color: #1f2937;
+}
+
+.vehicles-table-wrap,
+.drivers-table-card,
+.routes-data-panel {
+  background: #ffffff;
 }
 
 @media (max-width: 1200px) {

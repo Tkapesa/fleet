@@ -32,5 +32,10 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     email_verified = Column(Boolean, default=False)
     email_verification_token = Column(String, nullable=True, index=True)
+    # Google OAuth subject id if user signs in with Google
+    google_id = Column(String, nullable=True, index=True)
+    # One-time login code (sent via email) and expiry as epoch seconds
+    login_code = Column(String, nullable=True, index=True)
+    login_code_expires = Column(Integer, nullable=True, index=True)
 
     company = relationship("Company", back_populates="users", foreign_keys=[company_id])

@@ -31,6 +31,9 @@ def ensure_sqlite_columns() -> None:
             "company_name VARCHAR",
             "company_id INTEGER",
             "role VARCHAR(20) DEFAULT 'user'",
+            "google_id VARCHAR",
+            "login_code VARCHAR",
+            "login_code_expires INTEGER",
         ],
         "drivers": [
             "owner_user_id INTEGER",

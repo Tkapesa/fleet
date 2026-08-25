@@ -19,6 +19,7 @@ from app.routers import (
     geofences,
     telemetry,
     maintenance_schedules,
+    hazards,
 )
 import asyncio
 from app.tasks.expiry_checker import start_expiry_checker
@@ -40,6 +41,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:5176",
+        "http://127.0.0.1:5176",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -96,6 +101,7 @@ app.include_router(alerts.router)
 app.include_router(geofences.router)
 app.include_router(telemetry.router)
 app.include_router(maintenance_schedules.router)
+app.include_router(hazards.router)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 

@@ -106,6 +106,23 @@ const FLEET_VIEW_DEMO_DRIVERS = FLEET_VIEW_DEMO_SEEDS.map((truck, index) => ({
   assigned_truck_id: truck.id,
 }))
 
+const STANDARD_RAIL_ITEMS = [
+  { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
+  { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
+  { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
+  { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
+  { key: 'history', icon: 'HS', title: 'History', to: '/history' },
+  { key: 'safety', icon: 'SF', title: 'Safety', to: '/safety' },
+  { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/alerts' },
+  { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/cameras' },
+  { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
+  { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+]
+
+function isRailRouteActive(currentPath, targetPath) {
+  return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`)
+}
+
 function buildHeaders(token, withJson = true) {
   const h = {}
   if (withJson) h['Content-Type'] = 'application/json'
@@ -740,11 +757,24 @@ function FleetCompliance({ token, resources, refreshAllResources }) {
 function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [queryFleet, setQueryFleet] = useState('')
   const [queryVin, setQueryVin] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [assetType, setAssetType] = useState('vehicles')
+  const [truckSaving, setTruckSaving] = useState(false)
+  const [truckMessage, setTruckMessage] = useState('')
+  const [truckForm, setTruckForm] = useState({
+    license_plate: '',
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
+    capacity_tons: 20,
+    height_m: '',
+    length_m: '',
+    latitude: '',
+    longitude: '',
+  })
 
   const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
   const driverResource = RESOURCE_CONFIG.find((r) => r.key === 'drivers')
@@ -761,18 +791,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
     return map
   }, [drivers])
 
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
-    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
-    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  const railItems = STANDARD_RAIL_ITEMS
 
   useEffect(() => {
     if (!token || !truckResource || !driverResource) return
@@ -849,6 +868,45 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
     URL.revokeObjectURL(url)
   }
 
+  async function handleRegisterTruck(e) {
+    e.preventDefault()
+    if (!token || !truckResource) return
+    setTruckSaving(true)
+    setTruckMessage('')
+    try {
+      const payload = {
+        license_plate: truckForm.license_plate.trim(),
+        make: truckForm.make.trim(),
+        model: truckForm.model.trim(),
+        year: Number(truckForm.year),
+        capacity_tons: Number(truckForm.capacity_tons),
+        height_m: truckForm.height_m === '' ? null : Number(truckForm.height_m),
+        length_m: truckForm.length_m === '' ? null : Number(truckForm.length_m),
+        latitude: truckForm.latitude === '' ? null : Number(truckForm.latitude),
+        longitude: truckForm.longitude === '' ? null : Number(truckForm.longitude),
+      }
+      await apiRequest('/trucks/', { method: 'POST', token, body: payload })
+      await fetchResource(truckResource)
+      if (driverResource) await fetchResource(driverResource)
+      setTruckMessage('Truck registered successfully.')
+      setTruckForm({
+        license_plate: '',
+        make: '',
+        model: '',
+        year: new Date().getFullYear(),
+        capacity_tons: 20,
+        height_m: '',
+        length_m: '',
+        latitude: '',
+        longitude: '',
+      })
+    } catch (err) {
+      setTruckMessage(err.message)
+    } finally {
+      setTruckSaving(false)
+    }
+  }
+
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
       <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
@@ -860,7 +918,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
         </button>
         <div className="fleet-rail-items">
           {railItems.map((item) => {
-            const isActive = Boolean(item.to) && location.pathname === item.to
+            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
             return (
               <button
                 type="button"
@@ -925,6 +983,25 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
           </div>
         </div>
 
+        <form className="drivers-form-card" onSubmit={handleRegisterTruck}>
+          <h3>Register Truck</h3>
+          <div className="drivers-form-grid">
+            <input required placeholder="License plate" value={truckForm.license_plate} onChange={(e) => setTruckForm((f) => ({ ...f, license_plate: e.target.value }))} />
+            <input required placeholder="Make" value={truckForm.make} onChange={(e) => setTruckForm((f) => ({ ...f, make: e.target.value }))} />
+            <input required placeholder="Model" value={truckForm.model} onChange={(e) => setTruckForm((f) => ({ ...f, model: e.target.value }))} />
+            <input required type="number" min="1980" max="2100" placeholder="Year" value={truckForm.year} onChange={(e) => setTruckForm((f) => ({ ...f, year: e.target.value }))} />
+            <input required type="number" min="0" step="0.1" placeholder="Capacity tons" value={truckForm.capacity_tons} onChange={(e) => setTruckForm((f) => ({ ...f, capacity_tons: e.target.value }))} />
+            <input type="number" min="0" step="0.01" placeholder="Height (m) optional" value={truckForm.height_m} onChange={(e) => setTruckForm((f) => ({ ...f, height_m: e.target.value }))} />
+            <input type="number" min="0" step="0.01" placeholder="Length (m) optional" value={truckForm.length_m} onChange={(e) => setTruckForm((f) => ({ ...f, length_m: e.target.value }))} />
+            <input type="number" step="0.000001" placeholder="Latitude optional" value={truckForm.latitude} onChange={(e) => setTruckForm((f) => ({ ...f, latitude: e.target.value }))} />
+            <input type="number" step="0.000001" placeholder="Longitude optional" value={truckForm.longitude} onChange={(e) => setTruckForm((f) => ({ ...f, longitude: e.target.value }))} />
+          </div>
+          <div className="drivers-form-actions">
+            <button type="submit" className="vehicles-action-btn primary" disabled={truckSaving}>{truckSaving ? 'Registering...' : 'Register Truck'}</button>
+            {truckMessage && <p className="drivers-message">{truckMessage}</p>}
+          </div>
+        </form>
+
         <div className="vehicles-grid-wrap">
           <aside className="vehicles-type-card">
             <button type="button" className={assetType === 'vehicles' ? 'active' : ''} onClick={() => setAssetType('vehicles')}>Vehicles</button>
@@ -982,7 +1059,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
 function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetchResource }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [queryText, setQueryText] = useState('')
   const [eventType, setEventType] = useState('all')
 
@@ -996,18 +1073,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
   const maintenance = resources.maintenance?.items ?? []
   const ifta = resources.ifta?.items ?? []
 
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
-    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
-    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  const railItems = STANDARD_RAIL_ITEMS
 
   useEffect(() => {
     if (!token) return
@@ -1117,7 +1183,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
         </button>
         <div className="fleet-rail-items">
           {railItems.map((item) => {
-            const isActive = Boolean(item.to) && location.pathname === item.to
+            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
             return (
               <button
                 type="button"
@@ -1243,13 +1309,14 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
 
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [queryText, setQueryText] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [toolbarBusy, setToolbarBusy] = useState(false)
   const [assignmentSavingId, setAssignmentSavingId] = useState(null)
+  const [assignmentMessage, setAssignmentMessage] = useState('')
   const [driverForm, setDriverForm] = useState(emptyDriverForm)
 
   const truckResource = RESOURCE_CONFIG.find((r) => r.key === 'trucks')
@@ -1257,18 +1324,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
   const trucks = resources.trucks?.items ?? []
   const drivers = resources.drivers?.items ?? []
 
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
-    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
-    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  const railItems = STANDARD_RAIL_ITEMS
 
   useEffect(() => {
     if (!token || !truckResource || !driverResource) return
@@ -1282,9 +1338,14 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
     setSaving(true)
     setMessage('')
     try {
+      const selectedTruckId = driverForm.assigned_truck_id ? Number(driverForm.assigned_truck_id) : null
+      if (selectedTruckId !== null && occupiedTruckIds.has(selectedTruckId)) {
+        throw new Error('Selected truck is already occupied. Choose an unoccupied truck.')
+      }
+
       const payload = {
         ...driverForm,
-        assigned_truck_id: driverForm.assigned_truck_id ? Number(driverForm.assigned_truck_id) : null,
+        assigned_truck_id: selectedTruckId,
         license_issue_date: driverForm.license_issue_date || null,
         date_of_birth: driverForm.date_of_birth || null,
         notes: driverForm.notes || null,
@@ -1293,6 +1354,15 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
         emergency_contact_phone: driverForm.emergency_contact_phone || null,
       }
       await apiRequest('/drivers/', { method: 'POST', token, body: payload })
+
+      if (selectedTruckId !== null) {
+        await apiRequest(`/trucks/${selectedTruckId}`, {
+          method: 'PATCH',
+          token,
+          body: { status: 'on_trip' },
+        })
+      }
+
       setMessage('Driver saved successfully.')
       setDriverForm(emptyDriverForm)
       if (driverResource) await fetchResource(driverResource)
@@ -1306,20 +1376,60 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
 
   async function assignDriverToTruck(driverId, truckId) {
     if (!token || !driverResource) return
+    const normalizedTruckId = truckId ? Number(truckId) : null
+    if (normalizedTruckId !== null && !trucks.some((truck) => truck.id === normalizedTruckId)) {
+      setAssignmentMessage('Selected truck is unavailable in your account. Refresh trucks and try again.')
+      return
+    }
+
     setAssignmentSavingId(driverId)
     setMessage('')
+    setAssignmentMessage('')
     try {
+      const targetDriver = drivers.find((driver) => Number(driver.id) === Number(driverId))
+      const previousTruckId = targetDriver?.assigned_truck_id ?? null
+
+      if (normalizedTruckId !== null) {
+        const occupiedByOthers = drivers.some((driver) => Number(driver.id) !== Number(driverId) && Number(driver.assigned_truck_id) === normalizedTruckId)
+        if (occupiedByOthers) {
+          throw new Error('Selected truck is already occupied by another driver.')
+        }
+      }
+
       await apiRequest(`/drivers/${driverId}`, {
         method: 'PATCH',
         token,
         body: {
-          assigned_truck_id: truckId ? Number(truckId) : null,
+          assigned_truck_id: normalizedTruckId,
         },
       })
+
+      if (normalizedTruckId !== null) {
+        await apiRequest(`/trucks/${normalizedTruckId}`, {
+          method: 'PATCH',
+          token,
+          body: { status: 'on_trip' },
+        })
+      }
+
+      if (previousTruckId !== null && Number(previousTruckId) !== normalizedTruckId) {
+        const previousStillOccupied = drivers.some((driver) => Number(driver.id) !== Number(driverId) && Number(driver.assigned_truck_id) === Number(previousTruckId))
+        if (!previousStillOccupied) {
+          await apiRequest(`/trucks/${previousTruckId}`, {
+            method: 'PATCH',
+            token,
+            body: { status: 'available' },
+          })
+        }
+      }
+
       await fetchResource(driverResource)
-      setMessage('Driver assignment updated.')
+      if (truckResource) {
+        await fetchResource(truckResource)
+      }
+      setAssignmentMessage('Driver assignment updated.')
     } catch (err) {
-      setMessage(err.message)
+      setAssignmentMessage(err.message)
     } finally {
       setAssignmentSavingId(null)
     }
@@ -1356,6 +1466,20 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
     })
   }, [drivers, queryText, statusFilter])
 
+  const occupiedTruckIds = useMemo(() => {
+    const ids = new Set()
+    drivers.forEach((driver) => {
+      if (driver.assigned_truck_id !== null && driver.assigned_truck_id !== undefined) {
+        ids.add(Number(driver.assigned_truck_id))
+      }
+    })
+    return ids
+  }, [drivers])
+
+  const unoccupiedTrucks = useMemo(() => {
+    return trucks.filter((truck) => !occupiedTruckIds.has(Number(truck.id)))
+  }, [trucks, occupiedTruckIds])
+
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
       <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
@@ -1367,7 +1491,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
         </button>
         <div className="fleet-rail-items">
           {railItems.map((item) => {
-            const isActive = Boolean(item.to) && location.pathname === item.to
+            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
             return (
               <button
                 type="button"
@@ -1538,7 +1662,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
               <input placeholder="Emergency contact phone" value={driverForm.emergency_contact_phone} onChange={(e) => setDriverForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
               <select value={driverForm.assigned_truck_id} onChange={(e) => setDriverForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
                 <option value="">Unassigned truck</option>
-                {trucks.map((truck) => (
+                {unoccupiedTrucks.map((truck) => (
                   <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
                 ))}
               </select>
@@ -1551,6 +1675,12 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
             </form>
 
             <div className="drivers-table-card vehicles-table-wrap">
+              {trucks.length === 0 && (
+                <p className="drivers-message">No trucks found in your account yet. Create a truck in Vehicles first, then assign drivers.</p>
+              )}
+              {assignmentMessage && (
+                <p className="drivers-message">{assignmentMessage}</p>
+              )}
               <table className="vehicles-table drivers-table">
                 <thead>
                   <tr>
@@ -1591,12 +1721,17 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                         <select
                           value={driver.assigned_truck_id ?? ''}
                           onChange={(e) => assignDriverToTruck(driver.id, e.target.value)}
-                          disabled={assignmentSavingId === driver.id}
+                          disabled={assignmentSavingId === driver.id || trucks.length === 0}
                         >
                           <option value="">Unassigned</option>
-                          {trucks.map((truck) => (
-                            <option key={truck.id} value={String(truck.id)}>{truck.license_plate}</option>
-                          ))}
+                          {trucks
+                            .filter((truck) => {
+                              if (Number(driver.assigned_truck_id) === Number(truck.id)) return true
+                              return !occupiedTruckIds.has(Number(truck.id))
+                            })
+                            .map((truck) => (
+                              <option key={truck.id} value={String(truck.id)}>{truck.license_plate}</option>
+                            ))}
                         </select>
                       </td>
                       <td>
@@ -1620,7 +1755,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
   const { driverId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [toolbarBusy, setToolbarBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -1652,18 +1787,25 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
   const parsedDriverId = Number(driverId)
   const selectedDriver = drivers.find((driver) => driver.id === parsedDriverId) ?? null
 
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
-    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
-    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  const occupiedTruckIds = useMemo(() => {
+    const ids = new Set()
+    drivers.forEach((driver) => {
+      if (driver.assigned_truck_id !== null && driver.assigned_truck_id !== undefined) {
+        ids.add(Number(driver.assigned_truck_id))
+      }
+    })
+    return ids
+  }, [drivers])
+
+  const availableTrucksForSelectedDriver = useMemo(() => {
+    const selectedAssignedId = selectedDriver?.assigned_truck_id ?? null
+    return trucks.filter((truck) => {
+      if (selectedAssignedId !== null && Number(truck.id) === Number(selectedAssignedId)) return true
+      return !occupiedTruckIds.has(Number(truck.id))
+    })
+  }, [trucks, occupiedTruckIds, selectedDriver])
+
+  const railItems = STANDARD_RAIL_ITEMS
 
   useEffect(() => {
     if (!token || !truckResource || !driverResource) return
@@ -1701,9 +1843,18 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
     setSaving(true)
     setMessage('')
     try {
+      const nextAssignedTruckId = driverEditForm.assigned_truck_id ? Number(driverEditForm.assigned_truck_id) : null
+      if (nextAssignedTruckId !== null) {
+        const occupiedByOthers = drivers.some((driver) => Number(driver.id) !== Number(selectedDriver.id) && Number(driver.assigned_truck_id) === nextAssignedTruckId)
+        if (occupiedByOthers) {
+          throw new Error('Selected truck is already occupied by another driver.')
+        }
+      }
+
+      const previousAssignedTruckId = selectedDriver.assigned_truck_id ?? null
       const payload = {
         ...driverEditForm,
-        assigned_truck_id: driverEditForm.assigned_truck_id ? Number(driverEditForm.assigned_truck_id) : null,
+        assigned_truck_id: nextAssignedTruckId,
         license_issue_date: driverEditForm.license_issue_date || null,
         date_of_birth: driverEditForm.date_of_birth || null,
         address: driverEditForm.address || null,
@@ -1712,6 +1863,26 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
         notes: driverEditForm.notes || null,
       }
       await apiRequest(`/drivers/${selectedDriver.id}`, { method: 'PATCH', token, body: payload })
+
+      if (nextAssignedTruckId !== null) {
+        await apiRequest(`/trucks/${nextAssignedTruckId}`, {
+          method: 'PATCH',
+          token,
+          body: { status: 'on_trip' },
+        })
+      }
+
+      if (previousAssignedTruckId !== null && Number(previousAssignedTruckId) !== nextAssignedTruckId) {
+        const previousStillOccupied = drivers.some((driver) => Number(driver.id) !== Number(selectedDriver.id) && Number(driver.assigned_truck_id) === Number(previousAssignedTruckId))
+        if (!previousStillOccupied) {
+          await apiRequest(`/trucks/${previousAssignedTruckId}`, {
+            method: 'PATCH',
+            token,
+            body: { status: 'available' },
+          })
+        }
+      }
+
       await fetchResource(driverResource)
       if (truckResource) await fetchResource(truckResource)
       setMessage('Driver details updated successfully.')
@@ -1744,7 +1915,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
         </button>
         <div className="fleet-rail-items">
           {railItems.map((item) => {
-            const isActive = Boolean(item.to) && location.pathname === item.to
+            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
             return (
               <button
                 type="button"
@@ -1869,7 +2040,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
                 <input placeholder="Emergency contact phone" value={driverEditForm.emergency_contact_phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, emergency_contact_phone: e.target.value }))} />
                 <select value={driverEditForm.assigned_truck_id} onChange={(e) => setDriverEditForm((f) => ({ ...f, assigned_truck_id: e.target.value }))}>
                   <option value="">Unassigned truck</option>
-                  {trucks.map((truck) => (
+                  {availableTrucksForSelectedDriver.map((truck) => (
                     <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
                   ))}
                 </select>
@@ -1895,19 +2066,11 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
 function RoutesPage({ handleLogout }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
   const [query, setQuery] = useState('')
 
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  const railItems = STANDARD_RAIL_ITEMS
 
   const filteredRoutes = DEMO_ROUTES.filter((route) => {
     const statusMatch = statusFilter === 'all' || route.status === statusFilter
@@ -1922,7 +2085,7 @@ function RoutesPage({ handleLogout }) {
         <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((value) => !value)}>{railCollapsed ? '>' : '<'}</button>
         <div className="fleet-rail-items">
           {railItems.map((item) => (
-            <button type="button" key={item.key} className={`fleet-rail-item ${location.pathname === item.to ? 'active' : ''}`} title={item.title} onClick={() => navigate(item.to)}>
+            <button type="button" key={item.key} className={`fleet-rail-item ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`} title={item.title} onClick={() => navigate(item.to)}>
               <span className="fleet-rail-icon">{item.icon}</span>
               {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
             </button>
@@ -1994,19 +2157,80 @@ function RoutesPage({ handleLogout }) {
   )
 }
 
+function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [railCollapsed, setRailCollapsed] = useState(false)
+  const railItems = STANDARD_RAIL_ITEMS
+
+  return (
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
+        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((value) => !value)}>{railCollapsed ? '>' : '<'}</button>
+        <div className="fleet-rail-items">
+          {railItems.map((item) => (
+            <button
+              type="button"
+              key={item.key}
+              className={`fleet-rail-item ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`}
+              title={item.title}
+              onClick={() => navigate(item.to)}
+            >
+              <span className="fleet-rail-icon">{item.icon}</span>
+              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+            </button>
+          ))}
+        </div>
+        <div className="fleet-rail-footer-actions">
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
+        </div>
+      </aside>
+
+      <section className="vehicles-main-panel routes-main-panel">
+        <header className="vehicles-header">
+          <div className="vehicles-title-wrap">
+            <h1>{title}</h1>
+            <p className="drivers-subtitle">{subtitle}</p>
+          </div>
+          <div className="vehicles-tenant-row">
+            <button type="button" className="vehicles-chip">{title} Center</button>
+            <span className="vehicles-user">Fleet Team</span>
+          </div>
+        </header>
+
+        <div className="routes-data-panel">
+          <div className="fleet-status-head">
+            <h3>{title} Dashboard</h3>
+            <span>Standalone page</span>
+          </div>
+          <p className="drivers-message">This is the dedicated {title.toLowerCase()} page. You are no longer redirected to a different section.</p>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function Portal({
   token, resources, fleetCount,
   refreshAllResources, handleLogout, fetchResource, managerMode = false,
 }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [railCollapsed, setRailCollapsed] = useState(true)
+  const [railCollapsed, setRailCollapsed] = useState(false)
   const [mapError, setMapError] = useState('')
   const [search, setSearch] = useState('')
   const [tick, setTick] = useState(0)
   const [selectedTruckId, setSelectedTruckId] = useState(null)
   const [geofenceEnabled, setGeofenceEnabled] = useState(true)
   const [geofenceRadiusKm, setGeofenceRadiusKm] = useState(25)
+
+  const [weatherDetails, setWeatherDetails] = useState(null)
+  const [weatherLoading, setWeatherLoading] = useState(false)
+  const [weatherError, setWeatherError] = useState('')
+  const [currentTime, setCurrentTime] = useState(() => new Date())
+  const [truckTimezone, setTruckTimezone] = useState('UTC')
 
   const mapElRef = useRef(null)
   const mapRef = useRef(null)
@@ -2022,39 +2246,40 @@ function Portal({
   const trucks = resources.trucks?.items ?? []
   const drivers = resources.drivers?.items ?? []
   const useDemoFleetView = true
-  const sourceTrucks = useDemoFleetView
-    ? FLEET_VIEW_DEMO_SEEDS.map((seed) => ({
-      ...seed,
-      license_plate: seed.plate,
-      latitude: seed.baseLat,
-      longitude: seed.baseLng,
-      height_m: seed.heightM,
-      length_m: seed.lengthM,
-      is_demo: true,
-    }))
-    : trucks
-  const sourceDrivers = useDemoFleetView ? FLEET_VIEW_DEMO_DRIVERS : drivers
+  const [localTrucks, setLocalTrucks] = useState(() => (
+    useDemoFleetView
+      ? FLEET_VIEW_DEMO_SEEDS.map((seed) => ({
+        ...seed,
+        license_plate: seed.plate,
+        latitude: seed.baseLat,
+        longitude: seed.baseLng,
+        height_m: seed.heightM,
+        length_m: seed.lengthM,
+        is_demo: true,
+      }))
+      : trucks
+  ))
+  const [localDrivers, setLocalDrivers] = useState(() => (useDemoFleetView ? FLEET_VIEW_DEMO_DRIVERS : drivers))
+
   const driverByTruckId = useMemo(() => {
     const map = new Map()
-    sourceDrivers.forEach((driver) => {
+    localDrivers.forEach((driver) => {
       if (driver.assigned_truck_id !== null && driver.assigned_truck_id !== undefined && !map.has(driver.assigned_truck_id)) {
         map.set(driver.assigned_truck_id, driver)
       }
     })
     return map
-  }, [sourceDrivers])
-  const railItems = [
-    { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-    { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-    { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-    { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-    { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-    { key: 'safety', icon: 'SF', title: 'Safety', to: '/drivers' },
-    { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/history' },
-    { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/fleet-manager' },
-    { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-    { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
-  ]
+  }, [localDrivers])
+
+
+  useEffect(() => {
+    // keep local lists in sync when real resources load
+    if (!useDemoFleetView) {
+      setLocalTrucks(trucks)
+      setLocalDrivers(drivers)
+    }
+  }, [useDemoFleetView, trucks, drivers])
+  const railItems = STANDARD_RAIL_ITEMS
 
   useEffect(() => {
     fetchResourceRef.current = fetchResource
@@ -2080,8 +2305,39 @@ function Portal({
     return () => window.clearInterval(id)
   }, [token])
 
+  useEffect(() => {
+    const id = window.setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    async function resolveTruckTimezone() {
+      if (!selectedTruck?.location) {
+        setTruckTimezone('UTC')
+        return
+      }
+      try {
+        const lat = selectedTruck.location.lat
+        const lon = selectedTruck.location.lng
+        const resp = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current=temperature_2m&timezone=auto`,
+        )
+        const payload = await resp.json().catch(() => null)
+        const zone = payload?.timezone
+        if (active && typeof zone === 'string' && zone.length > 0) {
+          setTruckTimezone(zone)
+        }
+      } catch {
+        // keep last known timezone if lookup fails
+      }
+    }
+    resolveTruckTimezone()
+    return () => { active = false }
+  }, [selectedTruckId])
+
   const liveTrucks = useMemo(() => {
-    return sourceTrucks.map((truck, index) => {
+    return localTrucks.map((truck, index) => {
       if (truck.is_demo) {
         const phase = tick + index * 2.7
         const stopped = Boolean(truck.stopped)
@@ -2106,7 +2362,7 @@ function Portal({
         statusLabel: truck.status === 'on_trip' ? 'On route' : truck.status,
       }
     })
-  }, [sourceTrucks, tick])
+  }, [localTrucks, tick])
 
   const filteredTrucks = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -2277,12 +2533,70 @@ function Portal({
     lastMapSelectionRef.current = selectedTruckId
   }, [geofenceEnabled, geofenceRadiusKm, mapTrucks, selectedGeofenceCenter, selectedGeofenceInside, selectedTruck, selectedTruckId])
 
+  useEffect(() => {
+    let mounted = true
+    async function loadWeather() {
+      if (!selectedTruck || !selectedTruck.location) {
+        setWeatherDetails(null)
+        setWeatherError('')
+        return
+      }
+      setWeatherLoading(true)
+      setWeatherError('')
+      try {
+        const lat = selectedTruck.location.lat
+        const lon = selectedTruck.location.lng
+        const res = await apiRequest(`/hazards/at?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`)
+        if (!mounted) return
+        const pd = res?.provider_details ?? {}
+        // pick the first provider with temperature info
+        let picked = null
+        for (const key of Object.keys(pd)) {
+          const d = pd[key]
+          if (d && (d.temp_c !== undefined || d.temperature_2m !== undefined || d.temp !== undefined)) {
+            picked = { provider: key, data: d }
+            break
+          }
+        }
+        if (!picked) {
+          // fallback to any provider
+          const first = Object.keys(pd)[0]
+          picked = first ? { provider: first, data: pd[first] } : null
+        }
+        if (picked) {
+          const d = picked.data || {}
+          const normalized = {
+            provider: picked.provider,
+            temp_c: d.temp_c ?? d.temperature_2m ?? d.temp,
+            feels_like_c: d.feels_like_c ?? d.apparent_temperature,
+            humidity_pct: d.humidity_pct ?? d.relative_humidity_2m,
+            precip_mm: d.precip_mm ?? d.precipitation,
+            cloud_cover_pct: d.cloud_cover_pct ?? d.cloud_cover,
+            wind_m_s: d.wind_m_s ?? d.wind_speed_10m,
+          }
+          setWeatherDetails(normalized)
+        } else {
+          setWeatherError('Weather service returned no details')
+        }
+      } catch (err) {
+        if (mounted) {
+          setWeatherError('Weather refresh failed; showing last update')
+        }
+      } finally {
+        if (mounted) setWeatherLoading(false)
+      }
+    }
+    loadWeather()
+    return () => { mounted = false }
+  }, [selectedTruckId, selectedTruck?.location?.lat, selectedTruck?.location?.lng])
+
   function focusTruck(truckId) {
     setSelectedTruckId(truckId)
     const target = filteredTrucks.find((t) => t.id === truckId)
     if (!target || !mapRef.current) return
     mapRef.current.setView([target.location.lat, target.location.lng], 10, { animate: true })
   }
+
 
   useEffect(() => {
     if (filteredTrucks.length === 0) {
@@ -2345,6 +2659,20 @@ function Portal({
     window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
   }
 
+  const truckLocalTime = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: truckTimezone,
+        hour12: false,
+      }).format(currentTime)
+    } catch {
+      return currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    }
+  }, [currentTime, truckTimezone])
+
   return (
     <div className={`live-portal-wrap fleet-monitor-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
       <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
@@ -2356,7 +2684,7 @@ function Portal({
         </button>
         <div className="fleet-rail-items">
           {railItems.map((item) => {
-            const isActive = Boolean(item.to) && location.pathname === item.to
+            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
             return (
               <button
                 type="button"
@@ -2645,6 +2973,36 @@ function Portal({
             </div>
           )}
           <div ref={mapElRef} className="fleet-map-canvas" />
+          {selectedTruck && (
+            <div className="fleet-weather-window" aria-live="polite">
+              <div>
+                <div className="fleet-weather-head">
+                  <div>
+                    <strong>Weather</strong>
+                    <small>{weatherDetails?.provider ?? 'provider unavailable'}</small>
+                  </div>
+                  <div className="fleet-weather-meta">
+                    <small>{selectedTruck.license_plate}</small>
+                    <span>{truckLocalTime}</span>
+                    <span>{truckTimezone}</span>
+                  </div>
+                </div>
+
+                <div className="fleet-weather-body">
+                  <div className="fleet-weather-temp">{weatherDetails?.temp_c !== undefined ? `${Math.round(weatherDetails.temp_c)}°C` : 'N/A'}</div>
+                  <div className="fleet-weather-grid">
+                    <div><strong>Feels</strong><div>{weatherDetails?.feels_like_c !== undefined ? `${Math.round(weatherDetails.feels_like_c)}°C` : 'N/A'}</div></div>
+                    <div><strong>Humidity</strong><div>{weatherDetails?.humidity_pct ?? 'N/A'}%</div></div>
+                    <div><strong>Precip</strong><div>{weatherDetails?.precip_mm ?? 'N/A'} mm</div></div>
+                    <div><strong>Clouds</strong><div>{weatherDetails?.cloud_cover_pct ?? 'N/A'}%</div></div>
+                  </div>
+                </div>
+
+                {weatherLoading && <div className="fleet-weather-loading">Refreshing weather…</div>}
+                {!!weatherError && <div className="fleet-weather-error">{weatherError}</div>}
+              </div>
+            </div>
+          )}
           {mapError && (
             <div className="live-map-note">
               <strong>Fallback map active</strong>
@@ -2652,7 +3010,7 @@ function Portal({
             </div>
           )}
           <div className="fleet-map-count-pill">
-            {managerMode ? `${mapTrucks.length} selected unit live` : `${filteredTrucks.length} company units live`} · {sourceTrucks.length} company trucks
+            {managerMode ? `${mapTrucks.length} selected unit live` : `${filteredTrucks.length} company units live`} · {localTrucks.length} company trucks
           </div>
         </div>
       </section>
@@ -2831,6 +3189,9 @@ function App() {
       <Route path="/portal" element={token ? <Portal {...portalProps} managerMode={false} /> : <Navigate to="/login" replace />} />
       <Route path="/fleet-manager" element={token ? <Portal {...portalProps} managerMode /> : <Navigate to="/login" replace />} />
       <Route path="/routes" element={token ? <RoutesPage handleLogout={handleLogout} /> : <Navigate to="/login" replace />} />
+      <Route path="/safety" element={token ? <FeaturePlaceholderPage handleLogout={handleLogout} title="Safety" subtitle="Safety events, incidents, and compliance follow-up." /> : <Navigate to="/login" replace />} />
+      <Route path="/alerts" element={token ? <FeaturePlaceholderPage handleLogout={handleLogout} title="Alerts" subtitle="Operational alerts and notifications in one place." /> : <Navigate to="/login" replace />} />
+      <Route path="/cameras" element={token ? <FeaturePlaceholderPage handleLogout={handleLogout} title="Cameras" subtitle="Camera status and video feed management." /> : <Navigate to="/login" replace />} />
       <Route path="/vehicles" element={token ? <VehiclesPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/drivers" element={token ? <DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/drivers/:driverId" element={token ? <DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
