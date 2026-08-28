@@ -7,7 +7,7 @@ import { FleetMotionBoard, LiveStatsStrip } from './FleetMotion'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://fleet-api-tkapesa.fly.dev'
 const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY ?? ''
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
