@@ -2,6 +2,8 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import TruckScene from './Truck3D'
+import { FleetMotionBoard, LiveStatsStrip } from './FleetMotion'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -9,8 +11,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000
 const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY ?? ''
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
-const HERO_TRUCK_TOP_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/Truck-PNG.png'
-const HERO_TRUCK_VERTICAL_IMAGE = 'https://rockeld.us/wp-content/uploads/2024/12/img-01-01.png'
 
 const RESOURCE_CONFIG = [
   {
@@ -252,12 +252,12 @@ function EyebrowRow({ label = 'ATONDA' }) {
 
 function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
   return (
-    <div className={`orbit-item ${align}`}>
+    <div className={`orbit-item ${align}`} data-reveal>
       <div className={`orbit-num-row ${align}`}>
         <span className="orbit-num">{number}</span>
         <span className="orbit-num-line" />
       </div>
-      <div className="orbit-icon-box">{icon}</div>
+      <div className="orbit-icon-box tilt-card">{icon}</div>
       <h4 className="orbit-title">{title}</h4>
       <p className="orbit-desc">{desc}</p>
     </div>
@@ -266,7 +266,7 @@ function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
 
 function BenefitCard({ title, desc }) {
   return (
-    <div className="benefit-card">
+    <div className="benefit-card tilt-card" data-reveal>
       <div className="benefit-check">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <polyline points="20 6 9 17 4 12" />
@@ -288,9 +288,89 @@ function ComplianceStatusPill({ label, status }) {
   )
 }
 
+// ─── Cinematic microinteraction helpers ──────────────────────────────────────
+function CursorDot() {
+  const dotRef = useRef(null)
+
+  useEffect(() => {
+    if (window.matchMedia?.('(hover: none), (pointer: coarse)').matches) return undefined
+    const el = dotRef.current
+    if (!el) return undefined
+
+    function onMove(e) {
+      el.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`
+    }
+    function onOver(e) {
+      const hoverable = e.target.closest('a, button, [data-cursor-hover]')
+      el.classList.toggle('cursor-hover', Boolean(hoverable))
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseover', onOver)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseover', onOver)
+    }
+  }, [])
+
+  return <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
+}
+
+function useScrollReveal(deps = []) {
+  useEffect(() => {
+    const nodes = document.querySelectorAll('[data-reveal]')
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.16 },
+    )
+    nodes.forEach((node) => observer.observe(node))
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
+}
+
+function useMagnetic(ref, strength = 0.35) {
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    function onMove(e) {
+      const rect = el.getBoundingClientRect()
+      const x = e.clientX - (rect.left + rect.width / 2)
+      const y = e.clientY - (rect.top + rect.height / 2)
+      el.style.transform = `translate(${x * strength}px, ${y * strength}px)`
+    }
+    function onLeave() {
+      el.style.transform = 'translate(0, 0)'
+    }
+    el.addEventListener('mousemove', onMove)
+    el.addEventListener('mouseleave', onLeave)
+    return () => {
+      el.removeEventListener('mousemove', onMove)
+      el.removeEventListener('mouseleave', onLeave)
+    }
+  }, [ref, strength])
+}
+
+function MagneticLink({ className = '', children, ...props }) {
+  const ref = useRef(null)
+  useMagnetic(ref)
+  return (
+    <a ref={ref} className={`magnetic-btn ${className}`} {...props}>
+      {children}
+    </a>
+  )
+}
+
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 function Landing({ token }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  useScrollReveal()
   const [testimonialIdx, setTestimonialIdx] = useState(0)
   const [contactData, setContactData] = useState({
     name: '', company: '', phone: '', email: '', reason: 'demo', fleetSize: '1-4', message: '',
@@ -306,6 +386,7 @@ function Landing({ token }) {
 
   return (
     <div className="site-wrap">
+      <CursorDot />
       {/* NAV */}
       <header className="site-header" id="top">
         <div className="hdr-inner">
@@ -346,22 +427,43 @@ function Landing({ token }) {
         <div className="hero-decor-2" />
         <div className="hero-inner">
           <div className="hero-body">
-            <div className="hero-content-card">
+            <div className="hero-content-card" data-reveal="scale">
               <EyebrowRow />
               <h2 className="hero-h2">Keep your fleet on solid ground</h2>
               <h5 className="hero-h5">Your partner in compliance, safety, and efficiency.</h5>
               <div className="hero-actions">
-                <a href="#contact" className="btn-yellow">Request a demo</a>
+                <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
               </div>
             </div>
-            <div className="hero-call-card">
+            <div className="hero-call-card" data-reveal style={{ '--reveal-delay': '.15s' }}>
               <p>Call and book an appointment</p>
-              <a href="tel:7083232997">(708) 323-2997</a>
+              <a href="tel:7083232997" className="underline-link">(708) 323-2997</a>
             </div>
           </div>
-          <div className="hero-truck-strip">
-            <img className="hero-truck-top-image" src={HERO_TRUCK_TOP_IMAGE} alt="Truck side view" loading="eager" />
+          <div className="hero-truck-strip" data-reveal="scale" style={{ '--reveal-delay': '.1s' }}>
+            <img
+              className="hero-truck-photo"
+              src="https://framerusercontent.com/images/18fcpAEnZV1tlSpjskrotWgKpE.jpg?width=812&height=450"
+              alt="Fleet truck on the road"
+              loading="eager"
+            />
           </div>
+        </div>
+      </section>
+
+      {/* LIVE FLEET NETWORK */}
+      <section className="light-sect fleet-motion-sect">
+        <div className="sect-inner">
+          <div className="fleet-motion-hdr" data-reveal>
+            <EyebrowRow label="LIVE NETWORK" />
+            <h2>Fleets in motion, coast to coast</h2>
+            <p className="sect-sub">
+              Every truck on the ATONDA network reports its status in real time — loading, in transit,
+              delivering, and reloading for the next run.
+            </p>
+          </div>
+          <FleetMotionBoard />
+          <LiveStatsStrip />
         </div>
       </section>
 
@@ -387,9 +489,8 @@ function Landing({ token }) {
             </div>
 
             <div className="orbit-center">
-              <div className="orbit-diamond orbit-diamond-a" />
-              <div className="orbit-diamond orbit-diamond-b" />
-              <img className="orbit-truck" src={HERO_TRUCK_VERTICAL_IMAGE} alt="Truck top view" loading="lazy" />
+            <div className="orbit-diamond orbit-diamond-a float-anim" />
+              <TruckScene variant="orbit" className="orbit-truck-3d" />
             </div>
 
             <div className="orbit-col right">
@@ -416,11 +517,11 @@ function Landing({ token }) {
       <section id="about" className="dark-sect about-cta-sect">
         <div className="sect-inner">
           <div className="about-cta-inner">
-            <div className="about-cta-left">
+            <div className="about-cta-left" data-reveal>
               <EyebrowRow />
               <h2>Built for drivers, designed for success</h2>
               <p className="sect-sub">Our platform provides a powerful, easy-to-use solution to simplify fleet operations and ensure compliance.</p>
-              <a href="#contact" className="btn-yellow">Request a demo</a>
+              <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
             </div>
             <div className="about-cta-graphic">
               <div className="graphic-diamond diamond-lg" />
@@ -555,11 +656,11 @@ function Landing({ token }) {
 
       {/* FOOTER CTA */}
       <section className="footer-cta-sect">
-        <div className="sect-inner footer-cta-inner">
+        <div className="sect-inner footer-cta-inner" data-reveal>
           <h3 className="footer-cta-h3">
             Ready to build a <em>rock-solid foundation</em> for your fleet? Reach out to us today!
           </h3>
-          <a href="#contact" className="btn-yellow">Request a demo</a>
+          <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
         </div>
       </section>
 
