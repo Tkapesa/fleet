@@ -4,5 +4,6 @@ __pycache__/
 .env
 backend/venv/
 backend/venv312/
+backend/uploads/
 frontend/node_modules/
 my-tres-project/node_modules/
