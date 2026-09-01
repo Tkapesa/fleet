@@ -1,8 +1,10 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { geoNaturalEarth1, geoPath, geoGraticule10 } from 'd3-geo'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import TruckScene from './Truck3D'
+import { feature } from 'topojson-client'
+import worldLand from 'world-atlas/land-110m.json'
 import { FleetMotionBoard, LiveStatsStrip } from './FleetMotion'
 import './App.css'
 
@@ -11,6 +13,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fleet-api-tka
 const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY ?? ''
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
+const HERO_VIDEO_URL = `${import.meta.env.BASE_URL}videos/heroajuste.webm`
+const WHATSAPP_CONTACT_URL = 'https://wa.me/17083232997?text=Hi%20ATONDA%20team%2C%20I%20need%20help%20with%20fleet%20management.'
 
 const RESOURCE_CONFIG = [
   {
@@ -116,7 +120,7 @@ const STANDARD_RAIL_ITEMS = [
   { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/alerts' },
   { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/cameras' },
   { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-  { key: 'support', icon: 'SP', title: 'Support', to: '/fleet' },
+  { key: 'support', icon: 'SP', title: 'Support', to: '/compliance' },
 ]
 
 function isRailRouteActive(currentPath, targetPath) {
@@ -252,7 +256,12 @@ function EyebrowRow({ label = 'ATONDA' }) {
 
 function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
   return (
-    <div className={`orbit-item ${align}`} data-reveal>
+    <div
+      className={`orbit-item ${align}`}
+      data-reveal={align === 'left' ? 'fold-left' : 'fold-right'}
+      data-peek-title={title}
+      data-peek-detail={desc}
+    >
       <div className={`orbit-num-row ${align}`}>
         <span className="orbit-num">{number}</span>
         <span className="orbit-num-line" />
@@ -266,7 +275,7 @@ function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
 
 function BenefitCard({ title, desc }) {
   return (
-    <div className="benefit-card tilt-card" data-reveal>
+    <div className="benefit-card tilt-card" data-reveal="fold-up" data-peek-title={title} data-peek-detail={desc}>
       <div className="benefit-check">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <polyline points="20 6 9 17 4 12" />
@@ -368,10 +377,108 @@ function MagneticLink({ className = '', children, ...props }) {
 }
 
 // ─── Landing Page ─────────────────────────────────────────────────────────────
+const FLEET_PILLARS = [
+  {
+    index: '1',
+    title: 'Total visibility',
+    desc: "Live GPS, geofencing, and telemetry mean you never have to guess where a truck is, or why it stopped moving.",
+  },
+  {
+    index: '2',
+    title: 'Safety-first standards',
+    desc: 'Digital DVIRs, license and document expiry alerts, and maintenance tracking keep every truck road-ready.',
+  },
+  {
+    index: '3',
+    title: 'Proactive dispatch',
+    desc: "Reroute around delays, reassign loads, and add stops in real time, before small problems become late deliveries.",
+  },
+]
+
+const FLEET_STATS_BAND = [
+  { num: '500+', label: 'Fleet units tracked live' },
+  { num: '24/7', label: 'Dispatch & real-time tracking' },
+  { num: '100%', label: 'Paperless compliance' },
+  { num: '1,300+', label: 'Fleets trust ATONDA' },
+]
+
+const FLEET_USE_CASES = [
+  { q: 'Driver calls in sick?', a: 'Reassign the route in seconds, not hours.' },
+  { q: 'Truck breaks down mid-route?', a: 'Dispatch the nearest backup automatically.' },
+  { q: 'Weather closes the interstate?', a: 'Reroute live, before it costs you a delivery window.' },
+  { q: 'Compliance deadline approaching?', a: 'Alerts fire before it becomes a violation.' },
+  { q: 'Load added last minute?', a: 'Add it to the manifest in one tap.' },
+  { q: 'Fleet growing fast?', a: 'Scales with you, no extra headcount required.' },
+]
+
+const GLOBAL_HUBS = [
+  { city: 'Newark', x: 22, y: 22 },
+  { city: 'London', x: 47, y: 16 },
+  { city: 'Dubai', x: 58, y: 23 },
+  { city: 'Singapore', x: 70, y: 31 },
+  { city: 'Sao Paulo', x: 33, y: 39 },
+  { city: 'Sydney', x: 82, y: 40 },
+]
+
+const GLOBAL_ROUTES = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [0, 4],
+  [3, 5],
+]
+
+function buildArcPath(start, end) {
+  const cx = (start.x + end.x) / 2
+  const cy = Math.min(start.y, end.y) - 8
+  return `M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`
+}
+
+function GlobalWorldMap() {
+  const mapPaths = useMemo(() => {
+    const projection = geoNaturalEarth1().fitExtent([[3, 3], [97, 49]], { type: 'Sphere' })
+    const pathBuilder = geoPath(projection)
+    const landFeature = feature(worldLand, worldLand.objects.land)
+    return {
+      sphere: pathBuilder({ type: 'Sphere' }),
+      graticule: pathBuilder(geoGraticule10()),
+      land: pathBuilder(landFeature),
+    }
+  }, [])
+
+  return (
+    <svg className="global-map-base" viewBox="0 0 100 52" preserveAspectRatio="none" aria-label="World map with continents">
+      <path d={mapPaths.sphere} className="global-map-sphere" />
+      <path d={mapPaths.graticule} className="global-map-graticule" />
+      <path d={mapPaths.land} className="global-map-land" />
+    </svg>
+  )
+}
+
+function PillarCard({ index, title, desc }) {
+  return (
+    <div className="pillar-card tilt-card" data-reveal="fold-up" data-peek-title={title} data-peek-detail={desc}>
+      <span className="pillar-index">( {index} )</span>
+      <h4 className="pillar-title">{title}</h4>
+      <p className="pillar-desc">{desc}</p>
+    </div>
+  )
+}
+
+function UseCaseCard({ q, a }) {
+  return (
+    <div className="usecase-card" data-reveal="fold-up" data-peek-title={q} data-peek-detail={a}>
+      <p className="usecase-q">{q}</p>
+      <p className="usecase-a">{a}</p>
+    </div>
+  )
+}
+
 function Landing({ token }) {
   const [menuOpen, setMenuOpen] = useState(false)
   useScrollReveal()
   const [testimonialIdx, setTestimonialIdx] = useState(0)
+  const [hoverPeek, setHoverPeek] = useState({ visible: false, title: '', detail: '', x: 0, y: 0 })
   const [contactData, setContactData] = useState({
     name: '', company: '', phone: '', email: '', reason: 'demo', fleetSize: '1-4', message: '',
   })
@@ -384,9 +491,50 @@ function Landing({ token }) {
   function closeMenu() { setMenuOpen(false) }
   function setField(key) { return (e) => setContactData((d) => ({ ...d, [key]: e.target.value })) }
 
+  const hideHoverPeek = useCallback(() => {
+    setHoverPeek((prev) => (prev.visible ? { ...prev, visible: false } : prev))
+  }, [])
+
+  const handleHoverPeekMove = useCallback((event) => {
+    if (window.matchMedia?.('(hover: none), (pointer: coarse)').matches) return
+    const target = event.target instanceof Element ? event.target.closest('[data-peek-title]') : null
+    if (!target) {
+      hideHoverPeek()
+      return
+    }
+    const title = target.getAttribute('data-peek-title') ?? ''
+    const detail = target.getAttribute('data-peek-detail') ?? ''
+    const maxX = Math.max(24, window.innerWidth - 300)
+    const maxY = Math.max(24, window.innerHeight - 170)
+    const x = Math.min(event.clientX + 18, maxX)
+    const y = Math.min(event.clientY + 20, maxY)
+    setHoverPeek({ visible: true, title, detail, x, y })
+  }, [hideHoverPeek])
+
   return (
-    <div className="site-wrap">
+    <div className="site-wrap" onMouseMove={handleHoverPeekMove} onMouseLeave={hideHoverPeek}>
+      <div className="site-bg-media" aria-hidden="true">
+        <video className="site-bg-video" autoPlay muted loop playsInline preload="auto">
+          <source src={HERO_VIDEO_URL} type="video/webm" />
+        </video>
+      </div>
       <CursorDot />
+      <div
+        className={`hover-peek${hoverPeek.visible ? ' show' : ''}`}
+        style={{ left: hoverPeek.x, top: hoverPeek.y }}
+        aria-hidden={!hoverPeek.visible}
+      >
+        <strong>{hoverPeek.title}</strong>
+        <span>{hoverPeek.detail}</span>
+      </div>
+      <a className="whatsapp-float" href={WHATSAPP_CONTACT_URL} target="_blank" rel="noreferrer" aria-label="Contact our team on WhatsApp">
+        <span className="whatsapp-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M20.52 3.48A11.84 11.84 0 0 0 12.08 0C5.5 0 .17 5.33.17 11.91c0 2.1.55 4.16 1.6 5.97L0 24l6.29-1.65a11.86 11.86 0 0 0 5.79 1.48h.01c6.58 0 11.91-5.33 11.91-11.91 0-3.18-1.24-6.17-3.48-8.44ZM12.09 21.8h-.01a9.84 9.84 0 0 1-5.02-1.38l-.36-.21-3.73.98.99-3.64-.24-.37a9.83 9.83 0 0 1-1.52-5.27c0-5.43 4.42-9.85 9.86-9.85 2.63 0 5.1 1.02 6.96 2.88a9.77 9.77 0 0 1 2.89 6.95c0 5.44-4.43 9.86-9.86 9.86Zm5.4-7.38c-.3-.15-1.79-.88-2.07-.98-.28-.1-.49-.15-.7.15-.2.3-.79.98-.97 1.18-.18.2-.35.23-.65.08-.3-.15-1.26-.46-2.4-1.47-.88-.78-1.48-1.75-1.65-2.04-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.7-1.68-.96-2.3-.25-.6-.5-.52-.7-.53l-.6-.01c-.2 0-.53.08-.8.38-.28.3-1.06 1.04-1.06 2.54s1.09 2.94 1.24 3.14c.15.2 2.13 3.25 5.16 4.55.72.31 1.28.5 1.71.64.72.23 1.37.2 1.89.12.58-.09 1.79-.73 2.04-1.43.25-.7.25-1.3.18-1.42-.08-.13-.28-.2-.58-.35Z" />
+          </svg>
+        </span>
+        <span>Contact our team</span>
+      </a>
       {/* NAV */}
       <header className="site-header" id="top">
         <div className="hdr-inner">
@@ -395,9 +543,9 @@ function Landing({ token }) {
             <span className="logo-text">ATONDA</span>
           </a>
           <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
-            <a href="#about" onClick={closeMenu}>About</a>
+            <a href="#live-network" onClick={closeMenu}>Live Network</a>
             <a href="#features" onClick={closeMenu}>Features</a>
-            <Link to="/fleet" onClick={closeMenu}>Fleet Compliance</Link>
+            <Link to="/compliance" onClick={closeMenu}>Fleet Compliance</Link>
             <a href="#testimonials" onClick={closeMenu}>Testimonials</a>
             <a href="#contact" onClick={closeMenu}>Contact</a>
             <span className="nav-sep" />
@@ -427,39 +575,37 @@ function Landing({ token }) {
         <div className="hero-decor-2" />
         <div className="hero-inner">
           <div className="hero-body">
-            <div className="hero-content-card" data-reveal="scale">
-              <EyebrowRow />
-              <h2 className="hero-h2">Keep your fleet on solid ground</h2>
-              <h5 className="hero-h5">Your partner in compliance, safety, and efficiency.</h5>
+            <div className="hero-content-card">
+              <EyebrowRow label="ATONDA FLEET OS" />
+              <h1 className="cine-headline">
+                Fleet management.<br /><em>Freight delivered.</em>
+              </h1>
+              <p className="cine-sub">
+                Real-time GPS, compliance, and dispatch for fleets that can't afford downtime.
+                Every fleet, every load, every mile, visible in one command center.
+              </p>
               <div className="hero-actions">
                 <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
+                <a href="#live-network" className="hero-see-link underline-link">See the fleet in motion &#8595;</a>
               </div>
             </div>
-            <div className="hero-call-card" data-reveal style={{ '--reveal-delay': '.15s' }}>
+            <div className="hero-call-card">
               <p>Call and book an appointment</p>
               <a href="tel:7083232997" className="underline-link">(708) 323-2997</a>
             </div>
-          </div>
-          <div className="hero-truck-strip" data-reveal="scale" style={{ '--reveal-delay': '.1s' }}>
-            <img
-              className="hero-truck-photo"
-              src="https://framerusercontent.com/images/18fcpAEnZV1tlSpjskrotWgKpE.jpg?width=812&height=450"
-              alt="Fleet truck on the road"
-              loading="eager"
-            />
           </div>
         </div>
       </section>
 
       {/* LIVE FLEET NETWORK */}
-      <section className="light-sect fleet-motion-sect">
+      <section id="live-network" className="light-sect fleet-motion-sect">
         <div className="sect-inner">
           <div className="fleet-motion-hdr" data-reveal>
-            <EyebrowRow label="LIVE NETWORK" />
-            <h2>Fleets in motion, coast to coast</h2>
+            <EyebrowRow label="WHAT WE DO" />
+            <h2>The engine of every fleet.</h2>
             <p className="sect-sub">
-              Every truck on the ATONDA network reports its status in real time — loading, in transit,
-              delivering, and reloading for the next run.
+              We don't just show fleet management activity on a map. We connect GPS tracking, driver compliance, and dispatch into
+              one live view, so you always know where every load stands, from pickup to delivery.
             </p>
           </div>
           <FleetMotionBoard />
@@ -467,8 +613,23 @@ function Landing({ token }) {
         </div>
       </section>
 
+      {/* PILLARS */}
+      <section className="dark-sect pillars-sect">
+        <div className="sect-inner">
+          <div className="pillars-hdr" data-reveal>
+            <span className="pillar-kicker">( Three things we get right )</span>
+            <h2>We move fleets forward.</h2>
+          </div>
+          <div className="pillars-grid">
+            {FLEET_PILLARS.map((p) => (
+              <PillarCard key={p.index} index={p.index} title={p.title} desc={p.desc} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FEATURES */}
-      <section id="features" className="dark-sect features-orbit-section">
+      <section id="features" className="light-sect features-orbit-section">
         <div className="sect-inner">
           <div className="features-orbit">
             <div className="orbit-col left">
@@ -489,8 +650,13 @@ function Landing({ token }) {
             </div>
 
             <div className="orbit-center">
-            <div className="orbit-diamond orbit-diamond-a float-anim" />
-              <TruckScene variant="orbit" className="orbit-truck-3d" />
+              <div className="orbit-diamond orbit-diamond-a float-anim" />
+              <img
+                className="orbit-truck-3d orbit-truck-image"
+                src="https://trucknroll.com/uploads/uploads/_header/2320/SHOT01_251111_Truck_n_Roll_0090_shot01_v1.webp"
+                alt="Fleet management route visual"
+                loading="lazy"
+              />
             </div>
 
             <div className="orbit-col right">
@@ -513,20 +679,72 @@ function Landing({ token }) {
         </div>
       </section>
 
-      {/* ABOUT CTA */}
-      <section id="about" className="dark-sect about-cta-sect">
+      {/* STATS BAND */}
+      <section className="dark-sect stats-band">
         <div className="sect-inner">
-          <div className="about-cta-inner">
-            <div className="about-cta-left" data-reveal>
-              <EyebrowRow />
-              <h2>Built for drivers, designed for success</h2>
-              <p className="sect-sub">Our platform provides a powerful, easy-to-use solution to simplify fleet operations and ensure compliance.</p>
-              <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
-            </div>
-            <div className="about-cta-graphic">
-              <div className="graphic-diamond diamond-lg" />
-              <div className="graphic-diamond diamond-sm" />
-            </div>
+          <div className="stats-band-grid">
+            {FLEET_STATS_BAND.map((s) => (
+              <div className="stat-big" key={s.label} data-reveal data-peek-title={s.label} data-peek-detail={`Current indicator: ${s.num}`}>
+                <span className="stat-big-num">{s.num}</span>
+                <span className="stat-big-label">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GLOBAL MAP */}
+      <section className="light-sect global-sect" id="global">
+        <div className="sect-inner">
+          <div className="fleet-motion-hdr" data-reveal>
+            <EyebrowRow label="GLOBAL COVERAGE" />
+            <h2>Fleet management at world scale.</h2>
+            <p className="sect-sub">
+              As you scroll, this live map highlights our cross-region operations and connected hubs
+              across North America, Europe, the Middle East, Asia-Pacific, and Latin America.
+            </p>
+          </div>
+
+          <div className="global-map-card" data-reveal="scale" data-peek-title="Global Coverage" data-peek-detail="Live hub connectivity across major regions.">
+            <GlobalWorldMap />
+
+            <svg className="global-routes" viewBox="0 0 100 52" preserveAspectRatio="none" aria-hidden="true">
+              {GLOBAL_ROUTES.map(([from, to], index) => {
+                const start = GLOBAL_HUBS[from]
+                const end = GLOBAL_HUBS[to]
+                return (
+                  <path key={`${from}-${to}`} d={buildArcPath(start, end)} className="global-route" style={{ '--route-delay': `${index * 0.18}s` }} />
+                )
+              })}
+            </svg>
+
+            {GLOBAL_HUBS.map((hub) => (
+              <div
+                key={hub.city}
+                className="global-hub"
+                style={{ left: `${hub.x}%`, top: `${hub.y}%` }}
+                data-peek-title={hub.city}
+                data-peek-detail="Connected regional fleet hub"
+              >
+                <span className="global-hub-dot" />
+                <small>{hub.city}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* USE CASES */}
+      <section id="about" className="light-sect usecase-sect">
+        <div className="sect-inner">
+          <div className="fleet-motion-hdr" data-reveal>
+            <EyebrowRow label="USE CASES" />
+            <h2>Whatever happens on the road, you're ready.</h2>
+          </div>
+          <div className="usecase-grid">
+            {FLEET_USE_CASES.map((u) => (
+              <UseCaseCard key={u.q} q={u.q} a={u.a} />
+            ))}
           </div>
         </div>
       </section>
@@ -544,38 +762,6 @@ function Landing({ token }) {
               <BenefitCard title="Accurate IFTA Reporting" desc="Simplify fuel tax reporting with precision and ease." />
               <BenefitCard title="No Long-Term Contracts" desc="Enjoy flexibility and freedom with contract-free solutions." />
               <BenefitCard title="User-Friendly App" desc="Manage your fleet effortlessly with our intuitive mobile app." />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS / WHY / PRODUCTS */}
-      <section className="light-sect">
-        <div className="sect-inner">
-          <div className="why-grid">
-            <div className="stat-block">
-              <span className="stat-num">1300+</span>
-              <p className="stat-label">Satisfied clients</p>
-            </div>
-            <div className="why-text">
-              <p>
-                <strong>Why choose ATONDA?</strong> Because it is built to keep your fleet rolling smoothly, no
-                matter how tough the journey gets. Designed for reliable performance, it is your steadfast companion on
-                the road, ensuring compliance and efficiency every step of the way.
-              </p>
-              <p>
-                With a driver-friendly design, our platform takes the stress out of technology, so your team can stay
-                focused on what matters: the road ahead. And when questions arise, our 24/7 support team is always
-                ready to assist, ensuring you are never left stranded.
-              </p>
-            </div>
-            <div className="products-block">
-              <h4 className="products-title">Products That Stand SOLID</h4>
-              <ul className="products-list">
-                <li><span className="prod-dot" /><strong>ELD Devices</strong> — FMCSA-certified and fully compatible with all vehicle types.</li>
-                <li><span className="prod-dot" /><strong>GPS Devices</strong> — Comprehensive fleet tracking with live updates and geofence capabilities.</li>
-                <li><span className="prod-dot" /><strong>Dashcams</strong> — Enhance safety and accountability with high-quality dashcams for real-time recording.</li>
-              </ul>
             </div>
           </div>
         </div>
@@ -658,7 +844,7 @@ function Landing({ token }) {
       <section className="footer-cta-sect">
         <div className="sect-inner footer-cta-inner" data-reveal>
           <h3 className="footer-cta-h3">
-            Ready to build a <em>rock-solid foundation</em> for your fleet? Reach out to us today!
+            Fleets don't remember dashboards. <em>They remember on-time deliveries.</em>
           </h3>
           <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
         </div>
@@ -1035,7 +1221,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
           })}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -1300,7 +1486,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
           })}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -1608,7 +1794,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
           })}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -2032,7 +2218,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
           })}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -2193,7 +2379,7 @@ function RoutesPage({ handleLogout }) {
           ))}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -2284,7 +2470,7 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
           ))}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -2801,7 +2987,7 @@ function Portal({
           })}
         </div>
         <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/fleet')}>Compliance</button>
+          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
           <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
@@ -3237,6 +3423,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Landing token={token} />} />
+      <Route path="/fleet" element={<Landing token={token} />} />
 
       <Route
         path="/login"
@@ -3297,7 +3484,7 @@ function App() {
       <Route path="/drivers" element={token ? <DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/drivers/:driverId" element={token ? <DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/history" element={token ? <HistoryPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
-      <Route path="/fleet" element={token ? <FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} /> : <Navigate to="/login" replace />} />
+      <Route path="/compliance" element={token ? <FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} /> : <Navigate to="/login" replace />} />
     </Routes>
   )
 }

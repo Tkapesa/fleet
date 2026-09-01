@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="Stylized world map">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5f5f2" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#f5f5f2" stop-opacity="0.38" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="620" fill="none" />
+  <path fill="url(#g)" d="M95 230l58-48 102-22 68 26 64-20 56 20 72 2 56 32 34 52-30 46-64 18-84 0-72-14-66-6-56 18-64-6-70-40z"/>
+  <path fill="url(#g)" d="M468 162l56-44 82-12 84 20 58 40-8 46-70 8-54 28-94-6-58-34z"/>
+  <path fill="url(#g)" d="M618 264l54-24 66 10 44 32-14 34-44 24-72-8-44-30z"/>
+  <path fill="url(#g)" d="M780 206l58-38 108-20 126 46 34 64-30 54-96 36-102-18-90-40-24-44z"/>
+  <path fill="url(#g)" d="M1016 420l46-24 72 16 30 34-36 46-58 8-54-20z"/>
+  <path fill="url(#g)" d="M344 380l66 16 42 52-30 68-76 20-60-28-26-62z"/>
+</svg>

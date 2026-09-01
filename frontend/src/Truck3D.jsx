@@ -123,7 +123,7 @@ function TruckRig({ scale = 1 }) {
 }
 
 // Guards against WebGL-unavailable environments so the page never crashes.
-class Canvas3DBoundary extends Component {
+export class Canvas3DBoundary extends Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false }
