@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { feature } from 'topojson-client'
 import worldLand from 'world-atlas/land-110m.json'
+import heroVideo from './assets/Hailuo_Video_A cinematic realistic fleet of_554063152114913281.mp4'
 import { FleetMotionBoard, LiveStatsStrip } from './FleetMotion'
 import './App.css'
 
@@ -13,7 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fleet-api-tka
 const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY ?? ''
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
-const HERO_VIDEO_URL = `${import.meta.env.BASE_URL}videos/heroajuste.webm`
+const HERO_VIDEO_URL = heroVideo
 const WHATSAPP_CONTACT_URL = 'https://wa.me/17083232997?text=Hi%20ATONDA%20team%2C%20I%20need%20help%20with%20fleet%20management.'
 
 const RESOURCE_CONFIG = [
@@ -111,16 +112,16 @@ const FLEET_VIEW_DEMO_DRIVERS = FLEET_VIEW_DEMO_SEEDS.map((truck, index) => ({
 }))
 
 const STANDARD_RAIL_ITEMS = [
-  { key: 'fleet-view', icon: 'FL', title: 'Fleet View', to: '/portal' },
-  { key: 'fleet-manager', icon: 'FM', title: 'Fleet Manager', to: '/fleet-manager' },
-  { key: 'drivers', icon: 'DR', title: 'Drivers', to: '/drivers' },
-  { key: 'vehicles', icon: 'VH', title: 'Vehicles', to: '/vehicles' },
-  { key: 'history', icon: 'HS', title: 'History', to: '/history' },
-  { key: 'safety', icon: 'SF', title: 'Safety', to: '/safety' },
-  { key: 'alerts', icon: 'AL', title: 'Alerts', to: '/alerts' },
-  { key: 'cameras', icon: 'CM', title: 'Cameras', to: '/cameras' },
-  { key: 'routes', icon: 'RT', title: 'Routes', to: '/routes' },
-  { key: 'support', icon: 'SP', title: 'Support', to: '/compliance' },
+  { key: 'fleet-view', title: 'Fleet View', to: '/portal' },
+  { key: 'fleet-manager', title: 'Fleet Manager', to: '/fleet-manager' },
+  { key: 'drivers', title: 'Drivers', to: '/drivers' },
+  { key: 'vehicles', title: 'Vehicles', to: '/vehicles' },
+  { key: 'history', title: 'History', to: '/history' },
+  { key: 'safety', title: 'Safety', to: '/safety' },
+  { key: 'alerts', title: 'Alerts', to: '/alerts' },
+  { key: 'cameras', title: 'Cameras', to: '/cameras' },
+  { key: 'routes', title: 'Routes', to: '/routes' },
+  { key: 'support', title: 'Support', to: '/compliance' },
 ]
 
 function isRailRouteActive(currentPath, targetPath) {
@@ -209,6 +210,124 @@ function LogoIcon() {
   )
 }
 
+function RailChevronIcon({ collapsed }) {
+  return (
+    <svg
+      className={`fleet-rail-toggle-icon ${collapsed ? 'collapsed' : ''}`}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  )
+}
+
+function RailItemIcon({ itemKey }) {
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: '1.9',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': 'true',
+  }
+
+  switch (itemKey) {
+    case 'fleet-view':
+      return <svg {...common}><path d="M3 9.5 12 4l9 5.5v10A1.5 1.5 0 0 1 19.5 21h-15A1.5 1.5 0 0 1 3 19.5z" /><path d="M7.5 14h9" /></svg>
+    case 'fleet-manager':
+      return <svg {...common}><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M3 10h18" /><path d="M8 4v16" /></svg>
+    case 'drivers':
+      return <svg {...common}><circle cx="9" cy="8" r="3" /><path d="M3.5 18a5.5 5.5 0 0 1 11 0" /><circle cx="17" cy="9" r="2.3" /><path d="M15 18a4 4 0 0 1 6 0" /></svg>
+    case 'vehicles':
+      return <svg {...common}><rect x="3" y="8" width="18" height="8" rx="2" /><path d="M7 8V6.5A1.5 1.5 0 0 1 8.5 5h7A1.5 1.5 0 0 1 17 6.5V8" /><circle cx="8" cy="17.5" r="1.5" /><circle cx="16" cy="17.5" r="1.5" /></svg>
+    case 'history':
+      return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+    case 'safety':
+      return <svg {...common}><path d="M12 3 5 6v6.6c0 4.4 2.9 6.8 7 8.4 4.1-1.6 7-4 7-8.4V6z" /><path d="m9.5 12.2 1.8 1.8 3.7-3.7" /></svg>
+    case 'alerts':
+      return <svg {...common}><path d="M12 3a6 6 0 0 0-6 6v3.5L4 15h16l-2-2.5V9a6 6 0 0 0-6-6Z" /><path d="M9.5 18a2.5 2.5 0 0 0 5 0" /></svg>
+    case 'cameras':
+      return <svg {...common}><rect x="3" y="7" width="12" height="10" rx="2" /><path d="m15 10 6-2v8l-6-2" /><circle cx="9" cy="12" r="2" /></svg>
+    case 'routes':
+      return <svg {...common}><circle cx="6" cy="7" r="2" /><circle cx="18" cy="17" r="2" /><path d="M8 7h5a3 3 0 0 1 3 3v2" /><path d="M16 15H11a3 3 0 0 1-3-3v-2" /></svg>
+    case 'support':
+      return <svg {...common}><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 2.8-2 5-4.5 5H12" /><path d="M12 15v2" /><rect x="4" y="14.5" width="3" height="5" rx="1" /><rect x="17" y="14.5" width="3" height="5" rx="1" /></svg>
+    case 'logout':
+      return <svg {...common}><path d="M9 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3" /><path d="m14 16 4-4-4-4" /><path d="M18 12H9" /></svg>
+    default:
+      return <svg {...common}><circle cx="12" cy="12" r="8" /></svg>
+  }
+}
+
+function FleetPortalRail({ railCollapsed, setRailCollapsed, railItems, currentPath, navigate, handleLogout }) {
+  return (
+    <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
+      <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+        <LogoIcon />
+      </button>
+      <button
+        type="button"
+        className="fleet-rail-toggle"
+        aria-label={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        onClick={() => setRailCollapsed((value) => !value)}
+      >
+        <RailChevronIcon collapsed={railCollapsed} />
+      </button>
+      <div className="fleet-rail-items">
+        {railItems.map((item) => {
+          const isActive = Boolean(item.to) && isRailRouteActive(currentPath, item.to)
+          return (
+            <button
+              type="button"
+              key={item.key}
+              className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+              title={item.title}
+              aria-label={item.title}
+              onClick={() => item.to && navigate(item.to)}
+            >
+              <span className="fleet-rail-icon"><RailItemIcon itemKey={item.key} /></span>
+              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+            </button>
+          )
+        })}
+      </div>
+      <div className="fleet-rail-footer-actions">
+        <button
+          type="button"
+          className="fleet-rail-ghost"
+          title="Compliance"
+          aria-label="Compliance"
+          onClick={() => navigate('/compliance')}
+        >
+          <span className="fleet-rail-ghost-icon"><RailItemIcon itemKey="support" /></span>
+          {!railCollapsed && <span className="fleet-rail-ghost-label">Compliance</span>}
+        </button>
+        <button
+          type="button"
+          className="fleet-rail-ghost"
+          title="Logout"
+          aria-label="Logout"
+          onClick={handleLogout}
+        >
+          <span className="fleet-rail-ghost-icon"><RailItemIcon itemKey="logout" /></span>
+          {!railCollapsed && <span className="fleet-rail-ghost-label">Logout</span>}
+        </button>
+      </div>
+    </aside>
+  )
+}
+
 function GpsIcon() {
   return (
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -245,12 +364,113 @@ function IftaIcon() {
   )
 }
 
+function WeatherSunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6" />
+    </svg>
+  )
+}
+
+function WeatherRainIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 18a4 4 0 1 1 .9-7.9A5 5 0 1 1 18 12h-1" />
+      <path d="m8 18 1 2m4-2 1 2m4-2 1 2" />
+    </svg>
+  )
+}
+
+function WeatherCloudIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 18a4 4 0 1 1 .9-7.9A5 5 0 1 1 18 12h-1" />
+    </svg>
+  )
+}
+
+function ThermometerIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z" />
+    </svg>
+  )
+}
+
+function DropletIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3s6 6.4 6 10a6 6 0 0 1-12 0c0-3.6 6-10 6-10Z" />
+    </svg>
+  )
+}
+
+function RainDropIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 4c3 3.4 4.8 5.9 4.8 8.3a4.8 4.8 0 1 1-9.6 0C7.2 9.9 9 7.4 12 4Z" />
+      <path d="M9.5 13.3c.5 1 1.5 1.7 2.7 1.9" />
+    </svg>
+  )
+}
+
+function CloudsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6.5 18A3.5 3.5 0 1 1 7 11.1 4.5 4.5 0 0 1 16.2 12H17a3 3 0 1 1 0 6Z" />
+    </svg>
+  )
+}
+
 function EyebrowRow({ label = 'ATONDA' }) {
   return (
     <div className="eyebrow-row">
       <span className="eyebrow-bar" />
       <span className="eyebrow-label">{label}</span>
     </div>
+  )
+}
+
+function WeatherConditionIcon({ weatherDetails }) {
+  const precip = Number(weatherDetails?.precip_mm ?? 0)
+  const clouds = Number(weatherDetails?.cloud_cover_pct ?? 0)
+
+  if (Number.isFinite(precip) && precip > 1) return <WeatherRainIcon />
+  if (Number.isFinite(clouds) && clouds >= 65) return <WeatherCloudIcon />
+  return <WeatherSunIcon />
+}
+
+function LanguageFlagIcon({ lang }) {
+  if (lang === 'en') {
+    return (
+      <svg viewBox="0 0 24 16" aria-hidden="true">
+        <rect width="24" height="16" fill="#1b3f99" />
+        <path d="M0 0 10 0 24 10v6h-10L0 6z" fill="#ffffff" opacity="0.92" />
+        <path d="M24 0h-10L0 10v6h10L24 6z" fill="#ffffff" opacity="0.92" />
+        <path d="M0 0 8 0 24 11v5h-8L0 5z" fill="#d12d2d" />
+        <path d="M24 0h-8L0 11v5h8L24 5z" fill="#d12d2d" />
+        <rect x="10" width="4" height="16" fill="#ffffff" />
+        <rect y="6" width="24" height="4" fill="#ffffff" />
+        <rect x="11" width="2" height="16" fill="#d12d2d" />
+        <rect y="7" width="24" height="2" fill="#d12d2d" />
+      </svg>
+    )
+  }
+  if (lang === 'ru') {
+    return (
+      <svg viewBox="0 0 24 16" aria-hidden="true">
+        <rect width="24" height="16" fill="#ffffff" />
+        <rect y="5.33" width="24" height="5.34" fill="#1e40af" />
+        <rect y="10.67" width="24" height="5.33" fill="#c62828" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 16" aria-hidden="true">
+      <rect width="24" height="8" fill="#2563eb" />
+      <rect y="8" width="24" height="8" fill="#facc15" />
+    </svg>
   )
 }
 
@@ -412,12 +632,12 @@ const FLEET_USE_CASES = [
 ]
 
 const GLOBAL_HUBS = [
-  { city: 'Newark', x: 22, y: 22 },
-  { city: 'London', x: 47, y: 16 },
-  { city: 'Dubai', x: 58, y: 23 },
-  { city: 'Singapore', x: 70, y: 31 },
-  { city: 'Sao Paulo', x: 33, y: 39 },
-  { city: 'Sydney', x: 82, y: 40 },
+  { city: 'Newark', country: 'United States', language: 'English', x: 22, y: 22 },
+  { city: 'London', country: 'United Kingdom', language: 'English', x: 47, y: 16 },
+  { city: 'Dubai', country: 'United Arab Emirates', language: 'Arabic', x: 58, y: 23 },
+  { city: 'Singapore', country: 'Singapore', language: 'English, Malay, Mandarin, Tamil', x: 70, y: 31 },
+  { city: 'Sao Paulo', country: 'Brazil', language: 'Portuguese', x: 33, y: 39 },
+  { city: 'Sydney', country: 'Australia', language: 'English', x: 82, y: 40 },
 ]
 
 const GLOBAL_ROUTES = [
@@ -515,7 +735,7 @@ function Landing({ token }) {
     <div className="site-wrap" onMouseMove={handleHoverPeekMove} onMouseLeave={hideHoverPeek}>
       <div className="site-bg-media" aria-hidden="true">
         <video className="site-bg-video" autoPlay muted loop playsInline preload="auto">
-          <source src={HERO_VIDEO_URL} type="video/webm" />
+          <source src={HERO_VIDEO_URL} type="video/mp4" />
         </video>
       </div>
       <CursorDot />
@@ -528,12 +748,31 @@ function Landing({ token }) {
         <span>{hoverPeek.detail}</span>
       </div>
       <a className="whatsapp-float" href={WHATSAPP_CONTACT_URL} target="_blank" rel="noreferrer" aria-label="Contact our team on WhatsApp">
-        <span className="whatsapp-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-            <path d="M20.52 3.48A11.84 11.84 0 0 0 12.08 0C5.5 0 .17 5.33.17 11.91c0 2.1.55 4.16 1.6 5.97L0 24l6.29-1.65a11.86 11.86 0 0 0 5.79 1.48h.01c6.58 0 11.91-5.33 11.91-11.91 0-3.18-1.24-6.17-3.48-8.44ZM12.09 21.8h-.01a9.84 9.84 0 0 1-5.02-1.38l-.36-.21-3.73.98.99-3.64-.24-.37a9.83 9.83 0 0 1-1.52-5.27c0-5.43 4.42-9.85 9.86-9.85 2.63 0 5.1 1.02 6.96 2.88a9.77 9.77 0 0 1 2.89 6.95c0 5.44-4.43 9.86-9.86 9.86Zm5.4-7.38c-.3-.15-1.79-.88-2.07-.98-.28-.1-.49-.15-.7.15-.2.3-.79.98-.97 1.18-.18.2-.35.23-.65.08-.3-.15-1.26-.46-2.4-1.47-.88-.78-1.48-1.75-1.65-2.04-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.7-1.68-.96-2.3-.25-.6-.5-.52-.7-.53l-.6-.01c-.2 0-.53.08-.8.38-.28.3-1.06 1.04-1.06 2.54s1.09 2.94 1.24 3.14c.15.2 2.13 3.25 5.16 4.55.72.31 1.28.5 1.71.64.72.23 1.37.2 1.89.12.58-.09 1.79-.73 2.04-1.43.25-.7.25-1.3.18-1.42-.08-.13-.28-.2-.58-.35Z" />
+        <span className="contact-agent-avatar" aria-hidden="true">
+          <svg viewBox="0 0 56 56" width="28" height="28" fill="none">
+            <defs>
+              <linearGradient id="agentSkin" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#f6d3b1" />
+                <stop offset="100%" stopColor="#e7b88d" />
+              </linearGradient>
+              <linearGradient id="agentShirt" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#4463d3" />
+                <stop offset="100%" stopColor="#2e47ab" />
+              </linearGradient>
+            </defs>
+            <circle cx="28" cy="28" r="27" fill="#f4f7ff" />
+            <ellipse cx="28" cy="23" rx="11.2" ry="11" fill="url(#agentSkin)" />
+            <path d="M18 20.5c.8-7 5.4-11.2 10-11.2s9.2 4.2 10 11.2c-3-2.1-6.4-3.3-10-3.3s-7 1.2-10 3.3Z" fill="#1d2a4d" />
+            <path d="M12.2 49.8c1.8-8.1 7.8-13.3 15.8-13.3s14 5.2 15.8 13.3" fill="url(#agentShirt)" />
+            <circle cx="24.2" cy="22.8" r="1.2" fill="#25314f" />
+            <circle cx="31.8" cy="22.8" r="1.2" fill="#25314f" />
+            <path d="M24 27.2c1.3 1.4 2.7 2 4 2 1.4 0 2.8-.6 4-2" stroke="#b16948" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </span>
-        <span>Contact our team</span>
+        <span className="contact-agent-meta">
+          <strong>Contact our team</strong>
+          <small>24/7 dispatch support</small>
+        </span>
       </a>
       {/* NAV */}
       <header className="site-header" id="top">
@@ -552,13 +791,12 @@ function Landing({ token }) {
             <Link to={token ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
               {token ? 'Portal' : 'Login'}
             </Link>
-            <span className="nav-sep" />
-            <div className="header-languages" aria-label="Language selector">
-              <a href="#" lang="en" onClick={(e) => e.preventDefault()}>EN</a>
-              <a href="#" lang="ru" onClick={(e) => e.preventDefault()}>RU</a>
-              <a href="#" lang="uk" onClick={(e) => e.preventDefault()}>UA</a>
-            </div>
           </nav>
+          <div className="header-languages" aria-label="Language selector">
+            <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="en" /></span></a>
+            <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="ru" /></span></a>
+            <a href="#" lang="uk" aria-label="Ukrainian" title="Ukrainian" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="uk" /></span></a>
+          </div>
           <button
             className={`ham-btn${menuOpen ? ' ham-open' : ''}`}
             onClick={() => setMenuOpen((m) => !m)}
@@ -723,8 +961,8 @@ function Landing({ token }) {
                 key={hub.city}
                 className="global-hub"
                 style={{ left: `${hub.x}%`, top: `${hub.y}%` }}
-                data-peek-title={hub.city}
-                data-peek-detail="Connected regional fleet hub"
+                data-peek-title={`${hub.city}, ${hub.country}`}
+                data-peek-detail={`Language: ${hub.language}`}
               >
                 <span className="global-hub-dot" />
                 <small>{hub.city}</small>
@@ -1196,35 +1434,14 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
-          <LogoIcon />
-        </button>
-        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
-          {railCollapsed ? '>' : '<'}
-        </button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => {
-            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
-            return (
-              <button
-                type="button"
-                key={item.key}
-                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
-                title={item.title}
-                onClick={() => item.to && navigate(item.to)}
-              >
-                <span className="fleet-rail-icon">{item.icon}</span>
-                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel">
         <header className="vehicles-header">
@@ -1461,35 +1678,14 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
-          <LogoIcon />
-        </button>
-        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
-          {railCollapsed ? '>' : '<'}
-        </button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => {
-            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
-            return (
-              <button
-                type="button"
-                key={item.key}
-                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
-                title={item.title}
-                onClick={() => item.to && navigate(item.to)}
-              >
-                <span className="fleet-rail-icon">{item.icon}</span>
-                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel">
         <header className="vehicles-header">
@@ -1769,35 +1965,14 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
-          <LogoIcon />
-        </button>
-        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
-          {railCollapsed ? '>' : '<'}
-        </button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => {
-            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
-            return (
-              <button
-                type="button"
-                key={item.key}
-                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
-                title={item.title}
-                onClick={() => item.to && navigate(item.to)}
-              >
-                <span className="fleet-rail-icon">{item.icon}</span>
-                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel drivers-main-panel">
         <header className="vehicles-header">
@@ -2193,35 +2368,14 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
-          <LogoIcon />
-        </button>
-        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
-          {railCollapsed ? '>' : '<'}
-        </button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => {
-            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
-            return (
-              <button
-                type="button"
-                key={item.key}
-                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
-                title={item.title}
-                onClick={() => item.to && navigate(item.to)}
-              >
-                <span className="fleet-rail-icon">{item.icon}</span>
-                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel drivers-main-panel">
         <header className="vehicles-header">
@@ -2367,22 +2521,14 @@ function RoutesPage({ handleLogout }) {
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell routes-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
-        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((value) => !value)}>{railCollapsed ? '>' : '<'}</button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => (
-            <button type="button" key={item.key} className={`fleet-rail-item ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`} title={item.title} onClick={() => navigate(item.to)}>
-              <span className="fleet-rail-icon">{item.icon}</span>
-              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-            </button>
-          ))}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel routes-main-panel">
         <header className="vehicles-header">
@@ -2452,28 +2598,14 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
-        <button type="button" className="fleet-rail-toggle" onClick={() => setRailCollapsed((value) => !value)}>{railCollapsed ? '>' : '<'}</button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => (
-            <button
-              type="button"
-              key={item.key}
-              className={`fleet-rail-item ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`}
-              title={item.title}
-              onClick={() => navigate(item.to)}
-            >
-              <span className="fleet-rail-icon">{item.icon}</span>
-              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-            </button>
-          ))}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button type="button" className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="vehicles-main-panel routes-main-panel">
         <header className="vehicles-header">
@@ -2962,35 +3094,14 @@ function Portal({
 
   return (
     <div className={`live-portal-wrap fleet-monitor-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
-      <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-        <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
-          <LogoIcon />
-        </button>
-        <button className="fleet-rail-toggle" onClick={() => setRailCollapsed((v) => !v)}>
-          {railCollapsed ? '>' : '<'}
-        </button>
-        <div className="fleet-rail-items">
-          {railItems.map((item) => {
-            const isActive = Boolean(item.to) && isRailRouteActive(location.pathname, item.to)
-            return (
-              <button
-                type="button"
-                key={item.key}
-                className={`fleet-rail-item ${isActive ? 'active' : ''}`}
-                title={item.title}
-                onClick={() => item.to && navigate(item.to)}
-              >
-                <span className="fleet-rail-icon">{item.icon}</span>
-                {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <div className="fleet-rail-footer-actions">
-          <button type="button" className="fleet-rail-ghost" onClick={() => navigate('/compliance')}>Compliance</button>
-          <button className="fleet-rail-ghost" onClick={handleLogout}>Logout</button>
-        </div>
-      </aside>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={railItems}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
 
       <section className="fleet-details-panel">
         <div className="fleet-panel-topline">
@@ -3265,7 +3376,7 @@ function Portal({
               <div>
                 <div className="fleet-weather-head">
                   <div>
-                    <strong>Weather</strong>
+                    <strong className="fleet-weather-title"><span className="fleet-weather-title-icon"><WeatherConditionIcon weatherDetails={weatherDetails} /></span>Weather</strong>
                     <small>{weatherDetails?.provider ?? 'provider unavailable'}</small>
                   </div>
                   <div className="fleet-weather-meta">
@@ -3278,10 +3389,22 @@ function Portal({
                 <div className="fleet-weather-body">
                   <div className="fleet-weather-temp">{weatherDetails?.temp_c !== undefined ? `${Math.round(weatherDetails.temp_c)}°C` : 'N/A'}</div>
                   <div className="fleet-weather-grid">
-                    <div><strong>Feels</strong><div>{weatherDetails?.feels_like_c !== undefined ? `${Math.round(weatherDetails.feels_like_c)}°C` : 'N/A'}</div></div>
-                    <div><strong>Humidity</strong><div>{weatherDetails?.humidity_pct ?? 'N/A'}%</div></div>
-                    <div><strong>Precip</strong><div>{weatherDetails?.precip_mm ?? 'N/A'} mm</div></div>
-                    <div><strong>Clouds</strong><div>{weatherDetails?.cloud_cover_pct ?? 'N/A'}%</div></div>
+                    <div>
+                      <strong className="fleet-weather-metric-label"><ThermometerIcon />Feels</strong>
+                      <div>{weatherDetails?.feels_like_c !== undefined ? `${Math.round(weatherDetails.feels_like_c)}°C` : 'N/A'}</div>
+                    </div>
+                    <div>
+                      <strong className="fleet-weather-metric-label"><DropletIcon />Humidity</strong>
+                      <div>{weatherDetails?.humidity_pct ?? 'N/A'}%</div>
+                    </div>
+                    <div>
+                      <strong className="fleet-weather-metric-label"><RainDropIcon />Precip</strong>
+                      <div>{weatherDetails?.precip_mm ?? 'N/A'} mm</div>
+                    </div>
+                    <div>
+                      <strong className="fleet-weather-metric-label"><CloudsIcon />Clouds</strong>
+                      <div>{weatherDetails?.cloud_cover_pct ?? 'N/A'}%</div>
+                    </div>
                   </div>
                 </div>
 
