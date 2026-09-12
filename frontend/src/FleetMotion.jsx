@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 // ─── Animated fleet route: trucks loop origin → transit → delivery → reload ──
 const PHASES = [
@@ -90,6 +92,104 @@ export function FleetMotionBoard() {
   )
 }
 
+const GPS_ROUTE = [
+  [40.7128, -74.006],
+  [40.595, -74.16],
+  [40.462, -74.33],
+  [40.35, -74.46],
+  [40.217, -74.63],
+]
+
+function GpsTrackingPanel() {
+  const mapRef = useRef(null)
+
+  useEffect(() => {
+    const element = mapRef.current
+    if (!element) return undefined
+
+    const map = L.map(element, {
+      attributionControl: true,
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      keyboard: false,
+      zoomAnimation: false,
+      fadeAnimation: false,
+    }).setView([40.47, -74.33], 10)
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 16,
+    }).addTo(map)
+
+    L.polyline(GPS_ROUTE, {
+      color: '#ff5a1f',
+      weight: 5,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(map)
+
+    L.circle([40.217, -74.63], {
+      radius: 4200,
+      color: '#f7dc04',
+      weight: 2,
+      fillColor: '#f7dc04',
+      fillOpacity: 0.08,
+    }).addTo(map)
+
+    const truck = L.circleMarker(GPS_ROUTE[1], {
+      radius: 9,
+      color: '#ffffff',
+      weight: 2,
+      fillColor: '#ff5a1f',
+      fillOpacity: 1,
+    }).addTo(map)
+
+    let progress = 0.17
+    const interval = window.setInterval(() => {
+      progress = progress >= 0.79 ? 0.17 : progress + 0.006
+      const segment = Math.min(GPS_ROUTE.length - 2, Math.floor(progress * (GPS_ROUTE.length - 1)))
+      const localProgress = (progress * (GPS_ROUTE.length - 1)) - segment
+      const [startLat, startLng] = GPS_ROUTE[segment]
+      const [endLat, endLng] = GPS_ROUTE[segment + 1]
+      truck.setLatLng([
+        startLat + (endLat - startLat) * localProgress,
+        startLng + (endLng - startLng) * localProgress,
+      ])
+    }, 80)
+
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize())
+    resizeObserver.observe(element)
+    return () => {
+      window.clearInterval(interval)
+      resizeObserver.disconnect()
+      map.remove()
+    }
+  }, [])
+
+  return (
+    <section className="gps-tracking-panel" aria-labelledby="gps-tracking-title" data-reveal="scale">
+      <div className="gps-tracking-copy">
+        <span className="gps-kicker"><i /> Live GPS tracking</span>
+        <h3 id="gps-tracking-title">Every route has a live position.</h3>
+        <p>Follow each truck from dispatch through delivery with location, route progress, and destination status in one clear view.</p>
+        <dl className="gps-facts">
+          <div><dt>VEHICLE</dt><dd>ATD-1048</dd></div>
+          <div><dt>SPEED</dt><dd>64 mph</dd></div>
+          <div><dt>ETA</dt><dd>1h 42m</dd></div>
+        </dl>
+        <div className="gps-route-status"><span>Newark, NJ</span><b>In transit</b><span>Trenton, NJ</span></div>
+      </div>
+      <div className="gps-map-shell">
+        <div ref={mapRef} className="gps-real-map" aria-label="Live route map from Newark to Trenton" />
+        <div className="gps-map-tag"><i /> ATD-1048 reporting live</div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Live data strip: count-up on reveal + slow simulated ticking ────────────
 const STATS_SEED = [
   { key: 'trucks', label: 'Active trucks on the road', value: 1284, suffix: '', step: 1 },
@@ -173,3 +273,5 @@ export function LiveStatsStrip() {
     </div>
   )
 }
+
+export { GpsTrackingPanel }

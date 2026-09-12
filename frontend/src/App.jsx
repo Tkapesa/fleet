@@ -6,7 +6,8 @@ import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } fr
 import { feature } from 'topojson-client'
 import worldLand from 'world-atlas/land-110m.json'
 import heroVideo from './assets/Hailuo_Video_A cinematic realistic fleet of_554063152114913281.mp4'
-import { FleetMotionBoard, LiveStatsStrip } from './FleetMotion'
+import dashboardImage from './assets/dashboardimage.png'
+import { FleetMotionBoard, GpsTrackingPanel, LiveStatsStrip } from './FleetMotion'
 import './App.css'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -229,6 +230,22 @@ function RailChevronIcon({ collapsed }) {
   )
 }
 
+function PlannerPanelIcon({ open }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <path d="M14 4v16" />
+      <path d={open ? 'm11 9-3 3 3 3' : 'm8 9 3 3-3 3'} />
+    </svg>
+  )
+}
+
+function PlannerThemeIcon({ light }) {
+  return light ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+  ) : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M20 15.4A8.5 8.5 0 0 1 8.6 4 8.5 8.5 0 1 0 20 15.4Z" /></svg>
+}
+
 function RailItemIcon({ itemKey }) {
   const common = {
     width: 18,
@@ -441,39 +458,6 @@ function WeatherConditionIcon({ weatherDetails }) {
   return <WeatherSunIcon />
 }
 
-function LanguageFlagIcon({ lang }) {
-  if (lang === 'en') {
-    return (
-      <svg viewBox="0 0 24 16" aria-hidden="true">
-        <rect width="24" height="16" fill="#1b3f99" />
-        <path d="M0 0 10 0 24 10v6h-10L0 6z" fill="#ffffff" opacity="0.92" />
-        <path d="M24 0h-10L0 10v6h10L24 6z" fill="#ffffff" opacity="0.92" />
-        <path d="M0 0 8 0 24 11v5h-8L0 5z" fill="#d12d2d" />
-        <path d="M24 0h-8L0 11v5h8L24 5z" fill="#d12d2d" />
-        <rect x="10" width="4" height="16" fill="#ffffff" />
-        <rect y="6" width="24" height="4" fill="#ffffff" />
-        <rect x="11" width="2" height="16" fill="#d12d2d" />
-        <rect y="7" width="24" height="2" fill="#d12d2d" />
-      </svg>
-    )
-  }
-  if (lang === 'ru') {
-    return (
-      <svg viewBox="0 0 24 16" aria-hidden="true">
-        <rect width="24" height="16" fill="#ffffff" />
-        <rect y="5.33" width="24" height="5.34" fill="#1e40af" />
-        <rect y="10.67" width="24" height="5.33" fill="#c62828" />
-      </svg>
-    )
-  }
-  return (
-    <svg viewBox="0 0 24 16" aria-hidden="true">
-      <rect width="24" height="8" fill="#2563eb" />
-      <rect y="8" width="24" height="8" fill="#facc15" />
-    </svg>
-  )
-}
-
 function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
   return (
     <div
@@ -489,6 +473,43 @@ function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
       <div className="orbit-icon-box tilt-card">{icon}</div>
       <h4 className="orbit-title">{title}</h4>
       <p className="orbit-desc">{desc}</p>
+    </div>
+  )
+}
+
+function AiCapabilityIcon({ type }) {
+  const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true }
+  if (type === 'fuel') return <svg {...common}><path d="M7 21h10V4H7z" /><path d="M10 8h4M17 8h2l1 2v7a2 2 0 0 1-2 2h-1" /><path d="M10 15c1.3-1.4 2-2.5 2-3.4A2 2 0 0 0 8 11.6c0 .9.7 2 2 3.4Z" /></svg>
+  if (type === 'route') return <svg {...common}><circle cx="6" cy="6" r="2" /><circle cx="18" cy="18" r="2" /><path d="M8 6h3a3 3 0 0 1 3 3v3a3 3 0 0 0 3 3h1" /><path d="m14 5 2-2 2 2M10 19l-2 2-2-2" /></svg>
+  return <svg {...common}><path d="M5 15v-4a7 7 0 0 1 14 0v4" /><path d="M5 15H3v3a2 2 0 0 0 2 2h2v-5ZM19 15h2v3a2 2 0 0 1-2 2h-2v-5Z" /><path d="M12 18h3" /></svg>
+}
+
+function AiAnalyticsVisual({ type }) {
+  if (type === 'fuel') return (
+    <div className="ai-analytics ai-fuel-analytics" aria-label="Fuel efficiency forecast visualization">
+      <div className="ai-analytics-top"><span>FUEL EFFICIENCY FORECAST</span><strong>+8.4% <em>potential</em></strong></div>
+      <svg viewBox="0 0 300 92" role="img" aria-label="Fuel efficiency trend over seven days">
+        <defs><linearGradient id="fuelArea" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#57d994" stopOpacity=".32" /><stop offset="1" stopColor="#57d994" stopOpacity="0" /></linearGradient></defs>
+        <path className="ai-chart-grid" d="M0 20H300M0 46H300M0 72H300" />
+        <path className="ai-fuel-area" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12 V92H0Z" />
+        <path className="ai-fuel-line" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12" />
+        <circle cx="217" cy="26" r="4" className="ai-chart-alert" /><circle cx="300" cy="12" r="4" className="ai-chart-point" />
+      </svg>
+      <div className="ai-analytics-legend"><span><i className="forecast" />Projected MPG</span><span><i className="alert" />Idle anomaly</span></div>
+    </div>
+  )
+  if (type === 'route') return (
+    <div className="ai-analytics ai-route-analytics" aria-label="Route savings comparison visualization">
+      <div className="ai-analytics-top"><span>ROUTE OPTIMIZER</span><strong>$28 <em>saved</em></strong></div>
+      <div className="ai-route-bars"><span>Current <i><b style={{ width: '92%' }} /></i><em>$286</em></span><span>AI route <i><b style={{ width: '76%' }} /></i><em>$258</em></span></div>
+      <div className="ai-route-metrics"><span><b>14</b> min earlier</span><span><b>3.4%</b> less fuel</span><span><b>14</b> mi avoided</span></div>
+    </div>
+  )
+  return (
+    <div className="ai-analytics ai-assistant-analytics" aria-label="AI operations recommendation visualization">
+      <div className="ai-assistant-question">Why is fuel spend up today?</div>
+      <div className="ai-assistant-answer"><i />3 vehicles exceeded idle baseline near Dallas. Prioritize ATD-217 before its next dispatch.</div>
+      <div className="ai-assistant-action"><span>RECOMMENDED ACTION</span><strong>Save est. $46 today</strong></div>
     </div>
   )
 }
@@ -530,7 +551,7 @@ function CursorDot() {
       el.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`
     }
     function onOver(e) {
-      const hoverable = e.target.closest('a, button, [data-cursor-hover]')
+      const hoverable = e.target.closest('a, [data-cursor-hover]')
       el.classList.toggle('cursor-hover', Boolean(hoverable))
     }
     window.addEventListener('mousemove', onMove)
@@ -694,7 +715,7 @@ function UseCaseCard({ q, a }) {
   )
 }
 
-function Landing({ token }) {
+function Landing({ token, isDemoSession, startDemo, demoLoading }) {
   const [menuOpen, setMenuOpen] = useState(false)
   useScrollReveal()
   const [testimonialIdx, setTestimonialIdx] = useState(0)
@@ -710,6 +731,7 @@ function Landing({ token }) {
 
   function closeMenu() { setMenuOpen(false) }
   function setField(key) { return (e) => setContactData((d) => ({ ...d, [key]: e.target.value })) }
+  function openDemo() { closeMenu(); startDemo() }
 
   const hideHoverPeek = useCallback(() => {
     setHoverPeek((prev) => (prev.visible ? { ...prev, visible: false } : prev))
@@ -788,14 +810,14 @@ function Landing({ token }) {
             <a href="#testimonials" onClick={closeMenu}>Testimonials</a>
             <a href="#contact" onClick={closeMenu}>Contact</a>
             <span className="nav-sep" />
-            <Link to={token ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
-              {token ? 'Portal' : 'Login'}
+            <Link to={token && !isDemoSession ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
+              {token && !isDemoSession ? 'Portal' : 'Login'}
             </Link>
           </nav>
           <div className="header-languages" aria-label="Language selector">
-            <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="en" /></span></a>
-            <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="ru" /></span></a>
-            <a href="#" lang="uk" aria-label="Ukrainian" title="Ukrainian" onClick={(e) => e.preventDefault()}><span className="header-lang-flag"><LanguageFlagIcon lang="uk" /></span></a>
+            <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}>ENG</a>
+            <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}>RUS</a>
+            <a href="#" lang="fr" aria-label="French" title="French" onClick={(e) => e.preventDefault()}>FRA</a>
           </div>
           <button
             className={`ham-btn${menuOpen ? ' ham-open' : ''}`}
@@ -823,7 +845,7 @@ function Landing({ token }) {
                 Every fleet, every load, every mile, visible in one command center.
               </p>
               <div className="hero-actions">
-                <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
+                <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? 'Opening demo...' : 'Request a demo'}</button>
                 <a href="#live-network" className="hero-see-link underline-link">See the fleet in motion &#8595;</a>
               </div>
             </div>
@@ -847,6 +869,7 @@ function Landing({ token }) {
             </p>
           </div>
           <FleetMotionBoard />
+          <GpsTrackingPanel />
           <LiveStatsStrip />
         </div>
       </section>
@@ -913,6 +936,44 @@ function Landing({ token }) {
                 align="right"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PLANNED AI CAPABILITIES */}
+      <section className="dark-sect ai-road-sect" id="ai-road-intelligence">
+        <div className="sect-inner">
+          <div className="ai-road-header" data-reveal>
+            <div>
+              <EyebrowRow label="PLANNED AI CAPABILITIES" />
+              <h2>Make every mile work harder.</h2>
+            </div>
+            <p>We are building decision support that turns your fleet data into clear actions for lower fuel use, smarter routes, and stronger day-to-day operations.</p>
+          </div>
+          <div className="ai-road-grid">
+            <article className="ai-road-card" data-reveal="fold-left">
+              <span className="ai-road-icon"><AiCapabilityIcon type="fuel" /></span>
+              <span className="ai-road-status">IN DEVELOPMENT</span>
+              <h3>Fuel intelligence</h3>
+              <p>Forecast fuel consumption by vehicle, load, terrain, idle time, and driving patterns, then surface practical ways to reduce waste.</p>
+              <AiAnalyticsVisual type="fuel" />
+              <ul><li>Identify excessive idle time</li><li>Compare vehicle efficiency</li><li>Spot fuel-cost anomalies</li></ul>
+            </article>
+            <article className="ai-road-card ai-road-card-featured" data-reveal="scale">
+              <span className="ai-road-icon"><AiCapabilityIcon type="route" /></span>
+              <span className="ai-road-status">IN DEVELOPMENT</span>
+              <h3>Route savings engine</h3>
+              <p>Evaluate route alternatives against traffic, tolls, fuel burn, delivery windows, and vehicle restrictions to recommend the better run.</p>
+              <AiAnalyticsVisual type="route" />
+            </article>
+            <article className="ai-road-card" data-reveal="fold-right">
+              <span className="ai-road-icon"><AiCapabilityIcon type="assistant" /></span>
+              <span className="ai-road-status">IN DEVELOPMENT</span>
+              <h3>Operations assistant</h3>
+              <p>Ask focused questions about your fleet and get a plain-language answer with the next best action for dispatch, safety, and maintenance.</p>
+              <AiAnalyticsVisual type="assistant" />
+              <ul><li>What is driving fuel use today?</li><li>Which load is most at risk?</li><li>Where can we save time this week?</li></ul>
+            </article>
           </div>
         </div>
       </section>
@@ -1084,7 +1145,7 @@ function Landing({ token }) {
           <h3 className="footer-cta-h3">
             Fleets don't remember dashboards. <em>They remember on-time deliveries.</em>
           </h3>
-          <MagneticLink href="#contact" className="btn-yellow">Request a demo</MagneticLink>
+          <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? 'Opening demo...' : 'Request a demo'}</button>
         </div>
       </section>
 
@@ -1114,8 +1175,10 @@ function Landing({ token }) {
 }
 
 // ─── Fleet Compliance ────────────────────────────────────────────────────────
-function FleetCompliance({ token, resources, refreshAllResources }) {
+function FleetCompliance({ token, resources, refreshAllResources, handleLogout }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [railCollapsed, setRailCollapsed] = useState(false)
 
   const trucks = resources.trucks?.items ?? []
   const drivers = resources.drivers?.items ?? []
@@ -1152,7 +1215,16 @@ function FleetCompliance({ token, resources, refreshAllResources }) {
     : Math.round((Math.min(ifta.length, trucks.length) / trucks.length) * 100)
 
   return (
-    <div className="fleet-page-wrap">
+    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell compliance-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+      <FleetPortalRail
+        railCollapsed={railCollapsed}
+        setRailCollapsed={setRailCollapsed}
+        railItems={STANDARD_RAIL_ITEMS}
+        currentPath={location.pathname}
+        navigate={navigate}
+        handleLogout={handleLogout}
+      />
+      <div className="fleet-page-wrap">
       <header className="fleet-header">
         <div className="fleet-header-inner">
           <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
@@ -1274,6 +1346,7 @@ function FleetCompliance({ token, resources, refreshAllResources }) {
           </article>
         </section>
       </main>
+      </div>
     </div>
   )
 }
@@ -2631,6 +2704,114 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
   )
 }
 
+function RoutePlannerDashboard({ handleLogout }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const plannerMapElRef = useRef(null)
+  const plannerMapRef = useRef(null)
+  const plannerMapLayerRef = useRef(null)
+  const [plannerOpen, setPlannerOpen] = useState(true)
+  const [origin, setOrigin] = useState('')
+  const [destination, setDestination] = useState('')
+  const [departure, setDeparture] = useState(() => new Date().toISOString().slice(0, 16))
+  const [moreOptions, setMoreOptions] = useState(false)
+  const [routeProfile, setRouteProfile] = useState('Balanced')
+  const [routeReady, setRouteReady] = useState(false)
+  const [lightTheme, setLightTheme] = useState(false)
+  const toggleTheme = () => setLightTheme((isLight) => !isLight)
+
+  function createPlannerMapLayer(isLight) {
+    return isLight
+      ? L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors', subdomains: 'abc' })
+      : L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles &copy; Esri' })
+  }
+
+  useEffect(() => {
+    if (!plannerMapElRef.current || plannerMapRef.current) return undefined
+    const map = L.map(plannerMapElRef.current, { zoomControl: false }).setView([50.65, 12.4], 5)
+    plannerMapLayerRef.current = createPlannerMapLayer(lightTheme).addTo(map)
+    L.control.zoom({ position: 'bottomright' }).addTo(map)
+    plannerMapRef.current = map
+    window.setTimeout(() => map.invalidateSize(), 0)
+    return () => {
+      map.remove()
+      plannerMapRef.current = null
+      plannerMapLayerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    const map = plannerMapRef.current
+    if (!map) return
+    plannerMapLayerRef.current?.remove()
+    plannerMapLayerRef.current = createPlannerMapLayer(lightTheme).addTo(map)
+  }, [lightTheme])
+
+  useEffect(() => {
+    const map = plannerMapRef.current
+    if (!map) return undefined
+    const resizeMap = window.setTimeout(() => map.invalidateSize({ pan: false }), 270)
+    return () => window.clearTimeout(resizeMap)
+  }, [plannerOpen])
+
+  function optimizeRoute() {
+    if (!origin.trim() || !destination.trim()) return
+    setRouteReady(true)
+  }
+
+  return (
+    <div className={`route-planner-dashboard ${plannerOpen ? '' : 'planner-collapsed'}${lightTheme ? ' planner-light' : ''}`}>
+      <aside className="planner-rail">
+        <button className="planner-brand" type="button" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
+        <div className="planner-rail-tools">
+          {STANDARD_RAIL_ITEMS.slice(0, 9).map((item) => (
+            <button type="button" key={item.key} className={`planner-rail-button ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`} aria-label={item.title} title={item.title} onClick={() => item.to && navigate(item.to)}><RailItemIcon itemKey={item.key} /></button>
+          ))}
+        </div>
+        <div className="planner-rail-bottom">
+          <button type="button" className="planner-rail-button" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button>
+          <button type="button" className="planner-rail-button" aria-label="Compliance" title="Compliance" onClick={() => navigate('/compliance')}><RailItemIcon itemKey="support" /></button>
+          <button type="button" className="planner-rail-button" aria-label="Logout" title="Logout" onClick={handleLogout}><RailItemIcon itemKey="logout" /></button>
+        </div>
+      </aside>
+      <main className="planner-map-stage">
+        <div ref={plannerMapElRef} className="planner-map" />
+        {!routeReady && <div className="planner-map-prompt">Fill in your route to optimize</div>}
+        {routeReady && <div className="planner-route-confirmation">Route ready: {origin} to {destination}</div>}
+        {!plannerOpen && (
+          <button type="button" className="planner-reopen-button" aria-label="Open route planner" onClick={() => setPlannerOpen(true)}>
+            <PlannerPanelIcon open />
+            <span>Open planner</span>
+          </button>
+        )}
+      </main>
+      <section className={`planner-panel ${plannerOpen ? '' : 'collapsed'}`} aria-label="Route planner">
+        <header className="planner-header"><LogoIcon /><strong>Route Planner</strong><button type="button" className="planner-header-theme" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button><button type="button" className="planner-header-collapse" aria-label="Collapse route planner" title="Collapse route planner" onClick={() => setPlannerOpen(false)}><PlannerPanelIcon open /></button></header>
+        <div className="planner-content">
+          <article className="planner-vehicle-card">
+            <img src={dashboardImage} alt="Electric delivery truck" />
+            <div className="planner-vehicle-title"><span>⌄</span><strong>eActros 600</strong><button type="button" aria-label="Vehicle details">i</button></div>
+            <div className="planner-battery-label"><span>Starting Battery</span><strong>100%</strong></div>
+            <div className="planner-battery"><span /></div>
+          </article>
+          <label className="planner-field-label" htmlFor="planner-origin">Origin</label>
+          <div className="planner-input-wrap"><span>⌁</span><input id="planner-origin" value={origin} onChange={(event) => { setOrigin(event.target.value); setRouteReady(false) }} placeholder="Search origin location..." /></div>
+          <div className="planner-stop-heading"><label className="planner-field-label" htmlFor="planner-destination">Destinations</label><button type="button" onClick={() => setDestination((value) => value ? `${value}; ` : value)}>+ <span>Add Stop</span></button></div>
+          <div className="planner-input-wrap"><span>⌖</span><input id="planner-destination" value={destination} onChange={(event) => { setDestination(event.target.value); setRouteReady(false) }} placeholder="Search destination..." /></div>
+          <label className="planner-field-label" htmlFor="planner-departure">Departure</label>
+          <div className="planner-departure-row"><input id="planner-departure" type="datetime-local" value={departure} onChange={(event) => setDeparture(event.target.value)} /><button type="button" onClick={() => setDeparture(new Date().toISOString().slice(0, 16))}>Now</button></div>
+          <label className="planner-field-label" htmlFor="planner-profile">Optimization profile</label>
+          <div className="planner-profile-control"><select id="planner-profile" value={routeProfile} onChange={(event) => setRouteProfile(event.target.value)}><option>Balanced</option><option>Lowest cost</option><option>Fastest arrival</option><option>Lowest emissions</option></select></div>
+          <button type="button" className="planner-options" onClick={() => setMoreOptions((visible) => !visible)}>⚙ <span>{moreOptions ? 'Hide Options' : 'More Options'}</span></button>
+          {moreOptions && <div className="planner-extra-options"><label><input type="checkbox" defaultChecked /> Prefer commercial routes</label><label><input type="checkbox" /> Avoid tolls</label></div>}
+          <div className="planner-trip-preview"><span>Estimated trip</span><strong>{routeProfile === 'Fastest arrival' ? '6h 18m' : routeProfile === 'Lowest cost' ? '$184.60' : '482 mi'}</strong><small>{routeProfile} routing is ready when locations are added.</small></div>
+          <button type="button" className="planner-optimize" disabled={!origin.trim() || !destination.trim()} onClick={optimizeRoute}>⌁ <span>Optimize Route</span></button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function Portal({
   token, resources, fleetCount,
   refreshAllResources, handleLogout, fetchResource, managerMode = false,
@@ -3092,6 +3273,10 @@ function Portal({
     }
   }, [currentTime, truckTimezone])
 
+  if (!managerMode) {
+    return <RoutePlannerDashboard handleLogout={handleLogout} />
+  }
+
   return (
     <div className={`live-portal-wrap fleet-monitor-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
       <FleetPortalRail
@@ -3432,12 +3617,27 @@ function Portal({
 function AuthPage({ title, subtitle, children, message }) {
   return (
     <div className="auth-page">
-      <a href="/" className="auth-logo-link"><LogoIcon /><span>ATONDA</span></a>
-      <div className="auth-card">
-        <h2>{title}</h2>
-        <p className="auth-sub">{subtitle}</p>
-        {children}
-        {message && <p className="auth-msg">{message}</p>}
+      <div className="auth-layout">
+        <section className="auth-card" aria-labelledby="auth-title">
+          <a href="/" className="auth-logo-link"><LogoIcon /><span>ATONDA</span></a>
+          <div className="auth-title-block">
+            <span className="auth-eyebrow">Fleet operations workspace</span>
+            <h2 id="auth-title">{title}</h2>
+            <p className="auth-sub">{subtitle}</p>
+          </div>
+          {children}
+          {message && <p className="auth-msg">{message}</p>}
+        </section>
+        <aside className="auth-context" aria-label="Platform overview">
+          <div className="auth-context-mark"><LogoIcon /></div>
+          <p className="auth-eyebrow">ATONDA CONTROL</p>
+          <h1>Every mile.<br /><em>In view.</em></h1>
+          <p className="auth-context-copy">A clearer operating picture for dispatch, compliance, and the people moving freight.</p>
+          <div className="auth-context-stats">
+            <div><strong>24/7</strong><span>Fleet visibility</span></div>
+            <div><strong>LIVE</strong><span>Operational signals</span></div>
+          </div>
+        </aside>
       </div>
     </div>
   )
@@ -3447,11 +3647,13 @@ function AuthPage({ title, subtitle, children, message }) {
 function App() {
   const navigate = useNavigate()
   const [token, setToken] = useState(() => localStorage.getItem('truckAppToken') ?? '')
+  const [isDemoSession, setIsDemoSession] = useState(() => sessionStorage.getItem('truckAppDemoSession') === 'true')
   const authResetRef = useRef(false)
   const [registerForm, setRegisterForm] = useState(DEFAULT_REGISTER)
   const [loginForm, setLoginForm] = useState(DEFAULT_LOGIN)
   const [authMessage, setAuthMessage] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
+  const [demoLoading, setDemoLoading] = useState(false)
   const [resources, setResources] = useState(() =>
     RESOURCE_CONFIG.reduce((a, r) => { a[r.key] = DEFAULT_RESOURCE_STATE; return a }, {}),
   )
@@ -3467,7 +3669,13 @@ function App() {
   )
 
   const saveToken = useCallback((t) => {
-    if (!t) { localStorage.removeItem('truckAppToken'); setToken(''); return }
+    if (!t) {
+      localStorage.removeItem('truckAppToken')
+      sessionStorage.removeItem('truckAppDemoSession')
+      setIsDemoSession(false)
+      setToken('')
+      return
+    }
     localStorage.setItem('truckAppToken', t); setToken(t)
   }, [])
 
@@ -3504,6 +3712,23 @@ function App() {
     setAuthMessage('Data synced.')
   }, [fetchResource, fetchSpendingSummary, token])
 
+  const startDemo = useCallback(async () => {
+    if (token) { navigate('/portal'); return }
+    setDemoLoading(true)
+    try {
+      const data = await apiRequest('/auth/login', { method: 'POST', body: DUMMY_LOGIN })
+      saveToken(data.access_token)
+      sessionStorage.setItem('truckAppDemoSession', 'true')
+      setIsDemoSession(true)
+      navigate('/portal')
+    } catch (err) {
+      setAuthMessage(`Unable to open the demo: ${err.message}`)
+      navigate('/login')
+    } finally {
+      setDemoLoading(false)
+    }
+  }, [navigate, saveToken, token])
+
   async function handleRegister(e) {
     e.preventDefault(); setAuthLoading(true); setAuthMessage('')
     try {
@@ -3518,6 +3743,7 @@ function App() {
     e.preventDefault(); setAuthLoading(true); setAuthMessage('')
     try {
       const data = await apiRequest('/auth/login', { method: 'POST', body: loginForm })
+      sessionStorage.removeItem('truckAppDemoSession'); setIsDemoSession(false)
       saveToken(data.access_token); setAuthMessage('Login successful.')
       navigate('/portal'); await refreshAllResources()
     } catch (err) { setAuthMessage(err.message) }
@@ -3545,28 +3771,27 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Landing token={token} />} />
-      <Route path="/fleet" element={<Landing token={token} />} />
+      <Route path="/" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} />} />
+      <Route path="/fleet" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} />} />
 
       <Route
         path="/login"
         element={
           <AuthPage title="Sign in" subtitle="Access your existing fleet portal account." message={authMessage}>
             <form className="auth-form" onSubmit={handleLogin}>
-              <p className="auth-footer-text">Quick test login: demo@truckappdemo.com / Demo123!</p>
-              <button
-                type="button"
-                className="p-btn p-btn-sec"
-                onClick={() => setLoginForm(DUMMY_LOGIN)}
-              >
-                Use dummy login
-              </button>
-              <input required type="email" placeholder="Email" value={loginForm.email}
-                onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
-              <input required type="password" placeholder="Password" value={loginForm.password}
-                onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
-              <button type="submit" className="btn-yellow" disabled={authLoading}>{authLoading ? 'Signing in...' : 'Login'}</button>
-              <p className="auth-footer-text">No account? <Link to="/signup">Sign up</Link> &middot; <Link to="/">Home</Link></p>
+              <div className="auth-field">
+                <label htmlFor="login-email">Work email</label>
+                <input id="login-email" required type="email" autoComplete="email" placeholder="name@company.com" value={loginForm.email}
+                  onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="login-password">Password</label>
+                <input id="login-password" required type="password" autoComplete="current-password" placeholder="Enter your password" value={loginForm.password}
+                  onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
+              </div>
+              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Signing in...' : 'Enter fleet portal'}</button>
+              <button type="button" className="auth-demo-fill" onClick={() => setLoginForm(DUMMY_LOGIN)}>Fill test account</button>
+              <p className="auth-footer-text">New to ATONDA? <Link to="/signup">Create an account</Link><span>•</span><Link to="/">Home</Link></p>
             </form>
           </AuthPage>
         }
@@ -3575,23 +3800,38 @@ function App() {
       <Route
         path="/signup"
         element={
-          <AuthPage title="Create account" subtitle="Register a new account for the fleet portal." message={authMessage}>
+          <AuthPage title="Create account" subtitle="Set up a secure workspace for your fleet." message={authMessage}>
             <form className="auth-form" onSubmit={handleRegister}>
-              <input required type="email" placeholder="Email" value={registerForm.email}
-                onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
-              <input required placeholder="Full name" value={registerForm.full_name}
-                onChange={(e) => setRegisterForm((f) => ({ ...f, full_name: e.target.value }))} />
-              <input required type="password" placeholder="Password" value={registerForm.password}
-                onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
-              <select value={registerForm.account_type}
-                onChange={(e) => setRegisterForm((f) => ({ ...f, account_type: e.target.value }))}>
-                <option value="individual">Individual</option>
-                <option value="company">Company</option>
-              </select>
-              <input placeholder="Company name (required for company)" value={registerForm.company_name}
-                onChange={(e) => setRegisterForm((f) => ({ ...f, company_name: e.target.value }))} />
-              <button type="submit" className="btn-yellow" disabled={authLoading}>{authLoading ? 'Registering...' : 'Register'}</button>
-              <p className="auth-footer-text">Have an account? <Link to="/login">Login</Link> &middot; <Link to="/">Home</Link></p>
+              <div className="auth-field">
+                <label htmlFor="signup-email">Work email</label>
+                <input id="signup-email" required type="email" autoComplete="email" placeholder="name@company.com" value={registerForm.email}
+                  onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="signup-name">Full name</label>
+                <input id="signup-name" required autoComplete="name" placeholder="Your full name" value={registerForm.full_name}
+                  onChange={(e) => setRegisterForm((f) => ({ ...f, full_name: e.target.value }))} />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="signup-password">Create password</label>
+                <input id="signup-password" required type="password" autoComplete="new-password" placeholder="Create a secure password" value={registerForm.password}
+                  onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
+              </div>
+              <div className="auth-field">
+                <label htmlFor="account-type">Workspace type</label>
+                <select id="account-type" value={registerForm.account_type}
+                  onChange={(e) => setRegisterForm((f) => ({ ...f, account_type: e.target.value }))}>
+                  <option value="individual">Independent operator</option>
+                  <option value="company">Fleet company</option>
+                </select>
+              </div>
+              <div className="auth-field">
+                <label htmlFor="company-name">Company name {registerForm.account_type === 'company' ? '' : '(optional)'}</label>
+                <input id="company-name" required={registerForm.account_type === 'company'} autoComplete="organization" placeholder="Your business name" value={registerForm.company_name}
+                  onChange={(e) => setRegisterForm((f) => ({ ...f, company_name: e.target.value }))} />
+              </div>
+              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Creating workspace...' : 'Create workspace'}</button>
+              <p className="auth-footer-text">Already have access? <Link to="/login">Sign in</Link><span>•</span><Link to="/">Home</Link></p>
             </form>
           </AuthPage>
         }
@@ -3607,7 +3847,7 @@ function App() {
       <Route path="/drivers" element={token ? <DriversPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/drivers/:driverId" element={token ? <DriverDetailsPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
       <Route path="/history" element={token ? <HistoryPage token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} fetchResource={fetchResource} /> : <Navigate to="/login" replace />} />
-      <Route path="/compliance" element={token ? <FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} /> : <Navigate to="/login" replace />} />
+      <Route path="/compliance" element={token ? <FleetCompliance token={token} resources={resources} refreshAllResources={refreshAllResources} handleLogout={handleLogout} /> : <Navigate to="/login" replace />} />
     </Routes>
   )
 }
