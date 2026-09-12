@@ -804,15 +804,19 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
             <span className="logo-text">ATONDA</span>
           </a>
           <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
-            <a href="#live-network" onClick={closeMenu}>Live Network</a>
             <a href="#features" onClick={closeMenu}>Features</a>
             <Link to="/compliance" onClick={closeMenu}>Fleet Compliance</Link>
-            <a href="#testimonials" onClick={closeMenu}>Testimonials</a>
             <a href="#contact" onClick={closeMenu}>Contact</a>
             <span className="nav-sep" />
             <Link to={token && !isDemoSession ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
               {token && !isDemoSession ? 'Portal' : 'Login'}
             </Link>
+            <div className="nav-languages" aria-label="Language selector">
+              <span>Language</span>
+              <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}>ENG</a>
+              <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}>RUS</a>
+              <a href="#" lang="fr" aria-label="French" title="French" onClick={(e) => e.preventDefault()}>FRA</a>
+            </div>
           </nav>
           <div className="header-languages" aria-label="Language selector">
             <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}>ENG</a>
