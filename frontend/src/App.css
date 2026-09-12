@@ -1142,7 +1142,9 @@
   flex-shrink: 0;
 }
 .header-languages a,
-.nav-languages a {
+.header-languages button,
+.nav-languages a,
+.nav-languages button {
   font-family: var(--font-head);
   font-size: 12px;
   font-weight: 700;
@@ -1159,14 +1161,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 .header-languages a:hover,
+.header-languages button:hover,
 .nav-languages a:hover {
   opacity: 1;
   color: #0a0a0b;
   background: rgba(51, 209, 122, .95);
   border-color: rgba(51, 209, 122, .95);
 }
+.nav-languages button:hover,
+.header-languages button.active,
+.nav-languages button.active { opacity: 1; color: #ffffff; background: #178765; border-color: #48c697; }
 .nav-languages { display: none; }
 
 /* ── DEMO REQUEST CONSOLE ────────────────────────────────────────────────── */
@@ -2434,6 +2441,7 @@
 /* ── AUTH ───────────────────────────────────────────────────────────────────── */
 .auth-page {
   min-height: 100vh;
+  min-height: 100svh;
   background:
     linear-gradient(120deg, rgba(8,12,18,.96), rgba(16,23,31,.9)),
     repeating-linear-gradient(90deg, transparent 0, transparent 89px, rgba(255,255,255,.035) 90px);
@@ -2524,15 +2532,20 @@
 .auth-context-stats div { display: flex; flex-direction: column; gap: 4px; }
 .auth-context-stats strong { font-family: var(--font-head); font-size: 18px; color: var(--white); letter-spacing: .06em; }
 .auth-context-stats span { font-size: 11px; color: rgba(236,241,245,.58); }
+.auth-scroll-cue { display: none; }
 @media (max-width: 720px) {
   .auth-page { align-items: flex-start; padding: 0; overflow: auto; }
   .auth-page::before { width: 280px; height: 280px; right: -125px; top: -105px; }
   .auth-layout { display: block; min-height: 100vh; border: 0; box-shadow: none; }
   .auth-card { min-height: 100vh; padding: 32px 22px 36px; justify-content: flex-start; }
+  .auth-card { min-height: 100svh; }
   .auth-title-block { margin-top: 62px; }
   .auth-context { display: none; }
   .auth-footer-text { flex-wrap: wrap; }
+  .auth-scroll-cue { display: grid; place-items: center; position: fixed; z-index: 20; right: 18px; bottom: max(18px, env(safe-area-inset-bottom)); width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.26); border-radius: 50%; background: rgba(12,17,23,.9); box-shadow: 0 8px 24px rgba(0,0,0,.32); cursor: pointer; }
+  .auth-scroll-cue span { width: 9px; height: 9px; border-right: 2px solid var(--orange); border-bottom: 2px solid var(--orange); transform: rotate(45deg) translate(-2px, -2px); animation: auth-scroll-pulse 1.6s ease-in-out infinite; }
 }
+@keyframes auth-scroll-pulse { 0%, 100% { opacity: .55; transform: rotate(45deg) translate(-2px, -2px); } 50% { opacity: 1; transform: rotate(45deg) translate(1px, 1px); } }
 .google-signin {
   display: flex;
   flex-direction: column;
@@ -4929,7 +4942,7 @@
 
   .nav-languages {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     width: min(100%, 320px);
     margin: 0;
@@ -5019,6 +5032,22 @@
     padding: 2px 6px;
   }
 
+  .gps-tracking-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gps-tracking-copy {
+    padding: 28px 22px;
+  }
+  .gps-map-shell {
+    min-height: 280px;
+    border-top: 1px solid rgba(255, 255, 255, .13);
+    border-left: 0;
+  }
+  .gps-map-tag {
+    top: 12px;
+    right: 12px;
+  }
+
   .fleet-motion-board {
     flex-direction: column;
     padding: 28px 20px 60px;
@@ -5035,6 +5064,16 @@
   .ai-road-grid { grid-template-columns: 1fr; }
   .ai-road-card { min-height: 0; padding: 24px; }
   .ai-road-status { margin-top: 24px; }
+
+  .benefits-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .benefits-col {
+    gap: 12px;
+  }
+  .benefit-card {
+    padding: 18px;
+  }
 
   .features-orbit {
     grid-template-columns: 1fr;
@@ -5262,7 +5301,19 @@
 .planner-map .leaflet-control-zoom a { width: 37px; height: 37px; border-color: #26354a; background: #09111d; color: #d6e0ed; line-height: 35px; }
 .planner-map .leaflet-control-attribution { background: rgba(7, 13, 23, .72); color: #aab5c4; }
 .planner-map .leaflet-control-attribution a { color: #7bbf96; }
-.planner-map-prompt, .planner-route-confirmation {
+.planner-vehicle-marker-wrap { background: transparent; border: 0; }
+.planner-vehicle-marker { display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid #b9f4d7; border-radius: 50%; background: #087554; box-shadow: 0 0 0 4px rgba(11,151,105,.2), 0 7px 14px rgba(0,0,0,.38); transition: transform .2s ease, background .2s ease; }
+.planner-vehicle-marker i { display: block; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 12px solid #ffffff; transform: rotate(var(--vehicle-heading)); transform-origin: 4px 50%; }
+.planner-vehicle-marker.selected { border-color: #fff6a6; background: #c79012; box-shadow: 0 0 0 5px rgba(247,220,4,.24), 0 7px 14px rgba(0,0,0,.38); }
+.planner-vehicle-marker.stopped { border-color: #a9b5c4; background: #566474; }
+.planner-vehicle-marker.stopped i { display: none; }
+.planner-vehicle-marker.stopped::after { content: ''; width: 9px; height: 9px; border-radius: 2px; background: #ffffff; }
+.planner-vehicle-detail { position: absolute; z-index: 600; left: 24px; bottom: 26px; width: min(298px, calc(100% - 48px)); padding: 16px; border: 1px solid #31506b; border-left: 3px solid #31b783; border-radius: 7px; background: rgba(9,17,29,.94); color: #e9f0f5; box-shadow: 0 18px 40px rgba(0,0,0,.38); backdrop-filter: blur(10px); }
+.planner-vehicle-detail > button { position: absolute; top: 7px; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 4px; background: transparent; color: #96a8bb; font-size: 22px; line-height: 1; cursor: pointer; }.planner-vehicle-detail > button:hover { color: #ffffff; background: rgba(255,255,255,.08); }
+.planner-vehicle-detail-top { display: flex; align-items: center; gap: 9px; padding-right: 28px; }.planner-vehicle-detail-top span { color: #7be1b7; font: 700 10px var(--font-head); letter-spacing: .08em; text-transform: uppercase; }.planner-vehicle-detail-top span.stopped { color: #aebaca; }.planner-vehicle-detail-top strong { color: #ffffff; font: 700 16px var(--font-head); }
+.planner-vehicle-detail > p { margin: 5px 0 14px; color: #aab8c6; font-size: 12px; }
+.planner-vehicle-detail dl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; margin: 0; }.planner-vehicle-detail dl div { min-width: 0; }.planner-vehicle-detail dt { margin-bottom: 3px; color: #74869b; font: 700 9px var(--font-head); letter-spacing: .08em; text-transform: uppercase; }.planner-vehicle-detail dd { margin: 0; overflow: hidden; color: #edf3f8; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.planner-map-signup, .planner-route-confirmation {
   position: absolute;
   z-index: 500;
   top: 40%;
@@ -5282,6 +5333,8 @@
   text-align: center;
   text-transform: uppercase;
 }
+.planner-map-signup { cursor: pointer; }
+.planner-map-signup:hover { border-color: #f7dc04; background: #ffffff; color: #0f4f3e; }
 .planner-route-confirmation { border-color: #4e9f6a; background: #eaf5ed; color: #205a35; text-transform: none; }
 .planner-panel {
   position: relative;
@@ -5361,6 +5414,7 @@
 .route-planner-dashboard.planner-light { --planner-panel: #f6f8fb; --planner-line: #d8e0e8; --planner-accent: #157d5d; background: #eaf0f5; color: #172331; }
 .planner-light .planner-rail { border-color: #d5dee7; background: #ffffff; }.planner-light .planner-brand { border-color: #d5dee7; background: #f4f7fa; }.planner-light .planner-rail-button { color: #657386; }.planner-light .planner-rail-button:hover { color: #1e3442; background: #edf3f6; }.planner-light .planner-rail-button.active { border-color: #9fd4c1; background: #e2f3eb; color: #157d5d; }
 .planner-light .planner-map-stage, .planner-light .planner-map, .planner-light .planner-map .leaflet-container { background: #dbe7ed; }.planner-light .planner-map .leaflet-control-zoom { border-color: #cad6df; box-shadow: 0 6px 16px rgba(31,47,58,.16); }.planner-light .planner-map .leaflet-control-zoom a { border-color: #cad6df; background: #fff; color: #273846; }.planner-light .planner-map .leaflet-control-attribution { background: rgba(255,255,255,.78); color: #51616d; }.planner-light .planner-map .leaflet-control-attribution a { color: #157d5d; }
+.planner-light .planner-vehicle-detail { border-color: #afc4d2; background: rgba(255,255,255,.95); color: #243444; }.planner-light .planner-vehicle-detail > button { color: #597084; }.planner-light .planner-vehicle-detail > button:hover { color: #172c3b; background: #edf3f6; }.planner-light .planner-vehicle-detail-top strong, .planner-light .planner-vehicle-detail dd { color: #1b3442; }.planner-light .planner-vehicle-detail > p { color: #64788b; }.planner-light .planner-vehicle-detail dt { color: #718797; }.planner-light .planner-map-signup { border-color: #8fcdb6; background: #ffffff; color: #157d5d; }.planner-light .planner-map-signup:hover { background: #edf8f2; color: #0f6549; }
 .planner-light .planner-panel { border-color: #d8e0e8; }.planner-light .planner-header { color: #182633; }.planner-light .planner-header-theme, .planner-light .planner-header-collapse { border-color: #cad6df; background: #fff; color: #536474; }.planner-light .planner-header-theme:hover, .planner-light .planner-header-collapse:hover { color: #157d5d; border-color: #8fcdb6; background: #ebf7f1; }
 .planner-light .planner-vehicle-card { border-color: #d5dee7; background: #fff; }.planner-light .planner-vehicle-title, .planner-light .planner-battery-label, .planner-light .planner-field-label, .planner-light .planner-stop-heading button { color: #223241; }.planner-light .planner-vehicle-title > span, .planner-light .planner-battery-label { color: #637487; }.planner-light .planner-vehicle-title button { border-color: #cad6df; background: #f3f6f8; color: #536474; }.planner-light .planner-battery { background: #d9e5e5; }
 .planner-light .planner-input-wrap, .planner-light .planner-profile-control select, .planner-light .planner-departure-row input { border-color: #cbd7e0; background: #fff; color: #1f2e3b; }.planner-light .planner-input-wrap input, .planner-light .planner-departure-row input { color: #1f2e3b; }.planner-light .planner-input-wrap input::placeholder { color: #8090a0; }.planner-light .planner-departure-row button, .planner-light .planner-options { border-color: #cbd7e0; background: #f5f8fa; color: #344555; }.planner-light .planner-extra-options { color: #506172; }.planner-light .planner-trip-preview { border-color: #9bcdb8; background: #eef9f3; }.planner-light .planner-trip-preview span { color: #58716a; }.planner-light .planner-trip-preview strong { color: #174d3c; }.planner-light .planner-trip-preview small { color: #287354; }.planner-light .planner-map-prompt { border-color: #cbd6de; background: #ffffff; color: #263644; }

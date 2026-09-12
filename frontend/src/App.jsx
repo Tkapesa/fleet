@@ -16,7 +16,7 @@ const GOOGLE_MAPS_EMBED_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY
 const NEW_JERSEY_CENTER = { lat: 40.0583, lng: -74.4057 }
 const NEW_JERSEY_DEFAULT_ZOOM = 8
 const HERO_VIDEO_URL = heroVideo
-const WHATSAPP_CONTACT_URL = 'https://wa.me/17083232997?text=Hi%20ATONDA%20team%2C%20I%20need%20help%20with%20fleet%20management.'
+const WHATSAPP_CONTACT_URL = 'https://wa.me/19177536653?text=Hi%20ATONDA%20team%2C%20I%20need%20help%20with%20fleet%20management.'
 
 const RESOURCE_CONFIG = [
   {
@@ -76,6 +76,36 @@ const DEFAULT_REGISTER = { email: '', full_name: '', password: '', account_type:
 const DEFAULT_LOGIN = { email: '', password: '' }
 const DUMMY_LOGIN = { email: 'demo@truckappdemo.com', password: 'Demo123!' }
 const DEFAULT_RESOURCE_STATE = { items: [], loading: false, error: '' }
+const SITE_COPY = {
+  en: {
+    features: 'Features', compliance: 'Fleet Compliance', contact: 'Contact', login: 'Login', portal: 'Portal', language: 'Language',
+    contactTeam: 'Contact our team', dispatchSupport: '24/7 dispatch support', eyebrow: 'ATONDA FLEET OS',
+    heroTitle: 'Fleet management.', heroAccent: 'Freight delivered.', heroCopy: "Real-time GPS, compliance, and dispatch for fleets that can't afford downtime. Every fleet, every load, every mile, visible in one command center.",
+    demo: 'Request a demo', openingDemo: 'Opening demo...', seeFleet: 'See the fleet in motion', appointment: 'Call and book an appointment',
+    whatWeDo: 'WHAT WE DO', engine: 'The engine of every fleet.', engineCopy: "We don't just show fleet management activity on a map. We connect GPS tracking, driver compliance, and dispatch into one live view, so you always know where every load stands, from pickup to delivery.",
+    authWorkspace: 'Fleet operations workspace', signIn: 'Sign in', signInSub: 'Access your existing fleet portal account.', createAccount: 'Create account', createAccountSub: 'Set up a secure workspace for your fleet.', control: 'ATONDA CONTROL', everyMile: 'Every mile.', inView: 'In view.', authContext: 'A clearer operating picture for dispatch, compliance, and the people moving freight.',
+    workEmail: 'Work email', password: 'Password', fullName: 'Full name', createPassword: 'Create password', workspaceType: 'Workspace type', companyName: 'Company name', optional: '(optional)', emailPlaceholder: 'name@company.com', passwordPlaceholder: 'Enter your password', newPasswordPlaceholder: 'Create a secure password', namePlaceholder: 'Your full name', companyPlaceholder: 'Your business name', enterPortal: 'Enter fleet portal', testAccount: 'Fill test account', createWorkspace: 'Create workspace', newToAtonda: 'New to ATONDA?', createAnAccount: 'Create an account', alreadyHaveAccess: 'Already have access?', independentOperator: 'Independent operator', fleetCompany: 'Fleet company', home: 'Home', fleetVisibility: 'Fleet visibility', operationalSignals: 'Operational signals',
+  },
+  fr: {
+    features: 'Fonctionnalites', compliance: 'Conformite flotte', contact: 'Contact', login: 'Connexion', portal: 'Portail', language: 'Langue',
+    contactTeam: 'Contacter notre equipe', dispatchSupport: 'Assistance repartition 24 h/24, 7 j/7', eyebrow: 'ATONDA FLEET OS',
+    heroTitle: 'Gestion de flotte.', heroAccent: 'Fret livre.', heroCopy: "GPS en temps reel, conformite et repartition pour les flottes qui ne peuvent pas se permettre d'arret. Chaque flotte, chaque chargement, chaque kilometre, visible dans un seul centre de controle.",
+    demo: 'Demander une demo', openingDemo: 'Ouverture de la demo...', seeFleet: 'Voir la flotte en mouvement', appointment: 'Appelez pour prendre rendez-vous',
+    whatWeDo: 'NOS SERVICES', engine: 'Le moteur de chaque flotte.', engineCopy: "Nous ne montrons pas seulement l'activite de votre flotte sur une carte. Nous relions le suivi GPS, la conformite des conducteurs et la repartition dans une vue en direct.",
+    authWorkspace: "Espace d'exploitation de flotte", signIn: 'Connexion', signInSub: 'Accedez a votre espace flotte existant.', createAccount: 'Creer un compte', createAccountSub: 'Creez un espace securise pour votre flotte.', control: 'ATONDA CONTROL', everyMile: 'Chaque kilometre.', inView: 'En vue.', authContext: "Une vision plus claire pour la repartition, la conformite et les personnes qui transportent votre fret.",
+    workEmail: 'E-mail professionnel', password: 'Mot de passe', fullName: 'Nom complet', createPassword: 'Creer un mot de passe', workspaceType: "Type d'espace", companyName: "Nom de l'entreprise", optional: '(facultatif)', emailPlaceholder: 'nom@entreprise.com', passwordPlaceholder: 'Saisissez votre mot de passe', newPasswordPlaceholder: 'Creez un mot de passe securise', namePlaceholder: 'Votre nom complet', companyPlaceholder: 'Le nom de votre entreprise', enterPortal: 'Acceder au portail', testAccount: 'Remplir le compte test', createWorkspace: "Creer l'espace", newToAtonda: 'Nouveau sur ATONDA ?', createAnAccount: 'Creer un compte', alreadyHaveAccess: 'Vous avez deja un acces ?', independentOperator: 'Operateur independant', fleetCompany: 'Entreprise de flotte', home: 'Accueil', fleetVisibility: 'Visibilite de flotte', operationalSignals: "Signaux d'exploitation",
+  },
+}
+
+function getSiteCopy(language) {
+  return SITE_COPY[language] ?? SITE_COPY.en
+}
+const PLANNER_DEMO_VEHICLES = [
+  { id: 'ATD-101', make: 'Volvo', model: 'FH16', driver: 'Jordan Lee', route: 'Prague to Leipzig', status: 'On route', speed: 71, fuel: 78, lat: 50.12, lng: 13.42, phase: 0.4 },
+  { id: 'ATD-102', make: 'Freightliner', model: 'Cascadia', driver: 'Morgan Diaz', route: 'Nuremberg to Dresden', status: 'On route', speed: 64, fuel: 61, lat: 49.72, lng: 11.35, phase: 2.1 },
+  { id: 'ATD-104', make: 'Kenworth', model: 'T680', driver: 'Casey Brooks', route: 'Berlin to Prague', status: 'Traffic delay', speed: 42, fuel: 53, lat: 51.12, lng: 12.88, phase: 3.8 },
+  { id: 'ATD-107', make: 'Volvo', model: 'VNL', driver: 'Riley Morgan', route: 'Munich to Chemnitz', status: 'Stopped', speed: 0, fuel: 85, lat: 48.96, lng: 12.18, phase: 0 },
+]
 
 const FLEET_VIEW_DEMO_SEEDS = [
   { id: 101, plate: 'ATD-101', make: 'Volvo', model: 'FH16', heightM: 4.05, lengthM: 18.5, baseLat: 40.7128, baseLng: -74.0060, baseSpeed: 64, variance: 8 },
@@ -715,8 +745,9 @@ function UseCaseCard({ q, a }) {
   )
 }
 
-function Landing({ token, isDemoSession, startDemo, demoLoading }) {
+function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLanguage }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const copy = getSiteCopy(language)
   useScrollReveal()
   const [testimonialIdx, setTestimonialIdx] = useState(0)
   const [hoverPeek, setHoverPeek] = useState({ visible: false, title: '', detail: '', x: 0, y: 0 })
@@ -730,6 +761,7 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
   ]
 
   function closeMenu() { setMenuOpen(false) }
+  function selectLanguage(locale) { setLanguage(locale); closeMenu() }
   function setField(key) { return (e) => setContactData((d) => ({ ...d, [key]: e.target.value })) }
   function openDemo() { closeMenu(); startDemo() }
 
@@ -792,8 +824,8 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
           </svg>
         </span>
         <span className="contact-agent-meta">
-          <strong>Contact our team</strong>
-          <small>24/7 dispatch support</small>
+          <strong>{copy.contactTeam}</strong>
+          <small>{copy.dispatchSupport}</small>
         </span>
       </a>
       {/* NAV */}
@@ -804,24 +836,22 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
             <span className="logo-text">ATONDA</span>
           </a>
           <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
-            <a href="#features" onClick={closeMenu}>Features</a>
-            <Link to="/compliance" onClick={closeMenu}>Fleet Compliance</Link>
-            <a href="#contact" onClick={closeMenu}>Contact</a>
+            <a href="#features" onClick={closeMenu}>{copy.features}</a>
+            <Link to="/compliance" onClick={closeMenu}>{copy.compliance}</Link>
+            <a href="#contact" onClick={closeMenu}>{copy.contact}</a>
             <span className="nav-sep" />
             <Link to={token && !isDemoSession ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
-              {token && !isDemoSession ? 'Portal' : 'Login'}
+              {token && !isDemoSession ? copy.portal : copy.login}
             </Link>
             <div className="nav-languages" aria-label="Language selector">
-              <span>Language</span>
-              <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}>ENG</a>
-              <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}>RUS</a>
-              <a href="#" lang="fr" aria-label="French" title="French" onClick={(e) => e.preventDefault()}>FRA</a>
+              <span>{copy.language}</span>
+              <button type="button" className={language === 'en' ? 'active' : ''} lang="en" aria-pressed={language === 'en'} onClick={() => selectLanguage('en')}>ENG</button>
+              <button type="button" className={language === 'fr' ? 'active' : ''} lang="fr" aria-pressed={language === 'fr'} onClick={() => selectLanguage('fr')}>FRA</button>
             </div>
           </nav>
           <div className="header-languages" aria-label="Language selector">
-            <a href="#" lang="en" aria-label="English" title="English" onClick={(e) => e.preventDefault()}>ENG</a>
-            <a href="#" lang="ru" aria-label="Russian" title="Russian" onClick={(e) => e.preventDefault()}>RUS</a>
-            <a href="#" lang="fr" aria-label="French" title="French" onClick={(e) => e.preventDefault()}>FRA</a>
+            <button type="button" className={language === 'en' ? 'active' : ''} lang="en" aria-label="English" title="English" aria-pressed={language === 'en'} onClick={() => selectLanguage('en')}>ENG</button>
+            <button type="button" className={language === 'fr' ? 'active' : ''} lang="fr" aria-label="French" title="French" aria-pressed={language === 'fr'} onClick={() => selectLanguage('fr')}>FRA</button>
           </div>
           <button
             className={`ham-btn${menuOpen ? ' ham-open' : ''}`}
@@ -840,22 +870,21 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
         <div className="hero-inner">
           <div className="hero-body">
             <div className="hero-content-card">
-              <EyebrowRow label="ATONDA FLEET OS" />
+              <EyebrowRow label={copy.eyebrow} />
               <h1 className="cine-headline">
-                Fleet management.<br /><em>Freight delivered.</em>
+                {copy.heroTitle}<br /><em>{copy.heroAccent}</em>
               </h1>
               <p className="cine-sub">
-                Real-time GPS, compliance, and dispatch for fleets that can't afford downtime.
-                Every fleet, every load, every mile, visible in one command center.
+                {copy.heroCopy}
               </p>
               <div className="hero-actions">
-                <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? 'Opening demo...' : 'Request a demo'}</button>
-                <a href="#live-network" className="hero-see-link underline-link">See the fleet in motion &#8595;</a>
+                <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? copy.openingDemo : copy.demo}</button>
+                <a href="#live-network" className="hero-see-link underline-link">{copy.seeFleet} &#8595;</a>
               </div>
             </div>
             <div className="hero-call-card">
-              <p>Call and book an appointment</p>
-              <a href="tel:7083232997" className="underline-link">(708) 323-2997</a>
+              <p>{copy.appointment}</p>
+              <a href="tel:+19177536653" className="underline-link">+1 (917) 753-6653</a>
             </div>
           </div>
         </div>
@@ -865,11 +894,10 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
       <section id="live-network" className="light-sect fleet-motion-sect">
         <div className="sect-inner">
           <div className="fleet-motion-hdr" data-reveal>
-            <EyebrowRow label="WHAT WE DO" />
-            <h2>The engine of every fleet.</h2>
+            <EyebrowRow label={copy.whatWeDo} />
+            <h2>{copy.engine}</h2>
             <p className="sect-sub">
-              We don't just show fleet management activity on a map. We connect GPS tracking, driver compliance, and dispatch into
-              one live view, so you always know where every load stands, from pickup to delivery.
+              {copy.engineCopy}
             </p>
           </div>
           <FleetMotionBoard />
@@ -1162,7 +1190,7 @@ function Landing({ token, isDemoSession, startDemo, demoLoading }) {
           </div>
           <div className="footer-contact-item">
             <span className="fc-label">Phone</span>
-            <a href="tel:7083232997" className="fc-value">(708) 323-2997</a>
+            <a href="tel:+19177536653" className="fc-value">+1 (917) 753-6653</a>
           </div>
           <div className="footer-contact-item">
             <span className="fc-label">E-mail</span>
@@ -2708,13 +2736,14 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
   )
 }
 
-function RoutePlannerDashboard({ handleLogout }) {
+function RoutePlannerDashboard({ handleLogout, defaultPlannerOpen = true }) {
   const location = useLocation()
   const navigate = useNavigate()
   const plannerMapElRef = useRef(null)
   const plannerMapRef = useRef(null)
   const plannerMapLayerRef = useRef(null)
-  const [plannerOpen, setPlannerOpen] = useState(true)
+  const plannerMarkersRef = useRef([])
+  const [plannerOpen, setPlannerOpen] = useState(defaultPlannerOpen)
   const [origin, setOrigin] = useState('')
   const [destination, setDestination] = useState('')
   const [departure, setDeparture] = useState(() => new Date().toISOString().slice(0, 16))
@@ -2722,7 +2751,22 @@ function RoutePlannerDashboard({ handleLogout }) {
   const [routeProfile, setRouteProfile] = useState('Balanced')
   const [routeReady, setRouteReady] = useState(false)
   const [lightTheme, setLightTheme] = useState(false)
+  const [plannerTick, setPlannerTick] = useState(0)
+  const [selectedDemoVehicleId, setSelectedDemoVehicleId] = useState(null)
   const toggleTheme = () => setLightTheme((isLight) => !isLight)
+
+  const plannerVehicles = useMemo(() => PLANNER_DEMO_VEHICLES.map((vehicle) => {
+    if (vehicle.speed === 0) return { ...vehicle, heading: 0, lat: vehicle.lat, lng: vehicle.lng }
+    const phase = plannerTick / 2.4 + vehicle.phase
+    return {
+      ...vehicle,
+      lat: vehicle.lat + Math.sin(phase) * 0.105,
+      lng: vehicle.lng + Math.cos(phase) * 0.16,
+      heading: (Math.atan2(-Math.sin(phase), Math.cos(phase)) * 180 / Math.PI + 360) % 360,
+      speed: vehicle.speed + Math.round(Math.sin(phase * 1.7) * 5),
+    }
+  }), [plannerTick])
+  const selectedDemoVehicle = plannerVehicles.find((vehicle) => vehicle.id === selectedDemoVehicleId) ?? null
 
   function createPlannerMapLayer(isLight) {
     return isLight
@@ -2750,6 +2794,34 @@ function RoutePlannerDashboard({ handleLogout }) {
     plannerMapLayerRef.current?.remove()
     plannerMapLayerRef.current = createPlannerMapLayer(lightTheme).addTo(map)
   }, [lightTheme])
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => setPlannerTick((tick) => tick + 1), 1200)
+    return () => window.clearInterval(timerId)
+  }, [])
+
+  useEffect(() => {
+    const map = plannerMapRef.current
+    if (!map) return undefined
+    plannerMarkersRef.current.forEach((marker) => marker.remove())
+    plannerMarkersRef.current = plannerVehicles.map((vehicle) => {
+      const selected = vehicle.id === selectedDemoVehicleId
+      const marker = L.marker([vehicle.lat, vehicle.lng], {
+        icon: L.divIcon({
+          className: 'planner-vehicle-marker-wrap',
+          html: `<span class="planner-vehicle-marker${selected ? ' selected' : ''}${vehicle.speed === 0 ? ' stopped' : ''}" style="--vehicle-heading:${vehicle.heading}deg"><i></i></span>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+        }),
+        keyboard: true,
+        title: `${vehicle.id} · ${vehicle.make} ${vehicle.model}`,
+      }).addTo(map)
+      marker.bindTooltip(`${vehicle.id} · ${vehicle.speed === 0 ? 'Stopped' : `${vehicle.speed} km/h`}`, { direction: 'top', offset: [0, -18] })
+      marker.on('click', () => setSelectedDemoVehicleId(vehicle.id))
+      return marker
+    })
+    return () => plannerMarkersRef.current.forEach((marker) => marker.remove())
+  }, [plannerVehicles, selectedDemoVehicleId])
 
   useEffect(() => {
     const map = plannerMapRef.current
@@ -2780,7 +2852,20 @@ function RoutePlannerDashboard({ handleLogout }) {
       </aside>
       <main className="planner-map-stage">
         <div ref={plannerMapElRef} className="planner-map" />
-        {!routeReady && <div className="planner-map-prompt">Fill in your route to optimize</div>}
+        {selectedDemoVehicle && (
+          <article className="planner-vehicle-detail" aria-live="polite">
+            <button type="button" aria-label="Close vehicle details" onClick={() => setSelectedDemoVehicleId(null)}>&times;</button>
+            <div className="planner-vehicle-detail-top"><span className={selectedDemoVehicle.speed === 0 ? 'stopped' : ''}>{selectedDemoVehicle.status}</span><strong>{selectedDemoVehicle.id}</strong></div>
+            <p>{selectedDemoVehicle.make} {selectedDemoVehicle.model}</p>
+            <dl>
+              <div><dt>Driver</dt><dd>{selectedDemoVehicle.driver}</dd></div>
+              <div><dt>Speed</dt><dd>{selectedDemoVehicle.speed} km/h</dd></div>
+              <div><dt>Fuel</dt><dd>{selectedDemoVehicle.fuel}%</dd></div>
+              <div><dt>Route</dt><dd>{selectedDemoVehicle.route}</dd></div>
+            </dl>
+          </article>
+        )}
+        {!routeReady && <button type="button" className="planner-map-signup" onClick={() => navigate('/signup')}>Sign up to start using now</button>}
         {routeReady && <div className="planner-route-confirmation">Route ready: {origin} to {destination}</div>}
         {!plannerOpen && (
           <button type="button" className="planner-reopen-button" aria-label="Open route planner" onClick={() => setPlannerOpen(true)}>
@@ -2818,7 +2903,7 @@ function RoutePlannerDashboard({ handleLogout }) {
 
 function Portal({
   token, resources, fleetCount,
-  refreshAllResources, handleLogout, fetchResource, managerMode = false,
+  refreshAllResources, handleLogout, fetchResource, isDemoSession, managerMode = false,
 }) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -3278,7 +3363,7 @@ function Portal({
   }, [currentTime, truckTimezone])
 
   if (!managerMode) {
-    return <RoutePlannerDashboard handleLogout={handleLogout} />
+    return <RoutePlannerDashboard handleLogout={handleLogout} defaultPlannerOpen={!isDemoSession} />
   }
 
   return (
@@ -3618,14 +3703,35 @@ function Portal({
 }
 
 // ─── Auth wrapper ─────────────────────────────────────────────────────────────
-function AuthPage({ title, subtitle, children, message }) {
+function AuthPage({ title, subtitle, children, message, language = 'en' }) {
+  const [showScrollCue, setShowScrollCue] = useState(false)
+  const copy = getSiteCopy(language)
+
+  useEffect(() => {
+    function updateScrollCue() {
+      const { scrollHeight, scrollTop, clientHeight } = document.documentElement
+      setShowScrollCue(scrollHeight > clientHeight + 24 && scrollTop + clientHeight < scrollHeight - 24)
+    }
+    updateScrollCue()
+    window.addEventListener('resize', updateScrollCue)
+    window.addEventListener('scroll', updateScrollCue, { passive: true })
+    return () => {
+      window.removeEventListener('resize', updateScrollCue)
+      window.removeEventListener('scroll', updateScrollCue)
+    }
+  }, [])
+
+  function scrollToNextAuthSection() {
+    window.scrollBy({ top: Math.round(window.innerHeight * 0.72), behavior: 'smooth' })
+  }
+
   return (
     <div className="auth-page">
       <div className="auth-layout">
         <section className="auth-card" aria-labelledby="auth-title">
           <a href="/" className="auth-logo-link"><LogoIcon /><span>ATONDA</span></a>
           <div className="auth-title-block">
-            <span className="auth-eyebrow">Fleet operations workspace</span>
+            <span className="auth-eyebrow">{copy.authWorkspace}</span>
             <h2 id="auth-title">{title}</h2>
             <p className="auth-sub">{subtitle}</p>
           </div>
@@ -3634,15 +3740,20 @@ function AuthPage({ title, subtitle, children, message }) {
         </section>
         <aside className="auth-context" aria-label="Platform overview">
           <div className="auth-context-mark"><LogoIcon /></div>
-          <p className="auth-eyebrow">ATONDA CONTROL</p>
-          <h1>Every mile.<br /><em>In view.</em></h1>
-          <p className="auth-context-copy">A clearer operating picture for dispatch, compliance, and the people moving freight.</p>
+          <p className="auth-eyebrow">{copy.control}</p>
+          <h1>{copy.everyMile}<br /><em>{copy.inView}</em></h1>
+          <p className="auth-context-copy">{copy.authContext}</p>
           <div className="auth-context-stats">
-            <div><strong>24/7</strong><span>Fleet visibility</span></div>
-            <div><strong>LIVE</strong><span>Operational signals</span></div>
+            <div><strong>24/7</strong><span>{copy.fleetVisibility}</span></div>
+            <div><strong>LIVE</strong><span>{copy.operationalSignals}</span></div>
           </div>
         </aside>
       </div>
+      {showScrollCue && (
+        <button type="button" className="auth-scroll-cue" onClick={scrollToNextAuthSection} aria-label="Scroll down to continue">
+          <span aria-hidden="true" />
+        </button>
+      )}
     </div>
   )
 }
@@ -3652,6 +3763,7 @@ function App() {
   const navigate = useNavigate()
   const [token, setToken] = useState(() => localStorage.getItem('truckAppToken') ?? '')
   const [isDemoSession, setIsDemoSession] = useState(() => sessionStorage.getItem('truckAppDemoSession') === 'true')
+  const [language, setLanguage] = useState(() => localStorage.getItem('truckAppLanguage') ?? 'en')
   const authResetRef = useRef(false)
   const [registerForm, setRegisterForm] = useState(DEFAULT_REGISTER)
   const [loginForm, setLoginForm] = useState(DEFAULT_LOGIN)
@@ -3671,6 +3783,11 @@ function App() {
     () => RESOURCE_CONFIG.reduce((n, r) => n + (resources[r.key]?.items?.length ?? 0), 0),
     [resources],
   )
+
+  useEffect(() => {
+    document.documentElement.lang = language
+    localStorage.setItem('truckAppLanguage', language)
+  }, [language])
 
   const saveToken = useCallback((t) => {
     if (!t) {
@@ -3716,22 +3833,12 @@ function App() {
     setAuthMessage('Data synced.')
   }, [fetchResource, fetchSpendingSummary, token])
 
-  const startDemo = useCallback(async () => {
+  const startDemo = useCallback(() => {
     if (token) { navigate('/portal'); return }
-    setDemoLoading(true)
-    try {
-      const data = await apiRequest('/auth/login', { method: 'POST', body: DUMMY_LOGIN })
-      saveToken(data.access_token)
-      sessionStorage.setItem('truckAppDemoSession', 'true')
-      setIsDemoSession(true)
-      navigate('/portal')
-    } catch (err) {
-      setAuthMessage(`Unable to open the demo: ${err.message}`)
-      navigate('/login')
-    } finally {
-      setDemoLoading(false)
-    }
-  }, [navigate, saveToken, token])
+    sessionStorage.setItem('truckAppDemoSession', 'true')
+    setIsDemoSession(true)
+    navigate('/portal')
+  }, [navigate, token])
 
   async function handleRegister(e) {
     e.preventDefault(); setAuthLoading(true); setAuthMessage('')
@@ -3770,32 +3877,33 @@ function App() {
   const portalProps = {
     token, resources, createPayloads, setCreatePayloads,
     spendingSummary, summaryError, fleetCount,
-    refreshAllResources, handleLogout, fetchResource, handleCreateResource, authMessage,
+    refreshAllResources, handleLogout, fetchResource, handleCreateResource, authMessage, isDemoSession,
   }
+  const copy = getSiteCopy(language)
 
   return (
     <Routes>
-      <Route path="/" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} />} />
-      <Route path="/fleet" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} />} />
+      <Route path="/" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} language={language} setLanguage={setLanguage} />} />
+      <Route path="/fleet" element={<Landing token={token} isDemoSession={isDemoSession} startDemo={startDemo} demoLoading={demoLoading} language={language} setLanguage={setLanguage} />} />
 
       <Route
         path="/login"
         element={
-          <AuthPage title="Sign in" subtitle="Access your existing fleet portal account." message={authMessage}>
+          <AuthPage title={getSiteCopy(language).signIn} subtitle={getSiteCopy(language).signInSub} message={authMessage} language={language}>
             <form className="auth-form" onSubmit={handleLogin}>
               <div className="auth-field">
-                <label htmlFor="login-email">Work email</label>
-                <input id="login-email" required type="email" autoComplete="email" placeholder="name@company.com" value={loginForm.email}
+                <label htmlFor="login-email">{copy.workEmail}</label>
+                <input id="login-email" required type="email" autoComplete="email" placeholder={copy.emailPlaceholder} value={loginForm.email}
                   onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="auth-field">
-                <label htmlFor="login-password">Password</label>
-                <input id="login-password" required type="password" autoComplete="current-password" placeholder="Enter your password" value={loginForm.password}
+                <label htmlFor="login-password">{copy.password}</label>
+                <input id="login-password" required type="password" autoComplete="current-password" placeholder={copy.passwordPlaceholder} value={loginForm.password}
                   onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
               </div>
-              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Signing in...' : 'Enter fleet portal'}</button>
-              <button type="button" className="auth-demo-fill" onClick={() => setLoginForm(DUMMY_LOGIN)}>Fill test account</button>
-              <p className="auth-footer-text">New to ATONDA? <Link to="/signup">Create an account</Link><span>•</span><Link to="/">Home</Link></p>
+              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Signing in...' : copy.enterPortal}</button>
+              <button type="button" className="auth-demo-fill" onClick={() => setLoginForm(DUMMY_LOGIN)}>{copy.testAccount}</button>
+              <p className="auth-footer-text">{copy.newToAtonda} <Link to="/signup">{copy.createAnAccount}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
             </form>
           </AuthPage>
         }
@@ -3804,44 +3912,44 @@ function App() {
       <Route
         path="/signup"
         element={
-          <AuthPage title="Create account" subtitle="Set up a secure workspace for your fleet." message={authMessage}>
+          <AuthPage title={getSiteCopy(language).createAccount} subtitle={getSiteCopy(language).createAccountSub} message={authMessage} language={language}>
             <form className="auth-form" onSubmit={handleRegister}>
               <div className="auth-field">
-                <label htmlFor="signup-email">Work email</label>
-                <input id="signup-email" required type="email" autoComplete="email" placeholder="name@company.com" value={registerForm.email}
+                <label htmlFor="signup-email">{copy.workEmail}</label>
+                <input id="signup-email" required type="email" autoComplete="email" placeholder={copy.emailPlaceholder} value={registerForm.email}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
               <div className="auth-field">
-                <label htmlFor="signup-name">Full name</label>
-                <input id="signup-name" required autoComplete="name" placeholder="Your full name" value={registerForm.full_name}
+                <label htmlFor="signup-name">{copy.fullName}</label>
+                <input id="signup-name" required autoComplete="name" placeholder={copy.namePlaceholder} value={registerForm.full_name}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, full_name: e.target.value }))} />
               </div>
               <div className="auth-field">
-                <label htmlFor="signup-password">Create password</label>
-                <input id="signup-password" required type="password" autoComplete="new-password" placeholder="Create a secure password" value={registerForm.password}
+                <label htmlFor="signup-password">{copy.createPassword}</label>
+                <input id="signup-password" required type="password" autoComplete="new-password" placeholder={copy.newPasswordPlaceholder} value={registerForm.password}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
               </div>
               <div className="auth-field">
-                <label htmlFor="account-type">Workspace type</label>
+                <label htmlFor="account-type">{copy.workspaceType}</label>
                 <select id="account-type" value={registerForm.account_type}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, account_type: e.target.value }))}>
-                  <option value="individual">Independent operator</option>
-                  <option value="company">Fleet company</option>
+                  <option value="individual">{copy.independentOperator}</option>
+                  <option value="company">{copy.fleetCompany}</option>
                 </select>
               </div>
               <div className="auth-field">
-                <label htmlFor="company-name">Company name {registerForm.account_type === 'company' ? '' : '(optional)'}</label>
-                <input id="company-name" required={registerForm.account_type === 'company'} autoComplete="organization" placeholder="Your business name" value={registerForm.company_name}
+                <label htmlFor="company-name">{copy.companyName} {registerForm.account_type === 'company' ? '' : copy.optional}</label>
+                <input id="company-name" required={registerForm.account_type === 'company'} autoComplete="organization" placeholder={copy.companyPlaceholder} value={registerForm.company_name}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, company_name: e.target.value }))} />
               </div>
-              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Creating workspace...' : 'Create workspace'}</button>
-              <p className="auth-footer-text">Already have access? <Link to="/login">Sign in</Link><span>•</span><Link to="/">Home</Link></p>
+              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Creating workspace...' : copy.createWorkspace}</button>
+              <p className="auth-footer-text">{copy.alreadyHaveAccess} <Link to="/login">{copy.signIn}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
             </form>
           </AuthPage>
         }
       />
 
-      <Route path="/portal" element={token ? <Portal {...portalProps} managerMode={false} /> : <Navigate to="/login" replace />} />
+      <Route path="/portal" element={token || isDemoSession ? <Portal {...portalProps} managerMode={false} /> : <Navigate to="/login" replace />} />
       <Route path="/fleet-manager" element={token ? <Portal {...portalProps} managerMode /> : <Navigate to="/login" replace />} />
       <Route path="/routes" element={token ? <RoutesPage handleLogout={handleLogout} /> : <Navigate to="/login" replace />} />
       <Route path="/safety" element={token ? <FeaturePlaceholderPage handleLogout={handleLogout} title="Safety" subtitle="Safety events, incidents, and compliance follow-up." /> : <Navigate to="/login" replace />} />
