@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 
 // ─── Animated fleet route: trucks loop origin → transit → delivery → reload ──
 const PHASES = [
@@ -20,6 +19,11 @@ const FLEET_TRUCKS = [
   { id: 'ATD-104', cargo: 'Auto parts', speed: 0.000105, offset: 0.56 },
   { id: 'ATD-112', cargo: 'Construction materials', speed: 0.000075, offset: 0.8 },
 ]
+
+const DOT_TONE = {
+  active: 'absolute left-1/2 top-full mt-1.5 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(255,75,43,0.25)]',
+  done: 'absolute left-1/2 top-full mt-1.5 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-green shadow-[0_0_0_4px_rgba(51,209,122,0.25)]',
+}
 
 function FleetTruckToken({ truck }) {
   const wrapRef = useRef(null)
@@ -46,7 +50,7 @@ function FleetTruckToken({ truck }) {
         labelRef.current.dataset.phase = phase.label
         labelRef.current.textContent = phase.label
       }
-      if (dotRef.current) dotRef.current.className = `fleet-token-dot ${phase.tone}`
+      if (dotRef.current) dotRef.current.className = DOT_TONE[phase.tone] ?? DOT_TONE.active
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -54,39 +58,39 @@ function FleetTruckToken({ truck }) {
   }, [truck])
 
   return (
-    <div className="fleet-token" ref={wrapRef}>
-      <div className="fleet-token-card tilt-card" data-cursor-hover>
-        <strong>{truck.id}</strong>
-        <span ref={labelRef} className="fleet-token-phase">Loading cargo</span>
-        <em>{truck.cargo}</em>
+    <div className="absolute top-1/2 z-10 -translate-x-1/2" ref={wrapRef} style={{ left: '4%' }}>
+      <div className="min-w-[120px] rounded-lg border border-border bg-card/95 px-3 py-2 text-center shadow-float backdrop-blur-sm">
+        <strong className="block font-head text-[11px] font-bold tracking-wide text-ink">{truck.id}</strong>
+        <span ref={labelRef} className="mt-0.5 block font-head text-[10px] font-semibold uppercase tracking-wider text-accent">Loading cargo</span>
+        <em className="mt-0.5 block text-[10px] not-italic text-muted">{truck.cargo}</em>
       </div>
-      <span className="fleet-token-dot active" ref={dotRef} />
+      <span className={DOT_TONE.active} ref={dotRef} />
     </div>
   )
 }
 
 export function FleetMotionBoard() {
   return (
-    <div className="fleet-motion-board" data-reveal="scale">
-      <div className="fleet-motion-hub start">
-        <span className="fleet-hub-dot" />
+    <div className="relative mt-8 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card/80 to-dark/80 p-6 shadow-card md:p-8">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="h-3 w-3 rounded-full bg-green animate-[hub-pulse_1.8s_ease-out_infinite]" />
         <div>
-          <strong>Newark, NJ</strong>
-          <small>Origin hub</small>
+          <strong className="block font-head text-sm font-semibold text-ink">Newark, NJ</strong>
+          <small className="text-[11px] uppercase tracking-wider text-muted">Origin hub</small>
         </div>
       </div>
-      <div className="fleet-motion-track">
-        <div className="fleet-motion-line" />
+      <div className="relative mx-2 h-24 md:mx-8">
+        <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-gradient-to-r from-green via-accent to-green opacity-70" />
         {FLEET_TRUCKS.map((truck) => (
           <FleetTruckToken key={truck.id} truck={truck} />
         ))}
       </div>
-      <div className="fleet-motion-hub end">
+      <div className="mt-6 flex flex-row-reverse items-center gap-3 text-right">
+        <span className="h-3 w-3 rounded-full bg-green animate-[hub-pulse_1.8s_ease-out_infinite]" />
         <div>
-          <strong>Boston, MA</strong>
-          <small>Delivery hub</small>
+          <strong className="block font-head text-sm font-semibold text-ink">Boston, MA</strong>
+          <small className="text-[11px] uppercase tracking-wider text-muted">Delivery hub</small>
         </div>
-        <span className="fleet-hub-dot" />
       </div>
     </div>
   )
@@ -170,21 +174,47 @@ function GpsTrackingPanel() {
   }, [])
 
   return (
-    <section className="gps-tracking-panel" aria-labelledby="gps-tracking-title" data-reveal="scale">
-      <div className="gps-tracking-copy">
-        <span className="gps-kicker"><i /> Live GPS tracking</span>
-        <h3 id="gps-tracking-title">Every route has a live position.</h3>
-        <p>Follow each truck from dispatch through delivery with location, route progress, and destination status in one clear view.</p>
-        <dl className="gps-facts">
-          <div><dt>VEHICLE</dt><dd>ATD-1048</dd></div>
-          <div><dt>SPEED</dt><dd>64 mph</dd></div>
-          <div><dt>ETA</dt><dd>1h 42m</dd></div>
+    <section
+      className="mt-6 grid overflow-hidden rounded-lg border border-border bg-[#10161f] text-ink shadow-card md:grid-cols-[minmax(280px,0.82fr)_minmax(320px,1.18fr)]"
+      aria-labelledby="gps-tracking-title"
+    >
+      <div className="flex flex-col justify-center p-8 md:p-12">
+        <span className="flex items-center gap-2 font-head text-[11px] font-bold uppercase tracking-[0.12em] text-accent-hot">
+          <i className="inline-block h-2 w-2 rounded-full bg-green shadow-[0_0_0_5px_rgba(82,208,135,0.13)]" />
+          Live GPS tracking
+        </span>
+        <h3 id="gps-tracking-title" className="mt-4 font-head text-[clamp(27px,3vw,41px)] font-semibold leading-tight text-ink">
+          Every route has a live position.
+        </h3>
+        <p className="mt-3 max-w-[37ch] text-body">
+          Follow each truck from dispatch through delivery with location, route progress, and destination status in one clear view.
+        </p>
+        <dl className="my-7 flex gap-6">
+          <div>
+            <dt className="font-head text-[9px] font-bold tracking-wider text-muted">VEHICLE</dt>
+            <dd className="mt-1 font-head text-base font-bold text-ink">ATD-1048</dd>
+          </div>
+          <div>
+            <dt className="font-head text-[9px] font-bold tracking-wider text-muted">SPEED</dt>
+            <dd className="mt-1 font-head text-base font-bold text-ink">64 mph</dd>
+          </div>
+          <div>
+            <dt className="font-head text-[9px] font-bold tracking-wider text-muted">ETA</dt>
+            <dd className="mt-1 font-head text-base font-bold text-ink">1h 42m</dd>
+          </div>
         </dl>
-        <div className="gps-route-status"><span>Newark, NJ</span><b>In transit</b><span>Trenton, NJ</span></div>
+        <div className="flex items-center justify-between gap-2 border-t border-border pt-4 font-head text-[11px] font-semibold text-body">
+          <span>Newark, NJ</span>
+          <b className="font-bold uppercase tracking-wider text-green">In transit</b>
+          <span>Trenton, NJ</span>
+        </div>
       </div>
-      <div className="gps-map-shell">
-        <div ref={mapRef} className="gps-real-map" aria-label="Live route map from Newark to Trenton" />
-        <div className="gps-map-tag"><i /> ATD-1048 reporting live</div>
+      <div className="relative min-h-[370px] border-t border-border md:border-l md:border-t-0">
+        <div ref={mapRef} className="h-full min-h-[370px] w-full" aria-label="Live route map from Newark to Trenton" />
+        <div className="absolute right-4 top-4 z-[500] flex items-center gap-2 border border-border bg-dark/90 px-2.5 py-2 font-head text-[10px] font-bold tracking-wide text-ink">
+          <i className="inline-block h-2 w-2 rounded-full bg-green shadow-[0_0_0_5px_rgba(82,208,135,0.13)]" />
+          ATD-1048 reporting live
+        </div>
       </div>
     </section>
   )
@@ -218,18 +248,19 @@ function useCountUp(target, active, duration = 1400) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
+    // intentional: count-up fires once when section enters viewport
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
-  return active ? target : value
+  return value
 }
 
 function StatCounter({ label, target, suffix, active }) {
   const value = useCountUp(target, active)
   return (
-    <div className="live-stat-card tilt-card" data-reveal>
-      <span className="live-stat-pulse" />
-      <strong>{formatStat(value, suffix)}</strong>
-      <small>{label}</small>
+    <div className="relative flex min-h-[100px] flex-col justify-center rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 px-5 py-4 shadow-card backdrop-blur-sm">
+      <span className="absolute right-4 top-4 h-2 w-2 rounded-full bg-green animate-[hub-pulse_1.8s_ease-out_infinite]" />
+      <strong className="font-head text-2xl font-bold tracking-tight text-ink md:text-3xl">{formatStat(value, suffix)}</strong>
+      <small className="mt-1 text-xs text-muted">{label}</small>
     </div>
   )
 }
@@ -266,7 +297,7 @@ export function LiveStatsStrip() {
   }, [active])
 
   return (
-    <div className="live-stats-strip" ref={ref}>
+    <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" ref={ref}>
       {STATS_SEED.map((s, i) => (
         <StatCounter key={s.key} label={s.label} target={live[i]} suffix={s.suffix} active={active} />
       ))}

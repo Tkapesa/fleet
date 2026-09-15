@@ -1,14 +1,19 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { geoNaturalEarth1, geoPath, geoGraticule10 } from 'd3-geo'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { feature } from 'topojson-client'
 import worldLand from 'world-atlas/land-110m.json'
 import heroVideo from './assets/Hailuo_Video_A cinematic realistic fleet of_554063152114913281.mp4'
 import dashboardImage from './assets/dashboardimage.png'
 import { FleetMotionBoard, GpsTrackingPanel, LiveStatsStrip } from './FleetMotion'
-import './App.css'
+import { useLandingMotion } from './useLandingMotion'
+import TerminalStyleHeader from './TerminalStyleHeader'
+import TerminalStyleFooter from './TerminalStyleFooter'
+import TerminalStyleFAQ from './TerminalStyleFAQ'
+import TerminalStyleContact from './TerminalStyleContact'
+import TerminalStyleQuote from './TerminalStyleQuote'
+import TerminalStyleLogoGrid from './TerminalStyleLogoGrid'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fleet-api-tkapesa.onrender.com'
@@ -244,7 +249,7 @@ function LogoIcon() {
 function RailChevronIcon({ collapsed }) {
   return (
     <svg
-      className={`fleet-rail-toggle-icon ${collapsed ? 'collapsed' : ''}`}
+      className={`transition-transform ${collapsed ? 'rotate-180' : ''}`}
       width="14"
       height="14"
       viewBox="0 0 24 24"
@@ -319,56 +324,56 @@ function RailItemIcon({ itemKey }) {
 
 function FleetPortalRail({ railCollapsed, setRailCollapsed, railItems, currentPath, navigate, handleLogout }) {
   return (
-    <aside className={`fleet-icon-rail ${railCollapsed ? 'collapsed' : ''}`}>
-      <button type="button" className="fleet-rail-brand" aria-label="Home" onClick={() => navigate('/')}>
+    <aside className={`sticky top-0 flex h-svh flex-col gap-3 overflow-y-auto border-r border-border bg-[linear-gradient(180deg,#0f1727_0%,#0a101b_100%)] py-3 ${railCollapsed ? 'px-1.5' : 'px-2.5'}`}>
+      <button type="button" className="mx-auto grid h-[50px] w-[50px] place-items-center rounded-xl border border-border bg-white/5 transition hover:border-border-strong" aria-label="Home" onClick={() => navigate('/')}>
         <LogoIcon />
       </button>
       <button
         type="button"
-        className="fleet-rail-toggle"
+        className="mx-auto grid h-[34px] w-[34px] place-items-center rounded-full border border-border bg-white/10 text-ink transition hover:bg-white/15"
         aria-label={railCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         onClick={() => setRailCollapsed((value) => !value)}
       >
         <RailChevronIcon collapsed={railCollapsed} />
       </button>
-      <div className="fleet-rail-items">
+      <div className="flex flex-1 flex-col gap-1">
         {railItems.map((item) => {
           const isActive = Boolean(item.to) && isRailRouteActive(currentPath, item.to)
           return (
             <button
               type="button"
               key={item.key}
-              className={`fleet-rail-item ${isActive ? 'active' : ''}`}
+              className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-white/5 ${railCollapsed ? 'justify-center' : ''} ${isActive ? 'bg-accent/15 text-accent' : 'text-muted hover:text-ink'}`}
               title={item.title}
               aria-label={item.title}
               onClick={() => item.to && navigate(item.to)}
             >
-              <span className="fleet-rail-icon"><RailItemIcon itemKey={item.key} /></span>
-              {!railCollapsed && <span className="fleet-rail-label">{item.title}</span>}
+              <span className="grid h-8 w-8 shrink-0 place-items-center"><RailItemIcon itemKey={item.key} /></span>
+              {!railCollapsed && <span className="truncate font-head text-[12px] font-semibold">{item.title}</span>}
             </button>
           )
         })}
       </div>
-      <div className="fleet-rail-footer-actions">
+      <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
         <button
           type="button"
-          className="fleet-rail-ghost"
+          className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-muted transition hover:bg-white/5 hover:text-ink"
           title="Compliance"
           aria-label="Compliance"
           onClick={() => navigate('/compliance')}
         >
-          <span className="fleet-rail-ghost-icon"><RailItemIcon itemKey="support" /></span>
-          {!railCollapsed && <span className="fleet-rail-ghost-label">Compliance</span>}
+          <span className="grid h-8 w-8 shrink-0 place-items-center"><RailItemIcon itemKey="support" /></span>
+          {!railCollapsed && <span className="truncate font-head text-[12px] font-semibold">Compliance</span>}
         </button>
         <button
           type="button"
-          className="fleet-rail-ghost"
+          className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-muted transition hover:bg-white/5 hover:text-ink"
           title="Logout"
           aria-label="Logout"
           onClick={handleLogout}
         >
-          <span className="fleet-rail-ghost-icon"><RailItemIcon itemKey="logout" /></span>
-          {!railCollapsed && <span className="fleet-rail-ghost-label">Logout</span>}
+          <span className="grid h-8 w-8 shrink-0 place-items-center"><RailItemIcon itemKey="logout" /></span>
+          {!railCollapsed && <span className="truncate font-head text-[12px] font-semibold">Logout</span>}
         </button>
       </div>
     </aside>
@@ -472,9 +477,9 @@ function CloudsIcon() {
 
 function EyebrowRow({ label = 'ATONDA' }) {
   return (
-    <div className="eyebrow-row">
-      <span className="eyebrow-bar" />
-      <span className="eyebrow-label">{label}</span>
+    <div className="flex items-center gap-3">
+      <span className="h-px w-8 bg-accent" />
+      <span className="font-head text-[11px] font-bold uppercase tracking-[0.14em] text-accent">{label}</span>
     </div>
   )
 }
@@ -490,19 +495,14 @@ function WeatherConditionIcon({ weatherDetails }) {
 
 function FeatureOrbitItem({ number, icon, title, desc, align = 'left' }) {
   return (
-    <div
-      className={`orbit-item ${align}`}
-      data-reveal={align === 'left' ? 'fold-left' : 'fold-right'}
-      data-peek-title={title}
-      data-peek-detail={desc}
-    >
-      <div className={`orbit-num-row ${align}`}>
-        <span className="orbit-num">{number}</span>
-        <span className="orbit-num-line" />
+    <div className={`rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-5 shadow-card backdrop-blur-sm ${align === 'right' ? 'text-right' : ''}`}>
+      <div className={`mb-3 flex items-center gap-3 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+        <span className="font-head text-xs font-bold tracking-wider text-accent">{number}</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
-      <div className="orbit-icon-box tilt-card">{icon}</div>
-      <h4 className="orbit-title">{title}</h4>
-      <p className="orbit-desc">{desc}</p>
+      <div className={`mb-3 grid h-12 w-12 place-items-center rounded-lg border border-accent/30 bg-accent-soft text-accent ${align === 'right' ? 'ml-auto' : ''}`}>{icon}</div>
+      <h4 className="font-head text-lg font-semibold text-ink">{title}</h4>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{desc}</p>
     </div>
   )
 }
@@ -516,134 +516,60 @@ function AiCapabilityIcon({ type }) {
 
 function AiAnalyticsVisual({ type }) {
   if (type === 'fuel') return (
-    <div className="ai-analytics ai-fuel-analytics" aria-label="Fuel efficiency forecast visualization">
-      <div className="ai-analytics-top"><span>FUEL EFFICIENCY FORECAST</span><strong>+8.4% <em>potential</em></strong></div>
+    <div className="mt-5 rounded-md border border-border/80 bg-dark/50 p-3" aria-label="Fuel efficiency forecast visualization">
+      <div className="mb-2 flex items-center justify-between gap-2 font-head text-[10px] font-bold uppercase tracking-wider text-muted [&_strong]:text-green [&_em]:not-italic [&_em]:text-muted"><span>FUEL EFFICIENCY FORECAST</span><strong>+8.4% <em>potential</em></strong></div>
       <svg viewBox="0 0 300 92" role="img" aria-label="Fuel efficiency trend over seven days">
         <defs><linearGradient id="fuelArea" x1="0" x2="0" y1="0" y2="1"><stop stopColor="#57d994" stopOpacity=".32" /><stop offset="1" stopColor="#57d994" stopOpacity="0" /></linearGradient></defs>
-        <path className="ai-chart-grid" d="M0 20H300M0 46H300M0 72H300" />
-        <path className="ai-fuel-area" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12 V92H0Z" />
-        <path className="ai-fuel-line" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12" />
-        <circle cx="217" cy="26" r="4" className="ai-chart-alert" /><circle cx="300" cy="12" r="4" className="ai-chart-point" />
+        <path className="stroke-border stroke-[0.5]" d="M0 20H300M0 46H300M0 72H300" />
+        <path className="fill-[url(#fuelArea)]" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12 V92H0Z" />
+        <path className="fill-none stroke-green stroke-2" d="M0 72 C25 64 31 69 53 59 S88 65 110 48 S140 54 160 40 S194 47 217 26 S251 36 272 18 S290 21 300 12" />
+        <circle cx="217" cy="26" r="4" className="fill-accent" /><circle cx="300" cy="12" r="4" className="fill-green" />
       </svg>
-      <div className="ai-analytics-legend"><span><i className="forecast" />Projected MPG</span><span><i className="alert" />Idle anomaly</span></div>
+      <div className="mt-2 flex gap-4 text-[10px] text-muted [&_i]:mr-1.5 [&_i]:inline-block [&_i]:h-2 [&_i]:w-2 [&_i]:rounded-full"><span><i className="bg-green" />Projected MPG</span><span><i className="bg-accent" />Idle anomaly</span></div>
     </div>
   )
   if (type === 'route') return (
-    <div className="ai-analytics ai-route-analytics" aria-label="Route savings comparison visualization">
-      <div className="ai-analytics-top"><span>ROUTE OPTIMIZER</span><strong>$28 <em>saved</em></strong></div>
-      <div className="ai-route-bars"><span>Current <i><b style={{ width: '92%' }} /></i><em>$286</em></span><span>AI route <i><b style={{ width: '76%' }} /></i><em>$258</em></span></div>
-      <div className="ai-route-metrics"><span><b>14</b> min earlier</span><span><b>3.4%</b> less fuel</span><span><b>14</b> mi avoided</span></div>
+    <div className="mt-5 rounded-md border border-border/80 bg-dark/50 p-3" aria-label="Route savings comparison visualization">
+      <div className="mb-2 flex items-center justify-between gap-2 font-head text-[10px] font-bold uppercase tracking-wider text-muted [&_strong]:text-green [&_em]:not-italic [&_em]:text-muted"><span>ROUTE OPTIMIZER</span><strong>$28 <em>saved</em></strong></div>
+      <div className="mt-3 space-y-2 text-xs text-body [&_i]:mx-2 [&_i]:inline-flex [&_i]:h-2 [&_i]:w-28 [&_i]:overflow-hidden [&_i]:rounded-full [&_i]:bg-border [&_b]:block [&_b]:h-full [&_b]:rounded-full [&_b]:bg-accent [&_em]:not-italic [&_em]:text-ink"><span>Current <i><b style={{ width: '92%' }} /></i><em>$286</em></span><span>AI route <i><b style={{ width: '76%' }} /></i><em>$258</em></span></div>
+      <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted [&_b]:text-ink"><span><b>14</b> min earlier</span><span><b>3.4%</b> less fuel</span><span><b>14</b> mi avoided</span></div>
     </div>
   )
   return (
-    <div className="ai-analytics ai-assistant-analytics" aria-label="AI operations recommendation visualization">
-      <div className="ai-assistant-question">Why is fuel spend up today?</div>
-      <div className="ai-assistant-answer"><i />3 vehicles exceeded idle baseline near Dallas. Prioritize ATD-217 before its next dispatch.</div>
-      <div className="ai-assistant-action"><span>RECOMMENDED ACTION</span><strong>Save est. $46 today</strong></div>
+    <div className="mt-5 rounded-md border border-border/80 bg-dark/50 p-3" aria-label="AI operations recommendation visualization">
+      <div className="rounded bg-border/30 px-3 py-2 text-sm text-ink">Why is fuel spend up today?</div>
+      <div className="mt-2 flex gap-2 text-sm text-body [&_i]:mt-1.5 [&_i]:h-2 [&_i]:w-2 [&_i]:shrink-0 [&_i]:rounded-full [&_i]:bg-accent"><i />3 vehicles exceeded idle baseline near Dallas. Prioritize ATD-217 before its next dispatch.</div>
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[10px] uppercase tracking-wider text-muted [&_strong]:font-head [&_strong]:text-sm [&_strong]:normal-case [&_strong]:tracking-normal [&_strong]:text-green"><span>RECOMMENDED ACTION</span><strong>Save est. $46 today</strong></div>
     </div>
   )
 }
 
 function BenefitCard({ title, desc }) {
   return (
-    <div className="benefit-card tilt-card" data-reveal="fold-up" data-peek-title={title} data-peek-detail={desc}>
-      <div className="benefit-check">
+    <div className="flex gap-4 rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-5 shadow-card backdrop-blur-sm">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-green-deep/30 text-green">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
       <div>
-        <h4 className="benefit-title">{title}</h4>
-        <p className="benefit-desc">{desc}</p>
+        <h4 className="font-head text-base font-semibold text-ink">{title}</h4>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">{desc}</p>
       </div>
     </div>
   )
 }
 
 function ComplianceStatusPill({ label, status }) {
+  const tone = status === 'ok'
+    ? 'bg-green/15 text-green'
+    : status === 'warn'
+      ? 'bg-accent-hot/15 text-accent-hot'
+      : 'bg-red-500/15 text-red-400'
   return (
-    <span className={`fleet-pill ${status}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-1 font-head text-[10px] font-bold uppercase tracking-wide ${tone}`}>
       {label}
     </span>
-  )
-}
-
-// ─── Cinematic microinteraction helpers ──────────────────────────────────────
-function CursorDot() {
-  const dotRef = useRef(null)
-
-  useEffect(() => {
-    if (window.matchMedia?.('(hover: none), (pointer: coarse)').matches) return undefined
-    const el = dotRef.current
-    if (!el) return undefined
-
-    function onMove(e) {
-      el.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`
-    }
-    function onOver(e) {
-      const hoverable = e.target.closest('a, [data-cursor-hover]')
-      el.classList.toggle('cursor-hover', Boolean(hoverable))
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseover', onOver)
-    return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseover', onOver)
-    }
-  }, [])
-
-  return <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
-}
-
-function useScrollReveal(deps = []) {
-  useEffect(() => {
-    const nodes = document.querySelectorAll('[data-reveal]')
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.16 },
-    )
-    nodes.forEach((node) => observer.observe(node))
-    return () => observer.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
-}
-
-function useMagnetic(ref, strength = 0.35) {
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return undefined
-    function onMove(e) {
-      const rect = el.getBoundingClientRect()
-      const x = e.clientX - (rect.left + rect.width / 2)
-      const y = e.clientY - (rect.top + rect.height / 2)
-      el.style.transform = `translate(${x * strength}px, ${y * strength}px)`
-    }
-    function onLeave() {
-      el.style.transform = 'translate(0, 0)'
-    }
-    el.addEventListener('mousemove', onMove)
-    el.addEventListener('mouseleave', onLeave)
-    return () => {
-      el.removeEventListener('mousemove', onMove)
-      el.removeEventListener('mouseleave', onLeave)
-    }
-  }, [ref, strength])
-}
-
-function MagneticLink({ className = '', children, ...props }) {
-  const ref = useRef(null)
-  useMagnetic(ref)
-  return (
-    <a ref={ref} className={`magnetic-btn ${className}`} {...props}>
-      {children}
-    </a>
   )
 }
 
@@ -718,91 +644,76 @@ function GlobalWorldMap() {
   }, [])
 
   return (
-    <svg className="global-map-base" viewBox="0 0 100 52" preserveAspectRatio="none" aria-label="World map with continents">
-      <path d={mapPaths.sphere} className="global-map-sphere" />
-      <path d={mapPaths.graticule} className="global-map-graticule" />
-      <path d={mapPaths.land} className="global-map-land" />
+    <svg className="block h-full w-full opacity-90 drop-shadow-lg" viewBox="0 0 100 52" preserveAspectRatio="none" aria-label="World map with continents">
+      <path d={mapPaths.sphere} className="fill-white/[0.02] stroke-white/15 stroke-[0.16]" />
+      <path d={mapPaths.graticule} className="fill-none stroke-white/10 stroke-[0.09]" />
+      <path d={mapPaths.land} className="fill-ink/50 stroke-white/30 stroke-[0.08]" />
     </svg>
   )
 }
 
 function PillarCard({ index, title, desc }) {
   return (
-    <div className="pillar-card tilt-card" data-reveal="fold-up" data-peek-title={title} data-peek-detail={desc}>
-      <span className="pillar-index">( {index} )</span>
-      <h4 className="pillar-title">{title}</h4>
-      <p className="pillar-desc">{desc}</p>
+    <div className="rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-6 shadow-card backdrop-blur-sm">
+      <span className="font-head text-xs font-semibold text-accent">( {index} )</span>
+      <h4 className="mt-3 font-head text-xl font-semibold text-ink">{title}</h4>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{desc}</p>
     </div>
   )
 }
 
 function UseCaseCard({ q, a }) {
   return (
-    <div className="usecase-card" data-reveal="fold-up" data-peek-title={q} data-peek-detail={a}>
-      <p className="usecase-q">{q}</p>
-      <p className="usecase-a">{a}</p>
+    <div className="rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-5 shadow-card backdrop-blur-sm">
+      <p className="font-head text-base font-semibold text-ink">{q}</p>
+      <p className="mt-2 text-sm text-muted">{a}</p>
     </div>
   )
 }
 
 function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLanguage }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const landingRef = useRef(null)
+  const videoRef = useRef(null)
   const copy = getSiteCopy(language)
-  useScrollReveal()
-  const [testimonialIdx, setTestimonialIdx] = useState(0)
-  const [hoverPeek, setHoverPeek] = useState({ visible: false, title: '', detail: '', x: 0, y: 0 })
-  const [contactData, setContactData] = useState({
-    name: '', company: '', phone: '', email: '', reason: 'demo', fleetSize: '1-4', message: '',
-  })
+  useLandingMotion(landingRef)
 
-  const testimonials = [
-    { quote: 'Our platform is great! The system is straightforward, and their customer support is unbeatable!', author: 'Sarah K.', role: 'Fleet Manager' },
-    { quote: 'My logs are always accurate, inspections are stress-free, and I feel more confident on the road.', author: 'Mike L.', role: 'Owner-operator' },
-  ]
-
-  function closeMenu() { setMenuOpen(false) }
-  function selectLanguage(locale) { setLanguage(locale); closeMenu() }
-  function setField(key) { return (e) => setContactData((d) => ({ ...d, [key]: e.target.value })) }
-  function openDemo() { closeMenu(); startDemo() }
-
-  const hideHoverPeek = useCallback(() => {
-    setHoverPeek((prev) => (prev.visible ? { ...prev, visible: false } : prev))
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return undefined
+    video.muted = true
+    const play = video.play()
+    if (play?.catch) play.catch(() => {})
+    return undefined
   }, [])
 
-  const handleHoverPeekMove = useCallback((event) => {
-    if (window.matchMedia?.('(hover: none), (pointer: coarse)').matches) return
-    const target = event.target instanceof Element ? event.target.closest('[data-peek-title]') : null
-    if (!target) {
-      hideHoverPeek()
-      return
-    }
-    const title = target.getAttribute('data-peek-title') ?? ''
-    const detail = target.getAttribute('data-peek-detail') ?? ''
-    const maxX = Math.max(24, window.innerWidth - 300)
-    const maxY = Math.max(24, window.innerHeight - 170)
-    const x = Math.min(event.clientX + 18, maxX)
-    const y = Math.min(event.clientY + 20, maxY)
-    setHoverPeek({ visible: true, title, detail, x, y })
-  }, [hideHoverPeek])
+  function openDemo() { startDemo() }
 
   return (
-    <div className="site-wrap" onMouseMove={handleHoverPeekMove} onMouseLeave={hideHoverPeek}>
-      <div className="site-bg-media" aria-hidden="true">
-        <video className="site-bg-video" autoPlay muted loop playsInline preload="auto">
+    <div ref={landingRef} className="relative isolate min-h-screen overflow-x-hidden text-body font-body">
+      <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden" aria-hidden="true">
+        <video
+          ref={videoRef}
+          className="h-full w-full object-cover brightness-[1.14] contrast-[1.08] saturate-[1.08]"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          poster={dashboardImage}
+        >
           <source src={HERO_VIDEO_URL} type="video/mp4" />
         </video>
       </div>
-      <CursorDot />
       <div
-        className={`hover-peek${hoverPeek.visible ? ' show' : ''}`}
-        style={{ left: hoverPeek.x, top: hoverPeek.y }}
-        aria-hidden={!hoverPeek.visible}
-      >
-        <strong>{hoverPeek.title}</strong>
-        <span>{hoverPeek.detail}</span>
-      </div>
-      <a className="whatsapp-float" href={WHATSAPP_CONTACT_URL} target="_blank" rel="noreferrer" aria-label="Contact our team on WhatsApp">
-        <span className="contact-agent-avatar" aria-hidden="true">
+        className="pointer-events-none fixed inset-0 -z-10"
+        aria-hidden="true"
+        style={{
+          background: 'linear-gradient(180deg, rgba(4,4,6,.42) 0%, rgba(4,4,6,.28) 38%, rgba(4,4,6,.55) 100%), radial-gradient(1000px 500px at 20% 8%, rgba(255,75,43,.1), transparent 62%)',
+        }}
+      />
+
+      <a className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full border border-border bg-card/95 py-2 pl-2 pr-4 shadow-float backdrop-blur-sm transition hover:border-accent" href={WHATSAPP_CONTACT_URL} target="_blank" rel="noreferrer" aria-label="Contact our team on WhatsApp">
+        <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full animate-[agent-pulse_2.2s_ease-out_infinite]" aria-hidden="true">
           <svg viewBox="0 0 56 56" width="28" height="28" fill="none">
             <defs>
               <linearGradient id="agentSkin" x1="0" y1="0" x2="1" y2="1">
@@ -823,109 +734,82 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
             <path d="M24 27.2c1.3 1.4 2.7 2 4 2 1.4 0 2.8-.6 4-2" stroke="#b16948" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </span>
-        <span className="contact-agent-meta">
-          <strong>{copy.contactTeam}</strong>
-          <small>{copy.dispatchSupport}</small>
+        <span className="hidden flex-col sm:flex">
+          <strong className="font-head text-xs font-bold text-ink">{copy.contactTeam}</strong>
+          <small className="text-[10px] text-muted">{copy.dispatchSupport}</small>
         </span>
       </a>
-      {/* NAV */}
-      <header className="site-header" id="top">
-        <div className="hdr-inner">
-          <a href="#top" className="site-logo">
-            <LogoIcon />
-            <span className="logo-text">ATONDA</span>
-          </a>
-          <nav className={`main-nav${menuOpen ? ' nav-open' : ''}`}>
-            <a href="#features" onClick={closeMenu}>{copy.features}</a>
-            <Link to="/compliance" onClick={closeMenu}>{copy.compliance}</Link>
-            <a href="#contact" onClick={closeMenu}>{copy.contact}</a>
-            <span className="nav-sep" />
-            <Link to={token && !isDemoSession ? '/portal' : '/login'} className="nav-login-btn" onClick={closeMenu}>
-              {token && !isDemoSession ? copy.portal : copy.login}
-            </Link>
-            <div className="nav-languages" aria-label="Language selector">
-              <span>{copy.language}</span>
-              <button type="button" className={language === 'en' ? 'active' : ''} lang="en" aria-pressed={language === 'en'} onClick={() => selectLanguage('en')}>ENG</button>
-              <button type="button" className={language === 'fr' ? 'active' : ''} lang="fr" aria-pressed={language === 'fr'} onClick={() => selectLanguage('fr')}>FRA</button>
-            </div>
-          </nav>
-          <div className="header-languages" aria-label="Language selector">
-            <button type="button" className={language === 'en' ? 'active' : ''} lang="en" aria-label="English" title="English" aria-pressed={language === 'en'} onClick={() => selectLanguage('en')}>ENG</button>
-            <button type="button" className={language === 'fr' ? 'active' : ''} lang="fr" aria-label="French" title="French" aria-pressed={language === 'fr'} onClick={() => selectLanguage('fr')}>FRA</button>
-          </div>
-          <button
-            className={`ham-btn${menuOpen ? ' ham-open' : ''}`}
-            onClick={() => setMenuOpen((m) => !m)}
-            aria-label="Toggle menu"
-          >
-            <span /><span /><span />
-          </button>
-        </div>
-      </header>
 
-      {/* HERO */}
-      <section className="hero-section">
-        <div className="hero-decor-1" />
-        <div className="hero-decor-2" />
-        <div className="hero-inner">
-          <div className="hero-body">
-            <div className="hero-content-card">
-              <EyebrowRow label={copy.eyebrow} />
-              <h1 className="cine-headline">
+      <TerminalStyleHeader />
+
+      <section className="relative flex min-h-screen flex-col justify-end overflow-hidden pb-16 pt-[96px] sm:justify-center sm:pb-24">
+        <div className="pointer-events-none absolute -right-24 top-24 h-80 w-80 rotate-12 border border-accent/25" />
+        <div className="pointer-events-none absolute -left-16 bottom-28 h-56 w-56 -rotate-12 border border-white/15" />
+        <div className="relative z-10 mx-auto w-full max-w-[1160px] px-8">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+            <div className="max-w-xl">
+              <div data-hero-anim>
+                <EyebrowRow label={copy.eyebrow} />
+              </div>
+              <h1 data-hero-anim className="mt-4 font-head text-[clamp(42px,7vw,72px)] font-bold leading-[0.95] tracking-tight text-ink [&_em]:not-italic [&_em]:text-accent">
                 {copy.heroTitle}<br /><em>{copy.heroAccent}</em>
               </h1>
-              <p className="cine-sub">
+              <p data-hero-anim className="mt-5 max-w-[42ch] text-base leading-relaxed text-body">
                 {copy.heroCopy}
               </p>
-              <div className="hero-actions">
-                <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? copy.openingDemo : copy.demo}</button>
-                <a href="#live-network" className="hero-see-link underline-link">{copy.seeFleet} &#8595;</a>
+              <div data-hero-anim className="mt-8 flex flex-wrap items-center gap-5">
+                <button type="button" className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-[17px] font-head text-[15px] font-semibold text-white shadow-[0_12px_30px_rgba(255,90,31,.35)] transition hover:opacity-95 disabled:cursor-default disabled:opacity-45" onClick={openDemo} disabled={demoLoading}>{demoLoading ? copy.openingDemo : copy.demo}</button>
+                <a href="#live-network" className="font-head text-sm font-semibold text-ink underline decoration-accent/60 underline-offset-4 transition hover:text-accent">{copy.seeFleet} &#8595;</a>
               </div>
             </div>
-            <div className="hero-call-card">
-              <p>{copy.appointment}</p>
-              <a href="tel:+19177536653" className="underline-link">+1 (917) 753-6653</a>
+            <div data-hero-anim className="rounded-xl border border-white/20 bg-[rgba(12,12,15,.55)] p-5 shadow-card backdrop-blur-md">
+              <p className="text-sm text-muted">{copy.appointment}</p>
+              <a href="tel:+19177536653" className="mt-2 inline-block font-head text-lg font-semibold text-ink underline decoration-accent/60 underline-offset-4 transition hover:text-accent">+1 (917) 753-6653</a>
             </div>
           </div>
         </div>
       </section>
 
+      <TerminalStyleLogoGrid />
+
       {/* LIVE FLEET NETWORK */}
-      <section id="live-network" className="light-sect fleet-motion-sect">
-        <div className="sect-inner">
-          <div className="fleet-motion-hdr" data-reveal>
-            <EyebrowRow label={copy.whatWeDo} />
-            <h2>{copy.engine}</h2>
-            <p className="sect-sub">
+      <section id="live-network" className="relative py-20">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="mx-auto max-w-2xl text-center">
+            <div className="flex justify-center"><EyebrowRow label={copy.whatWeDo} /></div>
+            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">{copy.engine}</h2>
+            <p className="mx-auto mt-4 max-w-[54ch] text-body">
               {copy.engineCopy}
             </p>
           </div>
-          <FleetMotionBoard />
-          <GpsTrackingPanel />
-          <LiveStatsStrip />
+          <div data-animate="scale"><FleetMotionBoard /></div>
+          <div data-animate className="mt-6"><GpsTrackingPanel /></div>
+          <div data-animate className="mt-6"><LiveStatsStrip /></div>
         </div>
       </section>
 
       {/* PILLARS */}
-      <section className="dark-sect pillars-sect">
-        <div className="sect-inner">
-          <div className="pillars-hdr" data-reveal>
-            <span className="pillar-kicker">( Three things we get right )</span>
-            <h2>We move fleets forward.</h2>
+      <section className="relative py-20">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="mb-10">
+            <span className="font-head text-xs font-semibold uppercase tracking-wider text-muted">( Three things we get right )</span>
+            <h2 className="mt-3 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">We move fleets forward.</h2>
           </div>
-          <div className="pillars-grid">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {FLEET_PILLARS.map((p) => (
-              <PillarCard key={p.index} index={p.index} title={p.title} desc={p.desc} />
+              <div key={p.index} data-animate>
+                <PillarCard index={p.index} title={p.title} desc={p.desc} />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="light-sect features-orbit-section">
-        <div className="sect-inner">
-          <div className="features-orbit">
-            <div className="orbit-col left">
+      <section id="features" className="relative py-20">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="grid items-center gap-10 lg:grid-cols-[1fr_minmax(220px,0.9fr)_1fr]">
+            <div className="flex flex-col gap-8">
               <FeatureOrbitItem
                 number="01"
                 icon={<GpsIcon />}
@@ -942,17 +826,17 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
               />
             </div>
 
-            <div className="orbit-center">
-              <div className="orbit-diamond orbit-diamond-a float-anim" />
+            <div className="relative mx-auto flex max-w-sm items-center justify-center">
+              <div className="absolute h-40 w-40 rotate-45 border border-white/20 animate-[float-y_6s_ease-in-out_infinite]" />
               <img
-                className="orbit-truck-3d orbit-truck-image"
+                className="relative z-10 w-full rounded-lg object-contain drop-shadow-2xl"
                 src="https://trucknroll.com/uploads/uploads/_header/2320/SHOT01_251111_Truck_n_Roll_0090_shot01_v1.webp"
                 alt="Fleet management route visual"
                 loading="lazy"
               />
             </div>
 
-            <div className="orbit-col right">
+            <div className="flex flex-col gap-8">
               <FeatureOrbitItem
                 number="02"
                 icon={<DvirIcon />}
@@ -973,51 +857,51 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
       </section>
 
       {/* PLANNED AI CAPABILITIES */}
-      <section className="dark-sect ai-road-sect" id="ai-road-intelligence">
-        <div className="sect-inner">
-          <div className="ai-road-header" data-reveal>
+      <section className="relative py-24" id="ai-road-intelligence">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
               <EyebrowRow label="PLANNED AI CAPABILITIES" />
-              <h2>Make every mile work harder.</h2>
+              <h2 className="mt-3.5 max-w-[570px] font-head text-[clamp(34px,4vw,54px)] font-semibold leading-tight text-ink">Make every mile work harder.</h2>
             </div>
-            <p>We are building decision support that turns your fleet data into clear actions for lower fuel use, smarter routes, and stronger day-to-day operations.</p>
+            <p className="max-w-[430px] text-base leading-relaxed text-muted">We are building decision support that turns your fleet data into clear actions for lower fuel use, smarter routes, and stronger day-to-day operations.</p>
           </div>
-          <div className="ai-road-grid">
-            <article className="ai-road-card" data-reveal="fold-left">
-              <span className="ai-road-icon"><AiCapabilityIcon type="fuel" /></span>
-              <span className="ai-road-status">IN DEVELOPMENT</span>
-              <h3>Fuel intelligence</h3>
-              <p>Forecast fuel consumption by vehicle, load, terrain, idle time, and driving patterns, then surface practical ways to reduce waste.</p>
+          <div className="grid gap-3.5 md:grid-cols-3">
+            <article data-animate="left" className="relative min-h-[370px] overflow-hidden rounded-lg border border-border bg-card/90 p-7 backdrop-blur-sm">
+              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="fuel" /></span>
+              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
+              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Fuel intelligence</h3>
+              <p className="text-sm leading-relaxed text-muted">Forecast fuel consumption by vehicle, load, terrain, idle time, and driving patterns, then surface practical ways to reduce waste.</p>
               <AiAnalyticsVisual type="fuel" />
-              <ul><li>Identify excessive idle time</li><li>Compare vehicle efficiency</li><li>Spot fuel-cost anomalies</li></ul>
+              <ul className="mt-5 grid gap-2 text-[13px] text-[#d8d9d4] [&_li]:before:mr-2 [&_li]:before:text-accent [&_li]:before:content-['→']"><li>Identify excessive idle time</li><li>Compare vehicle efficiency</li><li>Spot fuel-cost anomalies</li></ul>
             </article>
-            <article className="ai-road-card ai-road-card-featured" data-reveal="scale">
-              <span className="ai-road-icon"><AiCapabilityIcon type="route" /></span>
-              <span className="ai-road-status">IN DEVELOPMENT</span>
-              <h3>Route savings engine</h3>
-              <p>Evaluate route alternatives against traffic, tolls, fuel burn, delivery windows, and vehicle restrictions to recommend the better run.</p>
+            <article data-animate="scale" className="relative min-h-[370px] overflow-hidden rounded-lg border border-accent/40 bg-[#1a1b1d]/90 p-7 shadow-[inset_0_3px_0_#ff4b2b] backdrop-blur-sm">
+              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="route" /></span>
+              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
+              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Route savings engine</h3>
+              <p className="text-sm leading-relaxed text-muted">Evaluate route alternatives against traffic, tolls, fuel burn, delivery windows, and vehicle restrictions to recommend the better run.</p>
               <AiAnalyticsVisual type="route" />
             </article>
-            <article className="ai-road-card" data-reveal="fold-right">
-              <span className="ai-road-icon"><AiCapabilityIcon type="assistant" /></span>
-              <span className="ai-road-status">IN DEVELOPMENT</span>
-              <h3>Operations assistant</h3>
-              <p>Ask focused questions about your fleet and get a plain-language answer with the next best action for dispatch, safety, and maintenance.</p>
+            <article data-animate="right" className="relative min-h-[370px] overflow-hidden rounded-lg border border-border bg-card/90 p-7 backdrop-blur-sm">
+              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="assistant" /></span>
+              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
+              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Operations assistant</h3>
+              <p className="text-sm leading-relaxed text-muted">Ask focused questions about your fleet and get a plain-language answer with a next best action for dispatch, safety, and maintenance.</p>
               <AiAnalyticsVisual type="assistant" />
-              <ul><li>What is driving fuel use today?</li><li>Which load is most at risk?</li><li>Where can we save time this week?</li></ul>
+              <ul className="mt-5 grid gap-2 text-[13px] text-[#d8d9d4] [&_li]:before:mr-2 [&_li]:before:text-accent [&_li]:before:content-['→']"><li>What is driving fuel use today?</li><li>Which load is most at risk?</li><li>Where can we save time this week?</li></ul>
             </article>
           </div>
         </div>
       </section>
 
       {/* STATS BAND */}
-      <section className="dark-sect stats-band">
-        <div className="sect-inner">
-          <div className="stats-band-grid">
+      <section className="relative py-16">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FLEET_STATS_BAND.map((s) => (
-              <div className="stat-big" key={s.label} data-reveal data-peek-title={s.label} data-peek-detail={`Current indicator: ${s.num}`}>
-                <span className="stat-big-num">{s.num}</span>
-                <span className="stat-big-label">{s.label}</span>
+              <div data-animate className="flex min-h-[122px] flex-col justify-center rounded-[18px] border border-border bg-gradient-to-br from-card/80 to-dark/70 p-[18px] shadow-card backdrop-blur-md" key={s.label}>
+                <span className="font-head text-3xl font-bold text-ink">{s.num}</span>
+                <span className="mt-1 text-sm text-muted">{s.label}</span>
               </div>
             ))}
           </div>
@@ -1025,26 +909,31 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
       </section>
 
       {/* GLOBAL MAP */}
-      <section className="light-sect global-sect" id="global">
-        <div className="sect-inner">
-          <div className="fleet-motion-hdr" data-reveal>
-            <EyebrowRow label="GLOBAL COVERAGE" />
-            <h2>Fleet management at world scale.</h2>
-            <p className="sect-sub">
+      <section className="relative py-20" id="global">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="mx-auto max-w-2xl text-center">
+            <div className="flex justify-center"><EyebrowRow label="GLOBAL COVERAGE" /></div>
+            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">Fleet management at world scale.</h2>
+            <p className="mx-auto mt-4 max-w-[54ch] text-body">
               As you scroll, this live map highlights our cross-region operations and connected hubs
               across North America, Europe, the Middle East, Asia-Pacific, and Latin America.
             </p>
           </div>
 
-          <div className="global-map-card" data-reveal="scale" data-peek-title="Global Coverage" data-peek-detail="Live hub connectivity across major regions.">
+          <div data-animate="scale" className="relative mt-6 min-h-[430px] overflow-hidden rounded-3xl border border-border-strong bg-gradient-to-br from-card/80 to-dark/70 shadow-card backdrop-blur-md">
             <GlobalWorldMap />
 
-            <svg className="global-routes" viewBox="0 0 100 52" preserveAspectRatio="none" aria-hidden="true">
+            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 52" preserveAspectRatio="none" aria-hidden="true">
               {GLOBAL_ROUTES.map(([from, to], index) => {
                 const start = GLOBAL_HUBS[from]
                 const end = GLOBAL_HUBS[to]
                 return (
-                  <path key={`${from}-${to}`} d={buildArcPath(start, end)} className="global-route" style={{ '--route-delay': `${index * 0.18}s` }} />
+                  <path
+                    key={`${from}-${to}`}
+                    d={buildArcPath(start, end)}
+                    className="fill-none stroke-accent/75 stroke-[0.45] stroke-linecap-round [stroke-dasharray:2_1.2] opacity-0 animate-[route-draw_1.2s_ease_forwards]"
+                    style={{ animationDelay: `${index * 0.18}s` }}
+                  />
                 )
               })}
             </svg>
@@ -1052,13 +941,11 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
             {GLOBAL_HUBS.map((hub) => (
               <div
                 key={hub.city}
-                className="global-hub"
+                className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
                 style={{ left: `${hub.x}%`, top: `${hub.y}%` }}
-                data-peek-title={`${hub.city}, ${hub.country}`}
-                data-peek-detail={`Language: ${hub.language}`}
               >
-                <span className="global-hub-dot" />
-                <small>{hub.city}</small>
+                <span className="h-2.5 w-2.5 rounded-full bg-green shadow-[0_0_0_0_rgba(51,209,122,0.56)] animate-[hub-pulse_1.8s_ease-out_infinite]" />
+                <small className="rounded-full border border-border-strong bg-dark/60 px-1.5 py-0.5 font-head text-[10px] uppercase tracking-wide text-ink/90">{hub.city}</small>
               </div>
             ))}
           </div>
@@ -1066,142 +953,49 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
       </section>
 
       {/* USE CASES */}
-      <section id="about" className="light-sect usecase-sect">
-        <div className="sect-inner">
-          <div className="fleet-motion-hdr" data-reveal>
-            <EyebrowRow label="USE CASES" />
-            <h2>Whatever happens on the road, you're ready.</h2>
+      <section id="about" className="relative py-20">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div data-animate className="mx-auto max-w-2xl text-center">
+            <div className="flex justify-center"><EyebrowRow label="USE CASES" /></div>
+            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">Whatever happens on the road, you're ready.</h2>
           </div>
-          <div className="usecase-grid">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FLEET_USE_CASES.map((u) => (
-              <UseCaseCard key={u.q} q={u.q} a={u.a} />
+              <div key={u.q} data-animate>
+                <UseCaseCard q={u.q} a={u.a} />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* BENEFITS */}
-      <section className="dark-sect">
-        <div className="sect-inner">
-          <div className="benefits-cols">
-            <div className="benefits-col">
-              <BenefitCard title="Paperless DVIRs" desc="Say goodbye to paperwork with our digital inspection reports." />
-              <BenefitCard title="Stress-Free Setup" desc="Get started quickly with our easy installation process." />
-              <BenefitCard title="24/7 Customer Support" desc="Count on expert assistance whenever you need it, day or night." />
+      <section className="relative py-20">
+        <div className="mx-auto max-w-[1160px] px-8">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="flex flex-col gap-4">
+              <div data-animate><BenefitCard title="Paperless DVIRs" desc="Say goodbye to paperwork with our digital inspection reports." /></div>
+              <div data-animate><BenefitCard title="Stress-Free Setup" desc="Get started quickly with our easy installation process." /></div>
+              <div data-animate><BenefitCard title="24/7 Customer Support" desc="Count on expert assistance whenever you need it, day or night." /></div>
             </div>
-            <div className="benefits-col">
-              <BenefitCard title="Accurate IFTA Reporting" desc="Simplify fuel tax reporting with precision and ease." />
-              <BenefitCard title="No Long-Term Contracts" desc="Enjoy flexibility and freedom with contract-free solutions." />
-              <BenefitCard title="User-Friendly App" desc="Manage your fleet effortlessly with our intuitive mobile app." />
+            <div className="flex flex-col gap-4">
+              <div data-animate><BenefitCard title="Accurate IFTA Reporting" desc="Simplify fuel tax reporting with precision and ease." /></div>
+              <div data-animate><BenefitCard title="No Long-Term Contracts" desc="Enjoy flexibility and freedom with contract-free solutions." /></div>
+              <div data-animate><BenefitCard title="User-Friendly App" desc="Manage your fleet effortlessly with our intuitive mobile app." /></div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section id="testimonials" className="dark-sect test-sect">
-        <div className="sect-inner">
-          <div className="test-slider">
-            {testimonials.map((t, i) => (
-              <div key={i} className={`test-slide${i === testimonialIdx ? ' slide-active' : ''}`}>
-                <div className="quote-mark">"</div>
-                <blockquote className="test-quote">{t.quote}</blockquote>
-                <div className="test-author">
-                  <h5>{t.author}</h5>
-                  <span className="test-role">{t.role}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="test-dots">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                className={`test-dot${i === testimonialIdx ? ' dot-active' : ''}`}
-                onClick={() => setTestimonialIdx(i)}
-                aria-label={`Testimonial ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* QUOTE — Terminal big image */}
+      <TerminalStyleQuote />
 
-      {/* CONTACT */}
-      <section id="contact" className="light-sect contact-sect">
-        <div className="sect-inner">
-          <h2 className="dark-h2">Contact us</h2>
-          <p className="contact-sub">
-            Our platform offers a powerful, easy-to-use solution designed to streamline fleet management and ensure full
-            compliance with industry regulations. Ready to stay compliant and upgrade your fleet operations? Fill out the
-            form below, and one of our specialists will reach out to you shortly.
-          </p>
-          <div className="contact-card">
-            <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
-              <input type="text" placeholder="Your Name" value={contactData.name} onChange={setField('name')} />
-              <input type="text" placeholder="Company Name" value={contactData.company} onChange={setField('company')} />
-              <input type="tel" placeholder="Phone number" value={contactData.phone} onChange={setField('phone')} />
-              <input type="email" placeholder="Work email" value={contactData.email} onChange={setField('email')} />
-              <div className="cf-select-wrap">
-                <label className="cf-select-label">What is the reason for contacting us?</label>
-                <div className="cf-select-box">
-                  <select value={contactData.reason} onChange={setField('reason')}>
-                    <option value="demo">Request a demo</option>
-                    <option value="support">Customer support</option>
-                    <option value="sales">Contact sales</option>
-                    <option value="partnership">Partnership inquiry</option>
-                    <option value="general">General inquiry</option>
-                  </select>
-                  <span className="cf-arrow">v</span>
-                </div>
-              </div>
-              <div className="cf-select-wrap">
-                <label className="cf-select-label">Please select your fleet size</label>
-                <div className="cf-select-box">
-                  <select value={contactData.fleetSize} onChange={setField('fleetSize')}>
-                    <option>1-4</option><option>5-19</option><option>20-50</option>
-                    <option>51-99</option><option>100+</option>
-                  </select>
-                  <span className="cf-arrow">v</span>
-                </div>
-              </div>
-              <textarea placeholder="Please briefly describe your needs:" rows={5} value={contactData.message} onChange={setField('message')} />
-              <button type="submit" className="btn-yellow btn-submit">Send message</button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER CTA */}
-      <section className="footer-cta-sect">
-        <div className="sect-inner footer-cta-inner" data-reveal>
-          <h3 className="footer-cta-h3">
-            Fleets don't remember dashboards. <em>They remember on-time deliveries.</em>
-          </h3>
-          <button type="button" className="btn-yellow" onClick={openDemo} disabled={demoLoading}>{demoLoading ? 'Opening demo...' : 'Request a demo'}</button>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="site-footer">
-        <div className="footer-contacts">
-          <div className="footer-logo-wrap">
-            <LogoIcon />
-            <span className="footer-logo-text">ATONDA</span>
-          </div>
-          <div className="footer-contact-item">
-            <span className="fc-label">Phone</span>
-            <a href="tel:+19177536653" className="fc-value">+1 (917) 753-6653</a>
-          </div>
-          <div className="footer-contact-item">
-            <span className="fc-label">E-mail</span>
-            <a href="mailto:office@truckapp.us" className="fc-value">office@truckapp.us</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <a href="#top" className="back-top">&#8593;</a>
-          <p>2026 ATONDA | All Rights Reserved</p>
-        </div>
-      </footer>
+      {/* CONTACT → FAQs → FOOTER */}
+      <div className="relative z-10">
+        <TerminalStyleContact />
+        <TerminalStyleFAQ />
+        <TerminalStyleFooter />
+      </div>
     </div>
   )
 }
@@ -1247,7 +1041,7 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
     : Math.round((Math.min(ifta.length, trucks.length) / trucks.length) * 100)
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell compliance-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -1256,19 +1050,19 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
         navigate={navigate}
         handleLogout={handleLogout}
       />
-      <div className="fleet-page-wrap">
-      <header className="fleet-header">
-        <div className="fleet-header-inner">
-          <a href="/" className="portal-logo-link"><LogoIcon /><span>ATONDA</span></a>
-          <div className="fleet-header-actions">
-            <button className="p-btn" onClick={refreshAllResources} disabled={!token}>Sync Compliance Data</button>
-            <button className="p-btn p-btn-sec" onClick={() => navigate('/portal')}>Back to Portal</button>
+      <div className="flex min-h-0 flex-col overflow-auto">
+      <header className="border-b border-border bg-portal">
+        <div className="flex items-center justify-between gap-4 px-6 py-4">
+          <a href="/" className="flex items-center gap-2.5 font-head text-[15px] font-bold text-ink"><LogoIcon /><span>ATONDA</span></a>
+          <div className="flex items-center gap-2.5">
+            <button className="rounded-md bg-accent px-[18px] py-2 font-head text-[13px] font-semibold text-ink transition hover:-translate-y-px disabled:cursor-default disabled:opacity-45" onClick={refreshAllResources} disabled={!token}>Sync Compliance Data</button>
+            <button className="rounded-md bg-accent px-[18px] py-2 font-head text-[13px] font-semibold text-ink transition hover:-translate-y-px disabled:cursor-default disabled:opacity-45 border border-border-strong bg-white/10 text-ink" onClick={() => navigate('/portal')}>Back to Portal</button>
           </div>
         </div>
       </header>
 
-      <main className="fleet-main">
-        <section className="fleet-hero-card">
+      <main className="mx-auto w-full max-w-6xl space-y-6 p-6 md:p-8">
+        <section className="rounded-2xl border border-border bg-card/60 p-6 md:p-8">
           <EyebrowRow label="FLEET COMPLIANCE" />
           <h1>Stay audit-ready with a clear compliance command center</h1>
           <p>
@@ -1277,8 +1071,8 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
           </p>
         </section>
 
-        <section className="fleet-kpi-grid">
-          <article className="fleet-kpi-card">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article className="rounded-xl border border-border bg-card p-5 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-2 [&_strong]:block [&_strong]:font-head [&_strong]:text-2xl [&_strong]:text-ink">
             <p>Fleet Units</p>
             <strong>{trucks.length}</strong>
             <ComplianceStatusPill
@@ -1287,7 +1081,7 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
             />
           </article>
 
-          <article className="fleet-kpi-card">
+          <article className="rounded-xl border border-border bg-card p-5 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-2 [&_strong]:block [&_strong]:font-head [&_strong]:text-2xl [&_strong]:text-ink">
             <p>Driver Licensing</p>
             <strong>{drivers.length}</strong>
             <ComplianceStatusPill
@@ -1296,7 +1090,7 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
             />
           </article>
 
-          <article className="fleet-kpi-card">
+          <article className="rounded-xl border border-border bg-card p-5 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-2 [&_strong]:block [&_strong]:font-head [&_strong]:text-2xl [&_strong]:text-ink">
             <p>IFTA Record Coverage</p>
             <strong>{iftaCoverage}%</strong>
             <ComplianceStatusPill
@@ -1305,7 +1099,7 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
             />
           </article>
 
-          <article className="fleet-kpi-card">
+          <article className="rounded-xl border border-border bg-card p-5 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-2 [&_strong]:block [&_strong]:font-head [&_strong]:text-2xl [&_strong]:text-ink">
             <p>Open Risks</p>
             <strong>{totalRiskItems}</strong>
             <ComplianceStatusPill
@@ -1315,17 +1109,17 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
           </article>
         </section>
 
-        <section className="fleet-content-grid">
-          <article className="compliance-list-card">
-            <div className="fleet-card-head">
+        <section className="grid gap-4 lg:grid-cols-2">
+          <article className="rounded-xl border border-border bg-card p-5">
+            <div className="mb-4 flex items-center justify-between gap-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink">
               <h3>Driver License Watchlist</h3>
-              <button className="fleet-link-btn" onClick={() => navigate('/portal')}>Open Drivers</button>
+              <button className="font-head text-xs font-semibold text-accent transition hover:text-accent-hot" onClick={() => navigate('/portal')}>Open Drivers</button>
             </div>
-            <div className="fleet-list-wrap">
-              {drivers.length === 0 && <p className="fleet-empty">No driver records yet.</p>}
+            <div className="space-y-3">
+              {drivers.length === 0 && <p className="text-sm text-muted">No driver records yet.</p>}
 
               {expiredDrivers.map((driver) => (
-                <div className="fleet-list-row" key={`expired-${driver.id}`}>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-dark/40 px-3 py-3 [&_strong]:font-head [&_strong]:text-sm [&_strong]:text-ink [&_p]:text-xs [&_p]:text-muted" key={`expired-${driver.id}`}>
                   <div>
                     <strong>{driver.full_name ?? 'Unknown Driver'}</strong>
                     <p>{driver.license_number ?? 'No license number'}</p>
@@ -1335,7 +1129,7 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
               ))}
 
               {expiringDrivers.map((driver) => (
-                <div className="fleet-list-row" key={`expiring-${driver.id}`}>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-dark/40 px-3 py-3 [&_strong]:font-head [&_strong]:text-sm [&_strong]:text-ink [&_p]:text-xs [&_p]:text-muted" key={`expiring-${driver.id}`}>
                   <div>
                     <strong>{driver.full_name ?? 'Unknown Driver'}</strong>
                     <p>Expires {driver.license_expiry}</p>
@@ -1345,32 +1139,32 @@ function FleetCompliance({ token, resources, refreshAllResources, handleLogout }
               ))}
 
               {expiredDrivers.length === 0 && expiringDrivers.length === 0 && drivers.length > 0 && (
-                <p className="fleet-ok-line">All tracked licenses are currently in good standing.</p>
+                <p className="text-sm text-green">All tracked licenses are currently in good standing.</p>
               )}
             </div>
           </article>
 
-          <article className="compliance-list-card">
-            <div className="fleet-card-head">
+          <article className="rounded-xl border border-border bg-card p-5">
+            <div className="mb-4 flex items-center justify-between gap-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink">
               <h3>Maintenance + IFTA Health</h3>
-              <button className="fleet-link-btn" onClick={() => navigate('/portal')}>Open Records</button>
+              <button className="font-head text-xs font-semibold text-accent transition hover:text-accent-hot" onClick={() => navigate('/portal')}>Open Records</button>
             </div>
-            <div className="fleet-list-wrap">
-              <div className="fleet-check-row">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 border-b border-border/50 py-3 text-sm text-body last:border-0">
                 <span>Overdue maintenance items</span>
                 <ComplianceStatusPill
                   status={overdueMaintenance.length === 0 ? 'ok' : 'risk'}
                   label={`${overdueMaintenance.length} open`}
                 />
               </div>
-              <div className="fleet-check-row">
+              <div className="flex items-center justify-between gap-3 border-b border-border/50 py-3 text-sm text-body last:border-0">
                 <span>IFTA records logged</span>
                 <ComplianceStatusPill
                   status={ifta.length >= trucks.length && trucks.length > 0 ? 'ok' : 'warn'}
                   label={`${ifta.length} entries`}
                 />
               </div>
-              <div className="fleet-check-row">
+              <div className="flex items-center justify-between gap-3 border-b border-border/50 py-3 text-sm text-body last:border-0">
                 <span>Total maintenance logs</span>
                 <ComplianceStatusPill status={maintenance.length > 0 ? 'ok' : 'warn'} label={`${maintenance.length} logs`} />
               </div>
@@ -1538,7 +1332,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
   }
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -1548,35 +1342,35 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>{assetType === 'vehicles' ? `Vehicles (${visibleRows.length})` : 'Trailers (0)'}</h1>
           </div>
-          <div className="vehicles-tenant-row">
-            <button className="vehicles-chip">Liberte Trucking</button>
-            <button className="vehicles-chip">All Groups</button>
-            <button className="vehicles-icon-btn" aria-label="Add">+</button>
-            <button className="vehicles-icon-btn" aria-label="Notifications">o</button>
-            <span className="vehicles-user">Bourlaye Coulibaly</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Liberte Trucking</button>
+            <button className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">All Groups</button>
+            <button className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Add">+</button>
+            <button className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Notifications">o</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Bourlaye Coulibaly</span>
           </div>
         </header>
 
-        <div className="vehicles-filter-row">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <input
-            className="vehicles-search"
+            className="min-w-[200px] flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             placeholder="Search by Vehicle ID, ELD S/N or GPS S/N"
             value={queryFleet}
             onChange={(e) => setQueryFleet(e.target.value)}
           />
           <input
-            className="vehicles-search"
+            className="min-w-[200px] flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             placeholder="Search by VIN"
             value={queryVin}
             onChange={(e) => setQueryVin(e.target.value)}
           />
           <select
-            className="vehicles-status"
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -1585,16 +1379,16 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
             <option value="idle">Idle</option>
           </select>
 
-          <div className="vehicles-filter-actions">
-            <button className="vehicles-action-btn" onClick={exportRows}>Export</button>
-            <button className="vehicles-action-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
-            <button className="vehicles-action-btn primary" onClick={refreshAllResources} disabled={!token}>Sync</button>
+          <div className="flex flex-wrap gap-2">
+            <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={exportRows}>Export</button>
+            <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
+            <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot" onClick={refreshAllResources} disabled={!token}>Sync</button>
           </div>
         </div>
 
-        <form className="drivers-form-card" onSubmit={handleRegisterTruck}>
+        <form className="mb-5 rounded-xl border border-border bg-card p-5 [&_h3]:mb-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink" onSubmit={handleRegisterTruck}>
           <h3>Register Truck</h3>
-          <div className="drivers-form-grid">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&_input]:rounded-md [&_input]:border [&_input]:border-border [&_input]:bg-dark/40 [&_input]:px-3 [&_input]:py-2 [&_input]:text-sm [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:bg-dark/40 [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-ink">
             <input required placeholder="License plate" value={truckForm.license_plate} onChange={(e) => setTruckForm((f) => ({ ...f, license_plate: e.target.value }))} />
             <input required placeholder="Make" value={truckForm.make} onChange={(e) => setTruckForm((f) => ({ ...f, make: e.target.value }))} />
             <input required placeholder="Model" value={truckForm.model} onChange={(e) => setTruckForm((f) => ({ ...f, model: e.target.value }))} />
@@ -1605,20 +1399,20 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
             <input type="number" step="0.000001" placeholder="Latitude optional" value={truckForm.latitude} onChange={(e) => setTruckForm((f) => ({ ...f, latitude: e.target.value }))} />
             <input type="number" step="0.000001" placeholder="Longitude optional" value={truckForm.longitude} onChange={(e) => setTruckForm((f) => ({ ...f, longitude: e.target.value }))} />
           </div>
-          <div className="drivers-form-actions">
-            <button type="submit" className="vehicles-action-btn primary" disabled={truckSaving}>{truckSaving ? 'Registering...' : 'Register Truck'}</button>
-            {truckMessage && <p className="drivers-message">{truckMessage}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button type="submit" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot" disabled={truckSaving}>{truckSaving ? 'Registering...' : 'Register Truck'}</button>
+            {truckMessage && <p className="text-sm text-green">{truckMessage}</p>}
           </div>
         </form>
 
-        <div className="vehicles-grid-wrap">
-          <aside className="vehicles-type-card">
-            <button type="button" className={assetType === 'vehicles' ? 'active' : ''} onClick={() => setAssetType('vehicles')}>Vehicles</button>
-            <button type="button" className={assetType === 'trailers' ? 'active' : ''} onClick={() => setAssetType('trailers')}>Trailers</button>
+        <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)]">
+          <aside className="flex flex-row gap-2 rounded-xl border border-border bg-card p-2 lg:flex-col">
+            <button type="button" className={assetType === 'vehicles' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setAssetType('vehicles')}>Vehicles</button>
+            <button type="button" className={assetType === 'trailers' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setAssetType('trailers')}>Trailers</button>
           </aside>
 
-          <div className="vehicles-table-wrap">
-            <table className="vehicles-table">
+          <div className="overflow-auto rounded-xl border border-border bg-card">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm [&_th]:border-b [&_th]:border-border [&_th]:bg-band/50 [&_th]:px-3 [&_th]:py-3 [&_th]:font-head [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted [&_td]:border-b [&_td]:border-border/50 [&_td]:px-3 [&_td]:py-3 [&_td]:text-body">
               <thead>
                 <tr>
                   <th>Vehicle ID</th>
@@ -1636,7 +1430,7 @@ function VehiclesPage({ token, resources, refreshAllResources, handleLogout, fet
               <tbody>
                 {visibleRows.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="vehicles-empty">
+                    <td colSpan={10} className="py-10 text-center text-muted">
                       {assetType === 'vehicles' ? 'No vehicles match current filters.' : 'Trailer view is ready. Connect trailer data to display records.'}
                     </td>
                   </tr>
@@ -1782,7 +1576,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
   }
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -1792,29 +1586,29 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>History ({filteredRows.length})</h1>
           </div>
-          <div className="vehicles-tenant-row">
-            <button type="button" className="vehicles-chip" onClick={() => navigate('/portal')}>Liberte Trucking</button>
-            <button type="button" className="vehicles-chip" onClick={() => setEventType('all')}>All Groups</button>
-            <button type="button" className="vehicles-icon-btn" aria-label="Add" onClick={() => navigate('/portal')}>+</button>
-            <button type="button" className="vehicles-icon-btn" aria-label="Notifications" onClick={() => setEventType('maintenance')}>o</button>
-            <span className="vehicles-user">Bourlaye Coulibaly</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted" onClick={() => navigate('/portal')}>Liberte Trucking</button>
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted" onClick={() => setEventType('all')}>All Groups</button>
+            <button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Add" onClick={() => navigate('/portal')}>+</button>
+            <button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Notifications" onClick={() => setEventType('maintenance')}>o</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Bourlaye Coulibaly</span>
           </div>
         </header>
 
-        <div className="vehicles-filter-row history-filter-row">
+        <div className="mb-4 flex flex-wrap items-center gap-3 mb-4 flex flex-wrap gap-3">
           <input
-            className="vehicles-search"
+            className="min-w-[200px] flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             placeholder="Search by vehicle, event, details, or reference"
             value={queryText}
             onChange={(e) => setQueryText(e.target.value)}
           />
           <select
-            className="vehicles-status"
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent"
             value={eventType}
             onChange={(e) => setEventType(e.target.value)}
           >
@@ -1823,22 +1617,22 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
             <option value="maintenance">Maintenance</option>
             <option value="ifta">IFTA</option>
           </select>
-          <div className="vehicles-filter-actions">
-            <button className="vehicles-action-btn" onClick={exportRows}>Export</button>
-            <button className="vehicles-action-btn" onClick={refreshAllResources} disabled={!token}>Sync</button>
+          <div className="flex flex-wrap gap-2">
+            <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={exportRows}>Export</button>
+            <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={refreshAllResources} disabled={!token}>Sync</button>
           </div>
         </div>
 
-        <div className="vehicles-grid-wrap history-grid-wrap">
-          <aside className="vehicles-type-card">
-            <button className={eventType === 'all' ? 'active' : ''} onClick={() => setEventType('all')}>All</button>
-            <button className={eventType === 'trip' ? 'active' : ''} onClick={() => setEventType('trip')}>Trips</button>
-            <button className={eventType === 'maintenance' ? 'active' : ''} onClick={() => setEventType('maintenance')}>Maintenance</button>
-            <button className={eventType === 'ifta' ? 'active' : ''} onClick={() => setEventType('ifta')}>IFTA</button>
+        <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)]">
+          <aside className="flex flex-row gap-2 rounded-xl border border-border bg-card p-2 lg:flex-col">
+            <button className={eventType === 'all' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setEventType('all')}>All</button>
+            <button className={eventType === 'trip' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setEventType('trip')}>Trips</button>
+            <button className={eventType === 'maintenance' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setEventType('maintenance')}>Maintenance</button>
+            <button className={eventType === 'ifta' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setEventType('ifta')}>IFTA</button>
           </aside>
 
-          <div className="vehicles-table-wrap">
-            <table className="vehicles-table history-table">
+          <div className="overflow-auto rounded-xl border border-border bg-card">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm [&_th]:border-b [&_th]:border-border [&_th]:bg-band/50 [&_th]:px-3 [&_th]:py-3 [&_th]:font-head [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted [&_td]:border-b [&_td]:border-border/50 [&_td]:px-3 [&_td]:py-3 [&_td]:text-body">
               <thead>
                 <tr>
                   <th>Date / Time</th>
@@ -1852,7 +1646,7 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
               <tbody>
                 {filteredRows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="vehicles-empty">No history records match current filters.</td>
+                    <td colSpan={6} className="py-10 text-center text-muted">No history records match current filters.</td>
                   </tr>
                 )}
                 {filteredRows.map((row) => (
@@ -1861,8 +1655,8 @@ function HistoryPage({ token, resources, refreshAllResources, handleLogout, fetc
                     <td>{row.event}</td>
                     <td>{row.vehicle}</td>
                     <td>{row.details}</td>
-                    <td className="history-status-cell">
-                      <span className={`history-badge ${String(row.status).toLowerCase().replace(/\s+/g, '-')}`}>{row.status}</span>
+                    <td className="font-head text-xs font-semibold">
+                      <span className="inline-flex rounded-full bg-accent/15 px-2 py-0.5 font-head text-[10px] font-bold text-accent">{row.status}</span>
                     </td>
                     <td>{row.reference}</td>
                   </tr>
@@ -2069,7 +1863,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
   }, [trucks, occupiedTruckIds])
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -2079,29 +1873,29 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel drivers-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6 flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>Drivers ({filteredDrivers.length})</h1>
-            <p className="drivers-subtitle">Create driver profiles, link each driver to a truck, and monitor expiry status.</p>
+            <p className="text-sm text-muted">Create driver profiles, link each driver to a truck, and monitor expiry status.</p>
           </div>
-          <div className="vehicles-tenant-row">
-            <button type="button" className="vehicles-chip">Driver Center</button>
-            <button type="button" className="vehicles-chip">Compliance Focus</button>
-            <button type="button" className="vehicles-icon-btn" aria-label="Drivers">DR</button>
-            <span className="vehicles-user">Fleet Team</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Driver Center</button>
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Compliance Focus</button>
+            <button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Drivers">DR</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Fleet Team</span>
           </div>
         </header>
 
-        <div className="vehicles-filter-row drivers-filter-row">
+        <div className="mb-4 flex flex-wrap items-center gap-3 flex flex-wrap items-center gap-3">
           <input
-            className="vehicles-search"
+            className="min-w-[200px] flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             placeholder="Search by name, email, phone, license, or assigned truck"
             value={queryText}
             onChange={(e) => setQueryText(e.target.value)}
           />
           <select
-            className="vehicles-status"
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -2110,10 +1904,10 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
             <option value="expiring_soon">Expiring Soon</option>
             <option value="expired">Expired</option>
           </select>
-          <div className="vehicles-filter-actions">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="vehicles-action-btn"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45"
               onClick={() => runToolbarAction(async () => {
                 if (driverResource) await fetchResource(driverResource)
               })}
@@ -2123,7 +1917,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
             </button>
             <button
               type="button"
-              className="vehicles-action-btn"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45"
               onClick={() => runToolbarAction(async () => {
                 if (truckResource) await fetchResource(truckResource)
               })}
@@ -2133,7 +1927,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
             </button>
             <button
               type="button"
-              className="vehicles-action-btn primary"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot"
               onClick={() => runToolbarAction(refreshAllResources)}
               disabled={!token || toolbarBusy}
             >
@@ -2142,31 +1936,31 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
           </div>
         </div>
 
-        <div className="drivers-kpi-row">
-          <div className="drivers-kpi-card">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink">
             <small>Total Drivers</small>
             <strong>{drivers.length}</strong>
           </div>
-          <div className="drivers-kpi-card warn">
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink bg-accent-hot/15 text-accent-hot">
             <small>Expiring Soon</small>
             <strong>{expiringSoonCount}</strong>
           </div>
-          <div className="drivers-kpi-card risk">
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink bg-red-500/15 text-red-400">
             <small>Expired</small>
             <strong>{expiredCount}</strong>
           </div>
         </div>
 
-        <section className="drivers-alert-panel" aria-live="polite">
-          <div className="drivers-alert-head">
+        <section className="rounded-xl border border-border bg-card p-4" aria-live="polite">
+          <div className="mb-3 flex items-center justify-between">
             <h3>Important Expiry Notifications</h3>
             <span>{criticalLicenseAlerts.length} alerts</span>
           </div>
           {criticalLicenseAlerts.length === 0 && (
-            <p className="drivers-alert-ok">No urgent license expiry risks in the next 30 days.</p>
+            <p className="text-sm text-green">No urgent license expiry risks in the next 30 days.</p>
           )}
           {criticalLicenseAlerts.length > 0 && (
-            <div className="drivers-alert-list">
+            <div className="space-y-2">
               {criticalLicenseAlerts.slice(0, 8).map((driver) => {
                 const days = driver.license_days_until_expiry
                 const level = days < 0 ? 'expired' : days <= 7 ? 'urgent' : 'warning'
@@ -2177,12 +1971,12 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                     : `Expires in ${days} day${days === 1 ? '' : 's'}`
 
                 return (
-                  <div className={`drivers-alert-item ${level}`} key={`alert-${driver.id}`}>
+                  <div className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${level === 'expired' ? 'border-red-400/40 bg-red-500/10' : level === 'urgent' ? 'border-accent/40 bg-accent/10' : 'border-accent-hot/40 bg-accent-hot/10'}`} key={`alert-${driver.id}`}>
                     <div>
                       <strong>{driver.full_name}</strong>
                       <p>{driver.license_number} · {driver.license_state ?? 'State N/A'} · {driver.license_expiry}</p>
                     </div>
-                    <span className="drivers-alert-badge">{label}</span>
+                    <span className="rounded-full bg-accent/15 px-2 py-0.5 font-head text-[10px] font-bold text-accent">{label}</span>
                   </div>
                 )
               })}
@@ -2190,18 +1984,18 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
           )}
         </section>
 
-        <div className="vehicles-grid-wrap drivers-grid-wrap">
-          <aside className="vehicles-type-card drivers-type-card">
-            <button type="button" className={statusFilter === 'all' ? 'active' : ''} onClick={() => setStatusFilter('all')}>All Drivers</button>
-            <button type="button" className={statusFilter === 'valid' ? 'active' : ''} onClick={() => setStatusFilter('valid')}>Valid</button>
-            <button type="button" className={statusFilter === 'expiring_soon' ? 'active' : ''} onClick={() => setStatusFilter('expiring_soon')}>Expiring</button>
-            <button type="button" className={statusFilter === 'expired' ? 'active' : ''} onClick={() => setStatusFilter('expired')}>Expired</button>
+        <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)]">
+          <aside className="flex flex-row gap-2 rounded-xl border border-border bg-card p-2 lg:flex-col">
+            <button type="button" className={statusFilter === 'all' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setStatusFilter('all')}>All Drivers</button>
+            <button type="button" className={statusFilter === 'valid' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setStatusFilter('valid')}>Valid</button>
+            <button type="button" className={statusFilter === 'expiring_soon' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setStatusFilter('expiring_soon')}>Expiring</button>
+            <button type="button" className={statusFilter === 'expired' ? 'rounded-md bg-accent/15 px-3 py-2 font-head text-xs font-semibold text-accent' : 'rounded-md px-3 py-2 font-head text-xs font-semibold text-muted'} onClick={() => setStatusFilter('expired')}>Expired</button>
           </aside>
 
-          <div className="drivers-content-stack">
-            <form className="drivers-form-card" onSubmit={handleCreateDriver}>
+          <div className="space-y-5">
+            <form className="mb-5 rounded-xl border border-border bg-card p-5 [&_h3]:mb-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink" onSubmit={handleCreateDriver}>
             <h3>Add Driver</h3>
-            <div className="drivers-form-grid">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&_input]:rounded-md [&_input]:border [&_input]:border-border [&_input]:bg-dark/40 [&_input]:px-3 [&_input]:py-2 [&_input]:text-sm [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:bg-dark/40 [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-ink">
               <input required placeholder="Full name" value={driverForm.full_name} onChange={(e) => setDriverForm((f) => ({ ...f, full_name: e.target.value }))} />
               <input required type="email" placeholder="Email" value={driverForm.email} onChange={(e) => setDriverForm((f) => ({ ...f, email: e.target.value }))} />
               <input required placeholder="Phone" value={driverForm.phone} onChange={(e) => setDriverForm((f) => ({ ...f, phone: e.target.value }))} />
@@ -2235,20 +2029,20 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
               </select>
             </div>
             <textarea placeholder="Notes" rows={3} value={driverForm.notes} onChange={(e) => setDriverForm((f) => ({ ...f, notes: e.target.value }))} />
-            <div className="drivers-form-actions">
-              <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver'}</button>
-              {message && <p className="drivers-message">{message}</p>}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="submit" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot" disabled={saving}>{saving ? 'Saving...' : 'Save Driver'}</button>
+              {message && <p className="text-sm text-green">{message}</p>}
             </div>
             </form>
 
-            <div className="drivers-table-card vehicles-table-wrap">
+            <div className="overflow-auto rounded-xl border border-border bg-card overflow-auto rounded-xl border border-border bg-card">
               {trucks.length === 0 && (
-                <p className="drivers-message">No trucks found in your account yet. Create a truck in Vehicles first, then assign drivers.</p>
+                <p className="text-sm text-green">No trucks found in your account yet. Create a truck in Vehicles first, then assign drivers.</p>
               )}
               {assignmentMessage && (
-                <p className="drivers-message">{assignmentMessage}</p>
+                <p className="text-sm text-green">{assignmentMessage}</p>
               )}
-              <table className="vehicles-table drivers-table">
+              <table className="w-full min-w-[900px] border-collapse text-left text-sm [&_th]:border-b [&_th]:border-border [&_th]:bg-band/50 [&_th]:px-3 [&_th]:py-3 [&_th]:font-head [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted [&_td]:border-b [&_td]:border-border/50 [&_td]:px-3 [&_td]:py-3 [&_td]:text-body">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -2263,7 +2057,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                 <tbody>
                   {filteredDrivers.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="vehicles-empty">No drivers match current filters.</td>
+                      <td colSpan={7} className="py-10 text-center text-muted">No drivers match current filters.</td>
                     </tr>
                   )}
                   {filteredDrivers.map((driver) => (
@@ -2281,7 +2075,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                         <small>{formatDaysUntilExpiry(driver.license_days_until_expiry)}</small>
                       </td>
                       <td>
-                        <span className={`driver-status-pill ${driver.license_status}`}>{humanizeLicenseStatus(driver.license_status)}</span>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 font-head text-[10px] font-bold uppercase tracking-wide ${driver.license_status === 'expired' ? 'bg-red-500/15 text-red-400' : driver.license_status === 'expiring_soon' ? 'bg-accent-hot/15 text-accent-hot' : 'bg-green/15 text-green'}`}>{humanizeLicenseStatus(driver.license_status)}</span>
                       </td>
                       <td>{driver.assigned_truck_label ?? 'Unassigned'}</td>
                       <td>
@@ -2302,7 +2096,7 @@ function DriversPage({ token, resources, refreshAllResources, handleLogout, fetc
                         </select>
                       </td>
                       <td>
-                        <button type="button" className="vehicles-action-btn" onClick={() => navigate(`/drivers/${driver.id}`)}>
+                        <button type="button" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={() => navigate(`/drivers/${driver.id}`)}>
                           View / Edit
                         </button>
                       </td>
@@ -2472,7 +2266,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
   }
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell drivers-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -2482,33 +2276,33 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel drivers-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6 flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>Driver Details</h1>
-            <p className="drivers-subtitle">View and edit complete information for one driver profile.</p>
+            <p className="text-sm text-muted">View and edit complete information for one driver profile.</p>
           </div>
-          <div className="vehicles-tenant-row">
-            <button type="button" className="vehicles-chip">Driver Center</button>
-            <button type="button" className="vehicles-chip">Profile Editor</button>
-            <button type="button" className="vehicles-icon-btn" aria-label="Drivers">DR</button>
-            <span className="vehicles-user">Fleet Team</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Driver Center</button>
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Profile Editor</button>
+            <button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Drivers">DR</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Fleet Team</span>
           </div>
         </header>
 
-        <div className="vehicles-filter-row drivers-filter-row">
-          <button type="button" className="vehicles-action-btn" onClick={() => navigate('/drivers')}>Back to Drivers</button>
-          <div className="driver-detail-meta">
+        <div className="mb-4 flex flex-wrap items-center gap-3 flex flex-wrap items-center gap-3">
+          <button type="button" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45" onClick={() => navigate('/drivers')}>Back to Drivers</button>
+          <div className="grid gap-3 sm:grid-cols-2">
             {selectedDriver ? (
               <span>{selectedDriver.full_name} · {selectedDriver.license_number}</span>
             ) : (
               <span>Driver not found</span>
             )}
           </div>
-          <div className="vehicles-filter-actions">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="vehicles-action-btn"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45"
               onClick={() => runToolbarAction(async () => {
                 if (driverResource) await fetchResource(driverResource)
               })}
@@ -2518,7 +2312,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
             </button>
             <button
               type="button"
-              className="vehicles-action-btn"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45"
               onClick={() => runToolbarAction(async () => {
                 if (truckResource) await fetchResource(truckResource)
               })}
@@ -2528,7 +2322,7 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
             </button>
             <button
               type="button"
-              className="vehicles-action-btn primary"
+              className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot"
               onClick={() => runToolbarAction(refreshAllResources)}
               disabled={!token || toolbarBusy}
             >
@@ -2538,27 +2332,27 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
         </div>
 
         {!selectedDriver && (
-          <div className="drivers-form-card">
+          <div className="mb-5 rounded-xl border border-border bg-card p-5 [&_h3]:mb-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink">
             <h3>Driver Not Available</h3>
-            <p className="drivers-message">This driver record could not be found. Try returning to Drivers and opening the record again.</p>
+            <p className="text-sm text-green">This driver record could not be found. Try returning to Drivers and opening the record again.</p>
           </div>
         )}
 
         {selectedDriver && (
-          <div className="driver-profile-layout">
-            <aside className="driver-profile-summary drivers-form-card">
+          <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+            <aside className="rounded-xl border border-border bg-card p-5 space-y-3 mb-5 rounded-xl border border-border bg-card p-5 [&_h3]:mb-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink">
               <h3>{selectedDriver.full_name}</h3>
-              <p className="driver-profile-line">Email: {selectedDriver.email}</p>
-              <p className="driver-profile-line">Phone: {selectedDriver.phone}</p>
-              <p className="driver-profile-line">License: {selectedDriver.license_number} · Class {selectedDriver.license_class}</p>
-              <p className="driver-profile-line">Status: {humanizeLicenseStatus(selectedDriver.license_status)} ({formatDaysUntilExpiry(selectedDriver.license_days_until_expiry)})</p>
-              <p className="driver-profile-line">Assigned Truck: {selectedDriver.assigned_truck_label ?? 'Unassigned'}</p>
-              <p className="driver-profile-line">Record ID: {selectedDriver.id}</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">Email: {selectedDriver.email}</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">Phone: {selectedDriver.phone}</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">License: {selectedDriver.license_number} · Class {selectedDriver.license_class}</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">Status: {humanizeLicenseStatus(selectedDriver.license_status)} ({formatDaysUntilExpiry(selectedDriver.license_days_until_expiry)})</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">Assigned Truck: {selectedDriver.assigned_truck_label ?? 'Unassigned'}</p>
+              <p className="flex justify-between gap-3 border-b border-border/40 py-2 text-sm last:border-0 [&_span]:text-muted [&_strong]:text-ink">Record ID: {selectedDriver.id}</p>
             </aside>
 
-            <form className="drivers-form-card" onSubmit={handleUpdateDriver}>
+            <form className="mb-5 rounded-xl border border-border bg-card p-5 [&_h3]:mb-3 [&_h3]:font-head [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-ink" onSubmit={handleUpdateDriver}>
               <h3>Edit Driver</h3>
-              <div className="drivers-form-grid">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 [&_input]:rounded-md [&_input]:border [&_input]:border-border [&_input]:bg-dark/40 [&_input]:px-3 [&_input]:py-2 [&_input]:text-sm [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:bg-dark/40 [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-ink">
                 <input required placeholder="Full name" value={driverEditForm.full_name} onChange={(e) => setDriverEditForm((f) => ({ ...f, full_name: e.target.value }))} />
                 <input required type="email" placeholder="Email" value={driverEditForm.email} onChange={(e) => setDriverEditForm((f) => ({ ...f, email: e.target.value }))} />
                 <input required placeholder="Phone" value={driverEditForm.phone} onChange={(e) => setDriverEditForm((f) => ({ ...f, phone: e.target.value }))} />
@@ -2590,15 +2384,15 @@ function DriverDetailsPage({ token, resources, refreshAllResources, handleLogout
                     <option key={truck.id} value={String(truck.id)}>{truck.license_plate} · {truck.make} {truck.model}</option>
                   ))}
                 </select>
-                <label className="drivers-active-toggle">
+                <label className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-xs text-body">
                   Active driver
                   <input type="checkbox" checked={driverEditForm.is_active} onChange={(e) => setDriverEditForm((f) => ({ ...f, is_active: e.target.checked }))} />
                 </label>
               </div>
               <textarea placeholder="Notes" rows={3} value={driverEditForm.notes} onChange={(e) => setDriverEditForm((f) => ({ ...f, notes: e.target.value }))} />
-              <div className="drivers-form-actions">
-                <button type="submit" className="vehicles-action-btn primary" disabled={saving}>{saving ? 'Saving...' : 'Save Driver Changes'}</button>
-                {message && <p className="drivers-message">{message}</p>}
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button type="submit" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot" disabled={saving}>{saving ? 'Saving...' : 'Save Driver Changes'}</button>
+                {message && <p className="text-sm text-green">{message}</p>}
               </div>
             </form>
           </div>
@@ -2625,7 +2419,7 @@ function RoutesPage({ handleLogout }) {
   })
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell routes-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -2635,51 +2429,51 @@ function RoutesPage({ handleLogout }) {
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel routes-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6 flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>Routes ({filteredRoutes.length})</h1>
-            <p className="drivers-subtitle">Plan, monitor, and review active fleet routes.</p>
+            <p className="text-sm text-muted">Plan, monitor, and review active fleet routes.</p>
           </div>
-          <div className="vehicles-tenant-row">
-            <button type="button" className="vehicles-chip">Route Center</button>
-            <button type="button" className="vehicles-icon-btn" aria-label="Routes">RT</button>
-            <span className="vehicles-user">Fleet Team</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">Route Center</button>
+            <button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-ink" aria-label="Routes">RT</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Fleet Team</span>
           </div>
         </header>
 
-        <div className="routes-toolbar">
-          <input className="vehicles-search" placeholder="Search route, location, truck, driver, or cargo" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <select className="vehicles-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <input className="min-w-[200px] flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" placeholder="Search route, location, truck, driver, or cargo" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <select className="rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none focus:border-accent" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All Route Statuses</option>
             <option value="In Transit">In Transit</option>
             <option value="Scheduled">Scheduled</option>
             <option value="Delayed">Delayed</option>
             <option value="Completed">Completed</option>
           </select>
-          <button type="button" className="vehicles-action-btn primary" onClick={() => setQuery('')}>Reset View</button>
+          <button type="button" className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent disabled:opacity-45 border-transparent bg-accent text-ink hover:bg-accent-hot" onClick={() => setQuery('')}>Reset View</button>
         </div>
 
-        <div className="drivers-kpi-row routes-kpi-row">
-          <div className="drivers-kpi-card"><small>Total Routes</small><strong>{DEMO_ROUTES.length}</strong></div>
-          <div className="drivers-kpi-card warn"><small>In Transit</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'In Transit').length}</strong></div>
-          <div className="drivers-kpi-card risk"><small>Needs Attention</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'Delayed').length}</strong></div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink"><small>Total Routes</small><strong>{DEMO_ROUTES.length}</strong></div>
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink bg-accent-hot/15 text-accent-hot"><small>In Transit</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'In Transit').length}</strong></div>
+          <div className="rounded-xl border border-border bg-card p-4 [&_p]:text-xs [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:mt-1 [&_strong]:block [&_strong]:font-head [&_strong]:text-xl [&_strong]:text-ink bg-red-500/15 text-red-400"><small>Needs Attention</small><strong>{DEMO_ROUTES.filter((route) => route.status === 'Delayed').length}</strong></div>
         </div>
 
-        <div className="routes-data-panel">
-          <div className="fleet-status-head">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
             <h3>Route Schedule</h3>
             <span>Demo data</span>
           </div>
-          <div className="routes-table-wrap">
-            <table className="vehicles-table routes-table">
+          <div className="overflow-auto rounded-xl border border-border bg-card">
+            <table className="w-full min-w-[900px] border-collapse text-left text-sm [&_th]:border-b [&_th]:border-border [&_th]:bg-band/50 [&_th]:px-3 [&_th]:py-3 [&_th]:font-head [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider [&_th]:text-muted [&_td]:border-b [&_td]:border-border/50 [&_td]:px-3 [&_td]:py-3 [&_td]:text-body">
               <thead><tr><th>Route</th><th>Status</th><th>From / To</th><th>Schedule</th><th>Truck / Driver</th><th>Cargo</th></tr></thead>
               <tbody>
-                {filteredRoutes.length === 0 && <tr><td colSpan={6} className="vehicles-empty">No routes match the current filters.</td></tr>}
+                {filteredRoutes.length === 0 && <tr><td colSpan={6} className="py-10 text-center text-muted">No routes match the current filters.</td></tr>}
                 {filteredRoutes.map((route) => (
                   <tr key={route.id}>
                     <td><strong>{route.reference}</strong><small>{route.distance}</small></td>
-                    <td><span className={`route-status route-status-${route.status.toLowerCase().replace(' ', '-')}`}>{route.status}</span></td>
+                    <td><span className={`rounded-full px-2 py-0.5 font-head text-[10px] font-bold uppercase ${route.status === 'Completed' ? 'bg-green/15 text-green' : route.status === 'Delayed' ? 'bg-accent/15 text-accent' : 'bg-white/10 text-muted'}`}>{route.status}</span></td>
                     <td><strong>{route.origin}</strong><small>to {route.destination}</small></td>
                     <td><strong>{route.departure}</strong><small>ETA {route.eta}</small></td>
                     <td><strong>{route.truck}</strong><small>{route.driver}</small></td>
@@ -2702,7 +2496,7 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
   const railItems = STANDARD_RAIL_ITEMS
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell vehicles-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[220px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -2712,24 +2506,24 @@ function FeaturePlaceholderPage({ handleLogout, title, subtitle }) {
         handleLogout={handleLogout}
       />
 
-      <section className="vehicles-main-panel routes-main-panel">
-        <header className="vehicles-header">
-          <div className="vehicles-title-wrap">
+      <section className="flex min-h-0 flex-col overflow-auto p-5 md:p-6 flex min-h-0 flex-col overflow-auto p-5 md:p-6">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="[&_h1]:font-head [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:text-ink">
             <h1>{title}</h1>
-            <p className="drivers-subtitle">{subtitle}</p>
+            <p className="text-sm text-muted">{subtitle}</p>
           </div>
-          <div className="vehicles-tenant-row">
-            <button type="button" className="vehicles-chip">{title} Center</button>
-            <span className="vehicles-user">Fleet Team</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded-full border border-border bg-card px-3 py-1.5 font-head text-xs font-semibold text-muted">{title} Center</button>
+            <span className="ml-1 font-head text-xs font-semibold text-ink">Fleet Team</span>
           </div>
         </header>
 
-        <div className="routes-data-panel">
-          <div className="fleet-status-head">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
             <h3>{title} Dashboard</h3>
             <span>Standalone page</span>
           </div>
-          <p className="drivers-message">This is the dedicated {title.toLowerCase()} page. You are no longer redirected to a different section.</p>
+          <p className="text-sm text-green">This is the dedicated {title.toLowerCase()} page. You are no longer redirected to a different section.</p>
         </div>
       </section>
     </div>
@@ -2836,67 +2630,69 @@ function RoutePlannerDashboard({ handleLogout, defaultPlannerOpen = true }) {
   }
 
   return (
-    <div className={`route-planner-dashboard ${plannerOpen ? '' : 'planner-collapsed'}${lightTheme ? ' planner-light' : ''}`}>
-      <aside className="planner-rail">
-        <button className="planner-brand" type="button" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
-        <div className="planner-rail-tools">
+    <div className={`grid min-h-svh text-ink ${lightTheme ? 'bg-[#e8ecf1] text-[#111827]' : 'bg-portal-deep'} ${plannerOpen ? 'md:grid-cols-[64px_minmax(320px,400px)_minmax(0,1fr)]' : 'md:grid-cols-[64px_minmax(0,1fr)]'}`}>
+      <aside className="flex flex-col items-center gap-3 border-r border-border bg-[#0a101b] py-4">
+        <button className="grid h-11 w-11 place-items-center rounded-xl border border-border bg-white/5" type="button" aria-label="Home" onClick={() => navigate('/')}><LogoIcon /></button>
+        <div className="flex flex-1 flex-col gap-2">
           {STANDARD_RAIL_ITEMS.slice(0, 9).map((item) => (
-            <button type="button" key={item.key} className={`planner-rail-button ${isRailRouteActive(location.pathname, item.to) ? 'active' : ''}`} aria-label={item.title} title={item.title} onClick={() => item.to && navigate(item.to)}><RailItemIcon itemKey={item.key} /></button>
+            <button type="button" key={item.key} className={`grid h-10 w-10 place-items-center rounded-lg transition hover:bg-white/5 ${isRailRouteActive(location.pathname, item.to) ? 'bg-accent/15 text-accent' : 'text-muted hover:text-ink'}`} aria-label={item.title} title={item.title} onClick={() => item.to && navigate(item.to)}><RailItemIcon itemKey={item.key} /></button>
           ))}
         </div>
-        <div className="planner-rail-bottom">
-          <button type="button" className="planner-rail-button" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button>
-          <button type="button" className="planner-rail-button" aria-label="Compliance" title="Compliance" onClick={() => navigate('/compliance')}><RailItemIcon itemKey="support" /></button>
-          <button type="button" className="planner-rail-button" aria-label="Logout" title="Logout" onClick={handleLogout}><RailItemIcon itemKey="logout" /></button>
+        <div className="mt-auto flex flex-col gap-2">
+          <button type="button" className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-white/5 hover:text-ink" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button>
+          <button type="button" className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-white/5 hover:text-ink" aria-label="Compliance" title="Compliance" onClick={() => navigate('/compliance')}><RailItemIcon itemKey="support" /></button>
+          <button type="button" className="grid h-10 w-10 place-items-center rounded-lg text-muted transition hover:bg-white/5 hover:text-ink" aria-label="Logout" title="Logout" onClick={handleLogout}><RailItemIcon itemKey="logout" /></button>
         </div>
       </aside>
-      <main className="planner-map-stage">
-        <div ref={plannerMapElRef} className="planner-map" />
+      {plannerOpen && (
+      <section className="flex min-h-0 flex-col overflow-hidden border-r border-border bg-portal" aria-label="Route planner">
+        <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3"><LogoIcon /><strong className="font-head text-sm">Route Planner</strong><button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button><button type="button" className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted" aria-label="Collapse route planner" title="Collapse route planner" onClick={() => setPlannerOpen(false)}><PlannerPanelIcon open /></button></header>
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 [&_input]:w-full [&_input]:rounded-md [&_input]:border [&_input]:border-border [&_input]:bg-card [&_input]:px-3 [&_input]:py-2 [&_input]:text-sm [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent [&_select]:w-full [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:bg-card [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-ink [&_button]:rounded-md [&_button]:border [&_button]:border-border [&_button]:bg-card [&_button]:px-3 [&_button]:py-2 [&_button]:text-xs [&_button]:text-ink">
+          <article className="rounded-xl border border-border bg-card p-3">
+            <img src={dashboardImage} alt="Electric delivery truck" className="mb-3 w-full rounded-lg object-cover" />
+            <div className="font-head text-sm font-semibold text-ink"><strong>eActros 600</strong></div>
+            <div className="mt-1 flex justify-between text-[10px] text-muted"><span>Starting Battery</span><strong>100%</strong></div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-border"><span className="block h-full w-full bg-green" /></div>
+          </article>
+          <label className="font-head text-[11px] font-semibold uppercase tracking-wider text-muted" htmlFor="planner-origin">Origin</label>
+          <div><input id="planner-origin" value={origin} onChange={(event) => { setOrigin(event.target.value); setRouteReady(false) }} placeholder="Search origin location..." /></div>
+          <div className="flex items-center justify-between"><label className="font-head text-[11px] font-semibold uppercase tracking-wider text-muted" htmlFor="planner-destination">Destinations</label><button type="button" onClick={() => setDestination((value) => value ? `${value}; ` : value)}>+ Add Stop</button></div>
+          <div><input id="planner-destination" value={destination} onChange={(event) => { setDestination(event.target.value); setRouteReady(false) }} placeholder="Search destination..." /></div>
+          <label className="font-head text-[11px] font-semibold uppercase tracking-wider text-muted" htmlFor="planner-departure">Departure</label>
+          <div className="flex gap-2"><input id="planner-departure" type="datetime-local" value={departure} onChange={(event) => setDeparture(event.target.value)} /><button type="button" onClick={() => setDeparture(new Date().toISOString().slice(0, 16))}>Now</button></div>
+          <label className="font-head text-[11px] font-semibold uppercase tracking-wider text-muted" htmlFor="planner-profile">Optimization profile</label>
+          <div><select id="planner-profile" value={routeProfile} onChange={(event) => setRouteProfile(event.target.value)}><option>Balanced</option><option>Lowest cost</option><option>Fastest arrival</option><option>Lowest emissions</option></select></div>
+          <button type="button" onClick={() => setMoreOptions((visible) => !visible)}>⚙ {moreOptions ? 'Hide Options' : 'More Options'}</button>
+          {moreOptions && <div className="space-y-2 rounded-lg border border-border/60 bg-dark/30 p-3 text-xs"><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Prefer commercial routes</label><label className="flex items-center gap-2"><input type="checkbox" /> Avoid tolls</label></div>}
+          <div className="rounded-xl border border-border bg-card p-3 text-sm"><span className="text-muted">Estimated trip</span><strong className="mt-1 block font-head text-ink">{routeProfile === 'Fastest arrival' ? '6h 18m' : routeProfile === 'Lowest cost' ? '$184.60' : '482 mi'}</strong><small className="text-muted">{routeProfile} routing is ready when locations are added.</small></div>
+          <button type="button" className="!border-0 !bg-accent !py-3 font-head text-sm font-bold uppercase tracking-wide text-ink transition hover:!bg-accent-hot" disabled={!origin.trim() || !destination.trim()} onClick={optimizeRoute}>Optimize Route</button>
+        </div>
+      </section>
+      )}
+      <main className="relative min-h-[50vh] md:min-h-0">
+        <div ref={plannerMapElRef} className="absolute inset-0 h-full w-full" />
         {selectedDemoVehicle && (
-          <article className="planner-vehicle-detail" aria-live="polite">
-            <button type="button" aria-label="Close vehicle details" onClick={() => setSelectedDemoVehicleId(null)}>&times;</button>
-            <div className="planner-vehicle-detail-top"><span className={selectedDemoVehicle.speed === 0 ? 'stopped' : ''}>{selectedDemoVehicle.status}</span><strong>{selectedDemoVehicle.id}</strong></div>
+          <article className="absolute left-4 top-4 z-10 w-64 space-y-1 rounded-xl border border-border bg-card/95 p-3 text-xs text-muted shadow-float" aria-live="polite">
+            <button type="button" className="absolute right-2 top-2" aria-label="Close vehicle details" onClick={() => setSelectedDemoVehicleId(null)}>&times;</button>
+            <div className="flex items-center justify-between"><span className={selectedDemoVehicle.speed === 0 ? 'text-accent-hot' : 'text-green'}>{selectedDemoVehicle.status}</span><strong className="text-ink">{selectedDemoVehicle.id}</strong></div>
             <p>{selectedDemoVehicle.make} {selectedDemoVehicle.model}</p>
-            <dl>
-              <div><dt>Driver</dt><dd>{selectedDemoVehicle.driver}</dd></div>
-              <div><dt>Speed</dt><dd>{selectedDemoVehicle.speed} km/h</dd></div>
-              <div><dt>Fuel</dt><dd>{selectedDemoVehicle.fuel}%</dd></div>
-              <div><dt>Route</dt><dd>{selectedDemoVehicle.route}</dd></div>
+            <dl className="grid grid-cols-2 gap-1">
+              <div><dt className="text-[10px] uppercase">Driver</dt><dd className="text-ink">{selectedDemoVehicle.driver}</dd></div>
+              <div><dt className="text-[10px] uppercase">Speed</dt><dd className="text-ink">{selectedDemoVehicle.speed} km/h</dd></div>
+              <div><dt className="text-[10px] uppercase">Fuel</dt><dd className="text-ink">{selectedDemoVehicle.fuel}%</dd></div>
+              <div><dt className="text-[10px] uppercase">Route</dt><dd className="text-ink">{selectedDemoVehicle.route}</dd></div>
             </dl>
           </article>
         )}
-        {!routeReady && <button type="button" className="planner-map-signup" onClick={() => navigate('/signup')}>Sign up to start using now</button>}
-        {routeReady && <div className="planner-route-confirmation">Route ready: {origin} to {destination}</div>}
+        {!routeReady && <button type="button" className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-full border border-border bg-card/95 px-4 py-2 font-head text-xs font-semibold shadow-float" onClick={() => navigate('/signup')}>Sign up to start using now</button>}
+        {routeReady && <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-xl border border-green/30 bg-green/10 px-4 py-2 text-sm text-green">Route ready: {origin} to {destination}</div>}
         {!plannerOpen && (
-          <button type="button" className="planner-reopen-button" aria-label="Open route planner" onClick={() => setPlannerOpen(true)}>
+          <button type="button" className="fixed bottom-6 left-6 z-20 flex items-center gap-2 rounded-full bg-accent px-4 py-3 font-head text-xs font-bold uppercase tracking-wide text-ink shadow-float" aria-label="Open route planner" onClick={() => setPlannerOpen(true)}>
             <PlannerPanelIcon open />
             <span>Open planner</span>
           </button>
         )}
       </main>
-      <section className={`planner-panel ${plannerOpen ? '' : 'collapsed'}`} aria-label="Route planner">
-        <header className="planner-header"><LogoIcon /><strong>Route Planner</strong><button type="button" className="planner-header-theme" aria-label={lightTheme ? 'Use dark mode' : 'Use light mode'} title={lightTheme ? 'Use dark mode' : 'Use light mode'} onClick={toggleTheme}><PlannerThemeIcon light={lightTheme} /></button><button type="button" className="planner-header-collapse" aria-label="Collapse route planner" title="Collapse route planner" onClick={() => setPlannerOpen(false)}><PlannerPanelIcon open /></button></header>
-        <div className="planner-content">
-          <article className="planner-vehicle-card">
-            <img src={dashboardImage} alt="Electric delivery truck" />
-            <div className="planner-vehicle-title"><span>⌄</span><strong>eActros 600</strong><button type="button" aria-label="Vehicle details">i</button></div>
-            <div className="planner-battery-label"><span>Starting Battery</span><strong>100%</strong></div>
-            <div className="planner-battery"><span /></div>
-          </article>
-          <label className="planner-field-label" htmlFor="planner-origin">Origin</label>
-          <div className="planner-input-wrap"><span>⌁</span><input id="planner-origin" value={origin} onChange={(event) => { setOrigin(event.target.value); setRouteReady(false) }} placeholder="Search origin location..." /></div>
-          <div className="planner-stop-heading"><label className="planner-field-label" htmlFor="planner-destination">Destinations</label><button type="button" onClick={() => setDestination((value) => value ? `${value}; ` : value)}>+ <span>Add Stop</span></button></div>
-          <div className="planner-input-wrap"><span>⌖</span><input id="planner-destination" value={destination} onChange={(event) => { setDestination(event.target.value); setRouteReady(false) }} placeholder="Search destination..." /></div>
-          <label className="planner-field-label" htmlFor="planner-departure">Departure</label>
-          <div className="planner-departure-row"><input id="planner-departure" type="datetime-local" value={departure} onChange={(event) => setDeparture(event.target.value)} /><button type="button" onClick={() => setDeparture(new Date().toISOString().slice(0, 16))}>Now</button></div>
-          <label className="planner-field-label" htmlFor="planner-profile">Optimization profile</label>
-          <div className="planner-profile-control"><select id="planner-profile" value={routeProfile} onChange={(event) => setRouteProfile(event.target.value)}><option>Balanced</option><option>Lowest cost</option><option>Fastest arrival</option><option>Lowest emissions</option></select></div>
-          <button type="button" className="planner-options" onClick={() => setMoreOptions((visible) => !visible)}>⚙ <span>{moreOptions ? 'Hide Options' : 'More Options'}</span></button>
-          {moreOptions && <div className="planner-extra-options"><label><input type="checkbox" defaultChecked /> Prefer commercial routes</label><label><input type="checkbox" /> Avoid tolls</label></div>}
-          <div className="planner-trip-preview"><span>Estimated trip</span><strong>{routeProfile === 'Fastest arrival' ? '6h 18m' : routeProfile === 'Lowest cost' ? '$184.60' : '482 mi'}</strong><small>{routeProfile} routing is ready when locations are added.</small></div>
-          <button type="button" className="planner-optimize" disabled={!origin.trim() || !destination.trim()} onClick={optimizeRoute}>⌁ <span>Optimize Route</span></button>
-        </div>
-      </section>
     </div>
   )
 }
@@ -3367,7 +3163,7 @@ function Portal({
   }
 
   return (
-    <div className={`live-portal-wrap fleet-monitor-shell ${railCollapsed ? 'rail-collapsed' : ''}`}>
+    <div className={`min-h-svh overflow-hidden bg-portal-deep text-ink grid ${railCollapsed ? 'md:grid-cols-[56px_360px_minmax(0,1fr)]' : 'md:grid-cols-[220px_360px_minmax(0,1fr)]'}`}>
       <FleetPortalRail
         railCollapsed={railCollapsed}
         setRailCollapsed={setRailCollapsed}
@@ -3377,15 +3173,15 @@ function Portal({
         handleLogout={handleLogout}
       />
 
-      <section className="fleet-details-panel">
-        <div className="fleet-panel-topline">
+      <section className="flex min-h-0 flex-col gap-4 overflow-y-auto border-r border-border bg-portal p-4">
+        <div className="space-y-1 [&_p]:text-[11px] [&_p]:uppercase [&_p]:tracking-wider [&_p]:text-muted [&_strong]:font-head [&_strong]:text-lg [&_strong]:text-ink">
           <p>{managerMode ? 'Fleet Manager' : 'Fleet View'}</p>
           <p>{managerMode ? 'Focused Unit Monitoring' : 'Company Operations Monitoring'}</p>
           <strong>{managerMode ? (selectedTruck ? selectedTruck.license_plate : 'No truck selected') : 'Company Live'}</strong>
         </div>
 
         {managerMode && filteredTrucks.length > 0 && (
-          <div className="fleet-manager-picker">
+          <div className="space-y-2 [&_label]:text-xs [&_label]:text-muted [&_select]:w-full [&_select]:rounded-md [&_select]:border [&_select]:border-border [&_select]:bg-card [&_select]:px-3 [&_select]:py-2 [&_select]:text-sm [&_select]:text-ink">
             <label htmlFor="fleet-manager-unit">Managed fleet unit</label>
             <select
               id="fleet-manager-unit"
@@ -3403,8 +3199,8 @@ function Portal({
         )}
 
         {managerMode && (
-          <div className="fleet-panel-tabs">
-            <button type="button" className="active" onClick={() => navigate('/fleet-manager')}>Live</button>
+          <div className="flex gap-2">
+            <button type="button" className="bg-accent/15 text-accent" onClick={() => navigate('/fleet-manager')}>Live</button>
             <button type="button" onClick={() => navigate('/history')}>History</button>
             <button type="button" onClick={() => navigate('/drivers')}>Profile</button>
           </div>
@@ -3412,26 +3208,26 @@ function Portal({
 
         {managerMode && selectedTruck ? (
           <>
-            <article className="fleet-status-card">
-              <div className="fleet-status-head">
+            <article className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
                 <h3>Status</h3>
                 <span>Now</span>
               </div>
-              <p className="fleet-speed-line">{speedMph} mph in motion for {movingMinutes}m</p>
-              <p className="fleet-address-line">{selectedTruck.location.lat.toFixed(4)}, {selectedTruck.location.lng.toFixed(4)} · New Jersey</p>
-              <p className="fleet-dimensions-line">Height {metersToFeet(selectedTruckHeightM).toFixed(1)} ft · Length {metersToFeet(selectedTruckLengthM).toFixed(1)} ft</p>
-              <div className="fleet-driver-block">
+              <p className="text-sm text-body">{speedMph} mph in motion for {movingMinutes}m</p>
+              <p className="text-xs text-muted">{selectedTruck.location.lat.toFixed(4)}, {selectedTruck.location.lng.toFixed(4)} · New Jersey</p>
+              <p className="text-xs text-muted">Height {metersToFeet(selectedTruckHeightM).toFixed(1)} ft · Length {metersToFeet(selectedTruckLengthM).toFixed(1)} ft</p>
+              <div className="mt-3 rounded-lg border border-border/60 bg-dark/30 p-3 text-sm">
                 <small>Current Driver</small>
                 <strong>{currentDriver?.full_name ?? 'Unassigned'}</strong>
               </div>
-              <div className="fleet-geofence-block">
-                <div className="fleet-geofence-head">
+              <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-dark/30 p-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-ink">
                   <strong>Geofence</strong>
                   <span className={selectedGeofenceInside ? 'geofence-inside' : 'geofence-outside'}>
                     {selectedGeofenceInside ? 'Inside zone' : 'Outside zone'}
                   </span>
                 </div>
-                <div className="fleet-geofence-controls">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted [&_input]:accent-accent">
                   <label>
                     Radius (km)
                     <input
@@ -3450,14 +3246,14 @@ function Portal({
               </div>
             </article>
 
-            <article className="fleet-routes-card">
-              <div className="fleet-status-head">
+            <article className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
                 <h3>Suggested Routes</h3>
                 <span>Clearance checked</span>
               </div>
-              <div className="fleet-route-list">
+              <div className="mt-3 space-y-2">
                 {routeRecommendations.map((route) => (
-                  <div className={`fleet-route-row ${route.safe ? 'route-safe' : 'route-blocked'}`} key={route.name}>
+                  <div className={`flex items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm ${route.safe ? 'route-safe' : 'route-blocked'}`} key={route.name}>
                     <div>
                       <strong>{route.name}</strong>
                       <p>{route.detail}</p>
@@ -3469,12 +3265,12 @@ function Portal({
               </div>
             </article>
 
-            <article className="fleet-telematics-card">
-              <div className="fleet-status-head">
+            <article className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
                 <h3>Telematics</h3>
                 <span>updated now</span>
               </div>
-              <div className="fleet-telemetry-grid">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <div>
                   <small>Fuel</small>
                   <strong>{fuelPct}%</strong>
@@ -3490,19 +3286,19 @@ function Portal({
               </div>
             </article>
 
-            <article className="fleet-cameras-card">
-              <div className="fleet-status-head">
+            <article className="rounded-xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
                 <h3>Cameras</h3>
                 <button onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh</button>
               </div>
-              <div className="fleet-streetview-panel">
-                <div className="fleet-streetview-head">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <div className="mb-3 flex items-center justify-between gap-2">
                   <strong>Google Street View</strong>
                   <a href={streetViewMapsUrl} target="_blank" rel="noreferrer">Open full view</a>
                 </div>
                 {streetViewEmbedUrl ? (
                   <iframe
-                    className="fleet-streetview-frame"
+                    className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-dark"
                     title="Fleet live street view"
                     src={streetViewEmbedUrl}
                     allowFullScreen
@@ -3510,17 +3306,17 @@ function Portal({
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
-                  <div className="fleet-streetview-fallback">
+                  <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted">
                     <p>Add VITE_GOOGLE_MAPS_EMBED_API_KEY in frontend/.env to embed Street View here.</p>
                     <a href={streetViewMapsUrl} target="_blank" rel="noreferrer">Open Street View in Google Maps</a>
                   </div>
                 )}
               </div>
-              <div className="fleet-camera-grid">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {cameraFeeds.map((feed) => (
-                  <div key={feed.id} className="fleet-camera-tile" style={{ backgroundImage: `linear-gradient(180deg, rgba(20, 36, 59, .24) 0%, rgba(20, 36, 59, .72) 100%), url('${feed.image}')` }}>
-                    <span className="fleet-camera-live">LIVE</span>
-                    <div className="fleet-camera-meta">
+                  <div key={feed.id} className="overflow-hidden rounded-lg border border-border" style={{ backgroundImage: `linear-gradient(180deg, rgba(20, 36, 59, .24) 0%, rgba(20, 36, 59, .72) 100%), url('${feed.image}')` }}>
+                    <span className="relative aspect-video bg-dark [&_img]:h-full [&_img]:w-full [&_img]:object-cover">LIVE</span>
+                    <div className="space-y-0.5 p-2 text-xs [&_strong]:text-ink [&_span]:text-muted">
                       <strong>{feed.label}</strong>
                       <small>{feed.detail}</small>
                     </div>
@@ -3530,14 +3326,14 @@ function Portal({
             </article>
           </>
         ) : managerMode ? (
-          <p className="fleet-empty">No trucks yet. Create one and refresh trucks.</p>
+          <p className="text-sm text-muted">No trucks yet. Create one and refresh trucks.</p>
         ) : (
-          <article className="fleet-status-card fleet-view-summary-card">
-            <div className="fleet-status-head">
+          <article className="rounded-xl border border-border bg-card p-4 m-3 rounded-xl border border-border bg-card p-4 text-sm">
+            <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
               <h3>Company Live Overview</h3>
               <span>Company wide</span>
             </div>
-            <div className="fleet-company-kpis">
+            <div className="grid grid-cols-2 gap-2 border-b border-border bg-portal/80 p-3 lg:grid-cols-4">
               <div>
                 <small>Fleets on map</small>
                 <strong>{filteredTrucks.length}</strong>
@@ -3555,17 +3351,17 @@ function Portal({
         )}
 
         {!managerMode && (
-          <article className="fleet-list-card fleet-ops-board">
-            <div className="fleet-status-head">
+          <article className="rounded-xl border border-border bg-card p-5 grid gap-3 border-b border-border bg-portal/60 p-3 lg:grid-cols-2">
+            <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
               <h3>Dispatch Board</h3>
               <span>Company-level signals</span>
             </div>
-            <div className="fleet-ops-columns">
+            <div className="space-y-2">
               <div>
                 <h4>Top Movers</h4>
-                {topMovers.length === 0 && <p className="fleet-empty">No units found.</p>}
+                {topMovers.length === 0 && <p className="text-sm text-muted">No units found.</p>}
                 {topMovers.map((truck) => (
-                  <div className="fleet-ops-row" key={`mover-${truck.id}`}>
+                  <div className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-card/40 px-3 py-2 text-xs" key={`mover-${truck.id}`}>
                     <div>
                       <strong>{truck.license_plate}</strong>
                       <p>{truck.make} {truck.model}</p>
@@ -3576,14 +3372,14 @@ function Portal({
               </div>
               <div>
                 <h4>Needs Attention</h4>
-                {attentionUnits.length === 0 && <p className="fleet-ok-line">No critical engine/fuel alerts right now.</p>}
+                {attentionUnits.length === 0 && <p className="text-sm text-green">No critical engine/fuel alerts right now.</p>}
                 {attentionUnits.map((truck) => (
-                  <div className="fleet-ops-row" key={`attention-${truck.id}`}>
+                  <div className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-card/40 px-3 py-2 text-xs" key={`attention-${truck.id}`}>
                     <div>
                       <strong>{truck.license_plate}</strong>
                       <p>Fuel {truck.unitFuel}% · Engine {truck.unitEngine}%</p>
                     </div>
-                    <button className="fleet-jump-btn" onClick={() => focusTruck(truck.id)}>Track</button>
+                    <button className="rounded-md border border-border bg-dark/40 px-3 py-1.5 font-head text-xs font-semibold text-ink transition hover:border-accent" onClick={() => focusTruck(truck.id)}>Track</button>
                   </div>
                 ))}
               </div>
@@ -3591,22 +3387,22 @@ function Portal({
           </article>
         )}
 
-        <article className="fleet-list-card">
-          <div className="fleet-status-head">
+        <article className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center justify-between [&_h3]:font-head [&_h3]:text-sm [&_h3]:font-semibold">
             <h3>{managerMode ? 'Fleet Units' : 'Company Fleet Roster'}</h3>
             <span>{filteredTrucks.length} active</span>
           </div>
           <input
-            className="live-search"
+            className="min-w-[180px] rounded-md border border-border bg-card px-3 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             placeholder={managerMode ? 'Search selected fleet unit' : 'Search company fleet'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="fleet-live-list">
+          <div className="max-h-40 space-y-1 overflow-auto p-3">
             {filteredTrucks.map((truck, index) => (
               <button
                 key={truck.id}
-                className={`fleet-live-row ${selectedTruckId === truck.id ? 'selected' : ''}`}
+                className={`flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-2 text-xs transition hover:bg-white/5 ${selectedTruckId === truck.id ? 'bg-accent/15 text-accent' : ''}`}
                 onClick={() => focusTruck(truck.id)}
               >
                 <div>
@@ -3623,77 +3419,77 @@ function Portal({
         </article>
       </section>
 
-      <section className="fleet-map-area">
-        <div className="fleet-map-header">
-          {!managerMode && <span className="fleet-live-badge">LIVE TRACKING · {Math.round(liveRefreshMs / 1000)}s refresh</span>}
-          <button className="fleet-header-btn" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh Vehicles</button>
-          <button className="fleet-header-btn" onClick={refreshAllResources} disabled={!token}>Sync All</button>
-          <button className="fleet-header-btn primary" onClick={handleShareLocation} disabled={!selectedTruck}>Share Location</button>
+      <section className="relative flex min-h-0 flex-col bg-[#0d1218]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-portal px-4 py-3">
+          {!managerMode && <span className="rounded-full bg-green/15 px-2 py-0.5 font-head text-[10px] font-bold text-green">LIVE TRACKING · {Math.round(liveRefreshMs / 1000)}s refresh</span>}
+          <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent" onClick={() => truckResource && fetchResource(truckResource)} disabled={!token || !truckResource}>Refresh Vehicles</button>
+          <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent" onClick={refreshAllResources} disabled={!token}>Sync All</button>
+          <button className="rounded-md border border-border bg-card px-3 py-2 font-head text-xs font-semibold text-ink transition hover:border-accent border-transparent bg-accent text-ink hover:bg-accent-hot" onClick={handleShareLocation} disabled={!selectedTruck}>Share Location</button>
         </div>
 
-        <div className="fleet-map-shell">
+        <div className="relative flex min-h-0 flex-1 flex-col">
           {mapError && (
-            <div className="live-map-dummy" aria-label="Dummy map">
-              <div className="live-map-grid" />
-              <div className="live-map-road road-a" />
-              <div className="live-map-road road-b" />
-              <div className="live-map-road road-c" />
-              <div className="live-map-pin pin-a" />
-              <div className="live-map-pin pin-b" />
-              <div className="live-map-pin pin-c" />
-              <div className="live-map-label">New Jersey Demo Map</div>
+            <div className="relative h-full min-h-[240px] overflow-hidden rounded-xl border border-border bg-[#101820]" aria-label="Dummy map">
+              <div className="absolute inset-0 opacity-30" />
+              <div className="absolute bg-border/40 left-[10%] top-1/2 h-0.5 w-[80%]" />
+              <div className="absolute bg-border/40 left-1/3 top-[15%] h-[70%] w-0.5" />
+              <div className="absolute bg-border/40 left-[55%] top-[20%] h-[55%] w-0.5" />
+              <div className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink left-[28%] top-[42%] bg-accent" />
+              <div className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink left-[48%] top-[58%] bg-green" />
+              <div className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink left-[68%] top-[35%] bg-accent-hot" />
+              <div className="absolute left-3 top-3 rounded bg-dark/80 px-2 py-1 font-head text-[10px] font-bold text-ink">New Jersey Demo Map</div>
             </div>
           )}
-          <div ref={mapElRef} className="fleet-map-canvas" />
+          <div ref={mapElRef} className="relative min-h-0 flex-1" />
           {selectedTruck && (
-            <div className="fleet-weather-window" aria-live="polite">
+            <div className="rounded-xl border border-border bg-card p-4" aria-live="polite">
               <div>
-                <div className="fleet-weather-head">
+                <div className="mb-3 flex items-center justify-between">
                   <div>
-                    <strong className="fleet-weather-title"><span className="fleet-weather-title-icon"><WeatherConditionIcon weatherDetails={weatherDetails} /></span>Weather</strong>
+                    <strong className="flex items-center gap-2 font-head text-sm font-semibold text-ink"><span className="text-accent"><WeatherConditionIcon weatherDetails={weatherDetails} /></span>Weather</strong>
                     <small>{weatherDetails?.provider ?? 'provider unavailable'}</small>
                   </div>
-                  <div className="fleet-weather-meta">
+                  <div className="text-[11px] text-muted">
                     <small>{selectedTruck.license_plate}</small>
                     <span>{truckLocalTime}</span>
                     <span>{truckTimezone}</span>
                   </div>
                 </div>
 
-                <div className="fleet-weather-body">
-                  <div className="fleet-weather-temp">{weatherDetails?.temp_c !== undefined ? `${Math.round(weatherDetails.temp_c)}°C` : 'N/A'}</div>
-                  <div className="fleet-weather-grid">
+                <div className="space-y-3">
+                  <div className="font-head text-3xl font-bold text-ink">{weatherDetails?.temp_c !== undefined ? `${Math.round(weatherDetails.temp_c)}°C` : 'N/A'}</div>
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <strong className="fleet-weather-metric-label"><ThermometerIcon />Feels</strong>
+                      <strong className="text-[10px] uppercase tracking-wider text-muted"><ThermometerIcon />Feels</strong>
                       <div>{weatherDetails?.feels_like_c !== undefined ? `${Math.round(weatherDetails.feels_like_c)}°C` : 'N/A'}</div>
                     </div>
                     <div>
-                      <strong className="fleet-weather-metric-label"><DropletIcon />Humidity</strong>
+                      <strong className="text-[10px] uppercase tracking-wider text-muted"><DropletIcon />Humidity</strong>
                       <div>{weatherDetails?.humidity_pct ?? 'N/A'}%</div>
                     </div>
                     <div>
-                      <strong className="fleet-weather-metric-label"><RainDropIcon />Precip</strong>
+                      <strong className="text-[10px] uppercase tracking-wider text-muted"><RainDropIcon />Precip</strong>
                       <div>{weatherDetails?.precip_mm ?? 'N/A'} mm</div>
                     </div>
                     <div>
-                      <strong className="fleet-weather-metric-label"><CloudsIcon />Clouds</strong>
+                      <strong className="text-[10px] uppercase tracking-wider text-muted"><CloudsIcon />Clouds</strong>
                       <div>{weatherDetails?.cloud_cover_pct ?? 'N/A'}%</div>
                     </div>
                   </div>
                 </div>
 
-                {weatherLoading && <div className="fleet-weather-loading">Refreshing weather…</div>}
-                {!!weatherError && <div className="fleet-weather-error">{weatherError}</div>}
+                {weatherLoading && <div className="text-sm text-muted">Refreshing weather…</div>}
+                {!!weatherError && <div className="text-sm text-accent-hot">{weatherError}</div>}
               </div>
             </div>
           )}
           {mapError && (
-            <div className="live-map-note">
+            <div className="absolute bottom-3 left-3 text-[10px] text-muted">
               <strong>Fallback map active</strong>
               <p>{mapError}. Showing built-in dummy map until map tiles are reachable.</p>
             </div>
           )}
-          <div className="fleet-map-count-pill">
+          <div className="rounded-full bg-accent/15 px-3 py-1 font-head text-xs font-bold text-accent">
             {managerMode ? `${mapTrucks.length} selected unit live` : `${filteredTrucks.length} company units live`} · {localTrucks.length} company trucks
           </div>
         </div>
@@ -3726,31 +3522,31 @@ function AuthPage({ title, subtitle, children, message, language = 'en' }) {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-layout">
-        <section className="auth-card" aria-labelledby="auth-title">
-          <a href="/" className="auth-logo-link"><LogoIcon /><span>ATONDA</span></a>
-          <div className="auth-title-block">
-            <span className="auth-eyebrow">{copy.authWorkspace}</span>
-            <h2 id="auth-title">{title}</h2>
-            <p className="auth-sub">{subtitle}</p>
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[linear-gradient(120deg,rgba(8,12,18,.96),rgba(16,23,31,.9))] p-9">
+      <div className="relative z-10 grid w-full max-w-[960px] min-h-[610px] grid-cols-1 overflow-hidden border border-border shadow-[0_28px_80px_rgba(0,0,0,.4)] md:grid-cols-[1.03fr_0.97fr]">
+        <section className="flex flex-col justify-center bg-[rgba(12,17,23,.96)] px-7 py-11 md:px-12" aria-labelledby="auth-title">
+          <a href="/" className="flex items-center gap-2.5 font-head text-base font-bold text-ink"><LogoIcon /><span>ATONDA</span></a>
+          <div className="mt-14">
+            <span className="font-head text-[10px] font-bold uppercase tracking-[0.14em] text-accent">{copy.authWorkspace}</span>
+            <h2 id="auth-title" className="my-2.5 font-head text-[clamp(30px,3vw,40px)] font-bold leading-none text-ink">{title}</h2>
+            <p className="mb-8 text-sm leading-relaxed text-body">{subtitle}</p>
           </div>
           {children}
-          {message && <p className="auth-msg">{message}</p>}
+          {message && <p className="mt-4 border-l-2 border-accent bg-accent-soft px-3 py-2.5 text-sm text-[#ffe5d8]">{message}</p>}
         </section>
-        <aside className="auth-context" aria-label="Platform overview">
-          <div className="auth-context-mark"><LogoIcon /></div>
-          <p className="auth-eyebrow">{copy.control}</p>
-          <h1>{copy.everyMile}<br /><em>{copy.inView}</em></h1>
-          <p className="auth-context-copy">{copy.authContext}</p>
-          <div className="auth-context-stats">
-            <div><strong>24/7</strong><span>{copy.fleetVisibility}</span></div>
-            <div><strong>LIVE</strong><span>{copy.operationalSignals}</span></div>
+        <aside className="relative hidden flex-col justify-end overflow-hidden bg-[linear-gradient(155deg,rgba(255,90,31,.16),rgba(19,32,42,.88)_43%,rgba(14,19,25,.96))] px-10 py-14 md:flex" aria-label="Platform overview">
+          <div className="absolute right-12 top-12 text-ink/70"><LogoIcon /></div>
+          <p className="font-head text-[10px] font-bold uppercase tracking-[0.14em] text-accent">{copy.control}</p>
+          <h1 className="relative mt-3.5 font-head text-[clamp(38px,4.3vw,58px)] leading-[0.92] text-ink [&_em]:not-italic [&_em]:text-accent">{copy.everyMile}<br /><em>{copy.inView}</em></h1>
+          <p className="relative mt-4 max-w-[28ch] text-sm leading-relaxed text-body">{copy.authContext}</p>
+          <div className="relative mt-9 grid grid-cols-2 gap-5 border-t border-border pt-4">
+            <div className="flex flex-col gap-1"><strong className="font-head text-lg tracking-wide text-ink">24/7</strong><span className="text-[11px] text-body/80">{copy.fleetVisibility}</span></div>
+            <div className="flex flex-col gap-1"><strong className="font-head text-lg tracking-wide text-ink">LIVE</strong><span className="text-[11px] text-body/80">{copy.operationalSignals}</span></div>
           </div>
         </aside>
       </div>
       {showScrollCue && (
-        <button type="button" className="auth-scroll-cue" onClick={scrollToNextAuthSection} aria-label="Scroll down to continue">
+        <button type="button" className="fixed bottom-[max(18px,env(safe-area-inset-bottom))] right-[18px] z-20 grid h-[42px] w-[42px] place-items-center rounded-full border border-border-strong bg-[rgba(12,17,23,.9)] shadow-float md:hidden" onClick={scrollToNextAuthSection} aria-label="Scroll down to continue">
           <span aria-hidden="true" />
         </button>
       )}
@@ -3890,20 +3686,20 @@ function App() {
         path="/login"
         element={
           <AuthPage title={getSiteCopy(language).signIn} subtitle={getSiteCopy(language).signInSub} message={authMessage} language={language}>
-            <form className="auth-form" onSubmit={handleLogin}>
-              <div className="auth-field">
+            <form className="flex flex-col gap-4" onSubmit={handleLogin}>
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="login-email">{copy.workEmail}</label>
                 <input id="login-email" required type="email" autoComplete="email" placeholder={copy.emailPlaceholder} value={loginForm.email}
                   onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
-              <div className="auth-field">
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="login-password">{copy.password}</label>
                 <input id="login-password" required type="password" autoComplete="current-password" placeholder={copy.passwordPlaceholder} value={loginForm.password}
                   onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} />
               </div>
-              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Signing in...' : copy.enterPortal}</button>
-              <button type="button" className="auth-demo-fill" onClick={() => setLoginForm(DUMMY_LOGIN)}>{copy.testAccount}</button>
-              <p className="auth-footer-text">{copy.newToAtonda} <Link to="/signup">{copy.createAnAccount}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
+              <button type="submit" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 font-head text-sm font-bold uppercase tracking-wide text-ink transition hover:bg-accent-hot disabled:cursor-default disabled:opacity-45 mt-1 w-full uppercase tracking-wide" disabled={authLoading}>{authLoading ? 'Signing in...' : copy.enterPortal}</button>
+              <button type="button" className="self-center border-0 bg-transparent p-0.5 font-head text-xs font-semibold text-muted transition hover:text-accent" onClick={() => setLoginForm(DUMMY_LOGIN)}>{copy.testAccount}</button>
+              <p className="mt-1.5 flex flex-wrap items-center justify-center gap-2 text-center text-xs text-muted [&_a]:font-semibold [&_a]:text-ink hover:[&_a]:text-accent [&_span]:text-accent">{copy.newToAtonda} <Link to="/signup">{copy.createAnAccount}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
             </form>
           </AuthPage>
         }
@@ -3913,23 +3709,23 @@ function App() {
         path="/signup"
         element={
           <AuthPage title={getSiteCopy(language).createAccount} subtitle={getSiteCopy(language).createAccountSub} message={authMessage} language={language}>
-            <form className="auth-form" onSubmit={handleRegister}>
-              <div className="auth-field">
+            <form className="flex flex-col gap-4" onSubmit={handleRegister}>
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="signup-email">{copy.workEmail}</label>
                 <input id="signup-email" required type="email" autoComplete="email" placeholder={copy.emailPlaceholder} value={registerForm.email}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, email: e.target.value }))} />
               </div>
-              <div className="auth-field">
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="signup-name">{copy.fullName}</label>
                 <input id="signup-name" required autoComplete="name" placeholder={copy.namePlaceholder} value={registerForm.full_name}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, full_name: e.target.value }))} />
               </div>
-              <div className="auth-field">
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="signup-password">{copy.createPassword}</label>
                 <input id="signup-password" required type="password" autoComplete="new-password" placeholder={copy.newPasswordPlaceholder} value={registerForm.password}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, password: e.target.value }))} />
               </div>
-              <div className="auth-field">
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="account-type">{copy.workspaceType}</label>
                 <select id="account-type" value={registerForm.account_type}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, account_type: e.target.value }))}>
@@ -3937,13 +3733,13 @@ function App() {
                   <option value="company">{copy.fleetCompany}</option>
                 </select>
               </div>
-              <div className="auth-field">
+              <div className="flex flex-col gap-1.5 [&_label]:font-head [&_label]:text-[11px] [&_label]:font-bold [&_label]:uppercase [&_label]:tracking-wider [&_label]:text-muted [&_input]:min-h-[50px] [&_input]:rounded [&_input]:border [&_input]:border-border-strong [&_input]:bg-white/[0.045] [&_input]:px-3.5 [&_input]:py-3 [&_input]:text-ink [&_input]:outline-none focus:[&_input]:border-accent focus:[&_input]:bg-accent-soft [&_select]:min-h-[50px] [&_select]:rounded [&_select]:border [&_select]:border-border-strong [&_select]:bg-white/[0.045] [&_select]:px-3.5 [&_select]:text-ink">
                 <label htmlFor="company-name">{copy.companyName} {registerForm.account_type === 'company' ? '' : copy.optional}</label>
                 <input id="company-name" required={registerForm.account_type === 'company'} autoComplete="organization" placeholder={copy.companyPlaceholder} value={registerForm.company_name}
                   onChange={(e) => setRegisterForm((f) => ({ ...f, company_name: e.target.value }))} />
               </div>
-              <button type="submit" className="btn-yellow auth-submit" disabled={authLoading}>{authLoading ? 'Creating workspace...' : copy.createWorkspace}</button>
-              <p className="auth-footer-text">{copy.alreadyHaveAccess} <Link to="/login">{copy.signIn}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
+              <button type="submit" className="inline-flex items-center justify-center rounded-md bg-accent px-6 py-3 font-head text-sm font-bold uppercase tracking-wide text-ink transition hover:bg-accent-hot disabled:cursor-default disabled:opacity-45 mt-1 w-full uppercase tracking-wide" disabled={authLoading}>{authLoading ? 'Creating workspace...' : copy.createWorkspace}</button>
+              <p className="mt-1.5 flex flex-wrap items-center justify-center gap-2 text-center text-xs text-muted [&_a]:font-semibold [&_a]:text-ink hover:[&_a]:text-accent [&_span]:text-accent">{copy.alreadyHaveAccess} <Link to="/login">{copy.signIn}</Link><span>•</span><Link to="/">{copy.home}</Link></p>
             </form>
           </AuthPage>
         }
