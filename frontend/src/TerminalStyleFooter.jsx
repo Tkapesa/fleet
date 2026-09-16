@@ -1,28 +1,27 @@
 import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { AtondaWordmark, BRAND } from './atondaBrand'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const BASE = 'https://terminal-industries.com'
-
 const TECH_LINKS = [
-  { label: 'Homepage', href: `${BASE}/` },
-  { label: 'Yard Operating System', href: `${BASE}/what-is-terminal-yos` },
-  { label: 'The Agentic AI Yard', href: `${BASE}/the-agentic-ai-yard` },
-  { label: 'Yard Efficiency Calculator', href: `${BASE}/yard-efficiency-calculator` },
+  { label: 'Homepage', href: '#top' },
+  { label: 'Yard Operating System', href: '#platform' },
+  { label: 'The Agentic AI Yard', href: '#yos-intro' },
+  { label: 'Yard Efficiency Calculator', href: '#calculator' },
 ]
 
 const COMPANY_LINKS = [
-  { label: 'About', href: `${BASE}/about` },
-  { label: 'Resources', href: `${BASE}/resources` },
-  { label: 'Contact', href: `${BASE}/contact` },
+  { label: 'About', href: '#contact' },
+  { label: 'Resources', href: '#faqs' },
+  { label: 'Contact', href: '#contact' },
 ]
 
 const SOCIALS = [
   {
     label: 'linkedin',
-    href: 'https://www.linkedin.com/company/terminal-industries/',
+    href: BRAND.site,
     icon: (
       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
         <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4V8.5zM8.5 8.5h3.8v2h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V23h-4v-6.6c0-1.57-.03-3.6-2.2-3.6-2.2 0-2.54 1.72-2.54 3.48V23h-4V8.5z" />
@@ -31,7 +30,7 @@ const SOCIALS = [
   },
   {
     label: 'x',
-    href: 'https://x.com/Terminal_Indust',
+    href: BRAND.site,
     icon: (
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
         <path d="M18.244 2H21.5l-7.5 8.57L22.5 22h-6.57l-5.14-6.71L5.2 22H1.94l8.03-9.17L1.5 2h6.73l4.64 6.15L18.244 2zm-1.15 18h1.8L7.01 3.94H5.08L17.094 20z" />
@@ -40,7 +39,7 @@ const SOCIALS = [
   },
   {
     label: 'youtube',
-    href: 'https://www.youtube.com/@Terminal-Industries',
+    href: BRAND.site,
     icon: (
       <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
         <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.5v-7l6.5 3.5-6.5 3.5z" />
@@ -50,15 +49,6 @@ const SOCIALS = [
 ]
 
 const FOOTER_BG = '#052623'
-
-function TerminalFooterLogo() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 203 45" className="h-9 w-auto" aria-hidden="true">
-      <path fill="#ABFF02" d="M8.654 0C7.8 0 6.982.34 6.378.939L.945 6.359A3.22 3.22 0 0 0 0 8.635v35.527c0 .46.378.838.84.838h31.59c.852 0 1.671-.34 2.276-.943l9.426-9.415c.604-.6.944-1.421.944-2.272V.838a.84.84 0 0 0-.84-.838H8.655Zm29.983 14.705c0 .755-.613 1.367-1.37 1.367h-16.37c-.73 0-1.39.6-1.369 1.329.013.318.143.612.349.834.02.02.038.042.063.063l7.028 7.021c.256.256.404.604.404.964v10.928c0 .755-.613 1.367-1.37 1.367H19.08a1.37 1.37 0 0 1-1.369-1.367V17.444c0-.755-.613-1.367-1.369-1.367H7.81a1.37 1.37 0 0 1-1.37-1.367V7.797c0-.755.614-1.367 1.37-1.367h9.333c.366 0 .714.143.97.403l7.016 7.004a1.3 1.3 0 0 0 .882.423c.748.043 1.36-.62 1.36-1.366V7.801c0-.754.614-1.366 1.37-1.366h8.531c.756 0 1.369.612 1.369 1.366v6.913z" />
-      <path fill="#fff" d="M54.739 13.045V8.593h22.673v4.452h-8.608v23.366h-5.496V13.045h-8.57Zm29.664 19.757c1.612 0 3.266-.575 4.341-2.377h5.459c-1.113 3.068-4.149 6.485-9.762 6.485-6.647 0-10.53-4.951-10.53-10.895s4.265-10.706 10.374-10.706 10.375 4.95 10.144 12.24H79.175c.27 3.53 2.73 5.257 5.228 5.257zm4.652-8.9c-.113-3.492-2.574-4.72-4.803-4.72-1.999 0-4.573 1.266-4.997 4.72zm17.639-3.144c-2.612 0-4.342.96-4.342 4.834V36.41h-5.303V15.77h5.228v3.605c1.192-2.532 3.073-3.567 5.458-3.567.344 0 .806.037 1.155.075v4.989a21 21 0 0 0-2.192-.114zm23.21 4.909v10.744h-5.303V24.4c0-2.264-.193-4.833-3.304-4.833-3.535 0-4.111 2.955-4.111 6.099V36.41h-5.303V15.77h5.303v2.725c1.155-2.033 3.267-3.186 5.765-3.186 3.536 0 5.072 1.882 5.878 3.374 1.613-2.301 3.691-3.374 6.802-3.374 5.19 0 6.996 3.223 6.996 8.094v13.008h-5.303V24.4c0-2.264-.194-4.833-3.305-4.833-3.535 0-4.11 2.955-4.11 6.099h-.005Zm21.137-12.161h-5.303V8.598h5.303zm0 22.905h-5.303V15.77h5.303v20.64Zm14.72-21.102c4.959 0 7.147 3.03 7.147 8.094v13.008h-5.303V24.556c0-2.687-.575-4.988-3.573-4.988-3.498 0-4.266 2.838-4.266 6.099v10.744h-5.303V15.77h5.303v2.725c1.192-2.071 3.459-3.186 5.995-3.186m9.683 15.539c0-4.87 5.496-6.33 13.604-7.252v-.344c0-3.185-1.73-4.296-3.88-4.296-2.036 0-3.728 1.073-3.842 3.337h-4.959c.387-4.067 3.767-7.06 9.07-7.06 4.916 0 8.914 2.109 8.914 9.093 0 .654-.076 3.374-.076 5.256 0 3.261.231 5.102.613 6.829h-4.879c-.155-.654-.269-1.572-.344-2.57-1.461 2.146-3.649 3.069-6.764 3.069-3.96 0-7.457-2.302-7.457-6.062m5.458-.268c0 1.496 1.193 2.725 3.573 2.725 3.305 0 4.728-1.803 4.728-4.796v-1.534c-5.916.612-8.301 1.303-8.301 3.605m16.795 5.83V8.594H203v27.814h-5.303v.004Z" />
-    </svg>
-  )
-}
 
 /** Terminal Industries top edge: high shoulders, recessed center cradle */
 function FooterNotchEdge() {
@@ -221,10 +211,8 @@ export default function TerminalStyleFooter() {
               The yard of the future starts today.
             </h2>
             <a
-              href={`${BASE}/contact`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center justify-center rounded-[6px] border border-white/25 bg-white/5 px-5 py-3 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition hover:border-white/50 hover:bg-white/10"
+              href="#contact"
+              className="mt-8 inline-flex items-center justify-center rounded-[6px] border border-white/25 bg-white/5 px-5 py-3 text-[12px] font-bold uppercase tracking-[0.08em] text-white transition hover:border-[#ABFF02]/50 hover:bg-[#ABFF02]/10 hover:text-[#ABFF02]"
             >
               Take charge of your yard
             </a>
@@ -232,19 +220,19 @@ export default function TerminalStyleFooter() {
 
           <div className="relative z-10 grid gap-12 border-t border-white/10 pt-12 lg:grid-cols-[1.1fr_1fr_1fr] lg:gap-10">
             <div>
-              <a href={BASE} target="_blank" rel="noopener noreferrer" aria-label="Terminal Industries">
-                <TerminalFooterLogo />
+              <a href="#top" aria-label={`${BRAND.name} home`}>
+                <AtondaWordmark className="text-[28px]" textClass="text-white" />
               </a>
               <div className="mt-8 flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-white/15 bg-white/5 text-[10px] font-bold tracking-wide text-white/80">
-                  Gartner
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded border border-[#ABFF02]/35 bg-[#ABFF02]/10 font-head text-[11px] font-bold tracking-wide text-[#ABFF02]">
+                  AF
                 </div>
                 <p className="text-[12px] leading-relaxed text-white/55">
-                  2025 Market Guide
+                  AI-native fleet &amp; yard
                   <br />
-                  Yard Management
+                  operating platform
                   <br />
-                  Featured Vendor
+                  Built for modern logistics
                 </p>
               </div>
             </div>
@@ -255,7 +243,7 @@ export default function TerminalStyleFooter() {
                 <ul className="space-y-3">
                   {TECH_LINKS.map((link) => (
                     <li key={link.href}>
-                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-[14px] text-white/80 transition hover:text-white">
+                      <a href={link.href} className="text-[14px] text-white/80 transition hover:text-white">
                         {link.label}
                       </a>
                     </li>
@@ -267,7 +255,7 @@ export default function TerminalStyleFooter() {
                 <ul className="space-y-3">
                   {COMPANY_LINKS.map((link) => (
                     <li key={link.href}>
-                      <a href={link.href} target="_blank" rel="noopener noreferrer" className="text-[14px] text-white/80 transition hover:text-white">
+                      <a href={link.href} className="text-[14px] text-white/80 transition hover:text-white">
                         {link.label}
                       </a>
                     </li>
@@ -279,13 +267,15 @@ export default function TerminalStyleFooter() {
             <div className="flex flex-col justify-between gap-8">
               <div>
                 <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.16em] text-white/45">Reach us</p>
-                <a href={`${BASE}/contact`} target="_blank" rel="noopener noreferrer" className="block text-[15px] text-white/85 transition hover:text-white">
+                <a href="#contact" className="block text-[15px] text-white/85 transition hover:text-white">
                   Ready for your yard of the future?
                 </a>
-                <a href="tel:737-279-5032" className="mt-2 block text-[15px] text-white transition hover:text-[#ABFF02]">
-                  +1 (737) 279-5032
+                <a href={BRAND.phoneHref} className="mt-2 block text-[15px] text-white transition hover:text-[#ABFF02]">
+                  {BRAND.phone}
                 </a>
-                <p className="mt-2 text-[14px] text-white/55">Give us a call today.</p>
+                <a href={`mailto:${BRAND.email}`} className="mt-2 block text-[14px] text-white/55 transition hover:text-white">
+                  {BRAND.email}
+                </a>
               </div>
 
               <ul className="flex items-center gap-4">
@@ -307,9 +297,9 @@ export default function TerminalStyleFooter() {
           </div>
 
           <div className="relative z-10 mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-[12px] text-white/45 sm:flex-row sm:items-center sm:justify-between">
-            <p>Copyright Terminal Industries © 2025 All Rights Reserved</p>
-            <a href={`${BASE}/technical-index`} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">
-              Technical Index
+            <p>Copyright {BRAND.name} © {BRAND.year} All Rights Reserved</p>
+            <a href={BRAND.site} target="_blank" rel="noopener noreferrer" className="transition hover:text-white">
+              atondafleet.com
             </a>
           </div>
         </div>

@@ -6,7 +6,6 @@ import { feature } from 'topojson-client'
 import worldLand from 'world-atlas/land-110m.json'
 import heroVideo from './assets/Hailuo_Video_A cinematic realistic fleet of_554063152114913281.mp4'
 import dashboardImage from './assets/dashboardimage.png'
-import { FleetMotionBoard, GpsTrackingPanel, LiveStatsStrip } from './FleetMotion'
 import { useLandingMotion } from './useLandingMotion'
 import TerminalStyleHeader from './TerminalStyleHeader'
 import TerminalStyleFooter from './TerminalStyleFooter'
@@ -14,6 +13,11 @@ import TerminalStyleFAQ from './TerminalStyleFAQ'
 import TerminalStyleContact from './TerminalStyleContact'
 import TerminalStyleQuote from './TerminalStyleQuote'
 import TerminalStyleLogoGrid from './TerminalStyleLogoGrid'
+import TerminalStylePlatform from './TerminalStylePlatform'
+import TerminalStyleCalculator from './TerminalStyleCalculator'
+import TerminalStyleProductGrid from './TerminalStyleProductGrid'
+import TerminalStyleHero from './TerminalStyleHero'
+import TerminalStyleYOSIntro from './TerminalStyleYOSIntro'
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fleet-api-tkapesa.onrender.com'
@@ -574,24 +578,6 @@ function ComplianceStatusPill({ label, status }) {
 }
 
 // ─── Landing Page ─────────────────────────────────────────────────────────────
-const FLEET_PILLARS = [
-  {
-    index: '1',
-    title: 'Total visibility',
-    desc: "Live GPS, geofencing, and telemetry mean you never have to guess where a truck is, or why it stopped moving.",
-  },
-  {
-    index: '2',
-    title: 'Safety-first standards',
-    desc: 'Digital DVIRs, license and document expiry alerts, and maintenance tracking keep every truck road-ready.',
-  },
-  {
-    index: '3',
-    title: 'Proactive dispatch',
-    desc: "Reroute around delays, reassign loads, and add stops in real time, before small problems become late deliveries.",
-  },
-]
-
 const FLEET_STATS_BAND = [
   { num: '500+', label: 'Fleet units tracked live' },
   { num: '24/7', label: 'Dispatch & real-time tracking' },
@@ -652,16 +638,6 @@ function GlobalWorldMap() {
   )
 }
 
-function PillarCard({ index, title, desc }) {
-  return (
-    <div className="rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-6 shadow-card backdrop-blur-sm">
-      <span className="font-head text-xs font-semibold text-accent">( {index} )</span>
-      <h4 className="mt-3 font-head text-xl font-semibold text-ink">{title}</h4>
-      <p className="mt-2 text-sm leading-relaxed text-muted">{desc}</p>
-    </div>
-  )
-}
-
 function UseCaseCard({ q, a }) {
   return (
     <div className="rounded-2xl border border-border bg-gradient-to-br from-card/70 to-dark/60 p-5 shadow-card backdrop-blur-sm">
@@ -686,10 +662,9 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
     return undefined
   }, [])
 
-  function openDemo() { startDemo() }
-
+  // overflow-x is clip rather than hidden: hidden would make this a scroll container and break the hero's sticky stage.
   return (
-    <div ref={landingRef} className="relative isolate min-h-screen overflow-x-hidden text-body font-body">
+    <div ref={landingRef} className="relative isolate min-h-screen overflow-x-clip text-body font-body">
       <div className="pointer-events-none fixed inset-0 -z-20 overflow-hidden" aria-hidden="true">
         <video
           ref={videoRef}
@@ -742,250 +717,12 @@ function Landing({ token, isDemoSession, startDemo, demoLoading, language, setLa
 
       <TerminalStyleHeader />
 
-      <section className="relative flex min-h-screen flex-col justify-end overflow-hidden pb-16 pt-[96px] sm:justify-center sm:pb-24">
-        <div className="pointer-events-none absolute -right-24 top-24 h-80 w-80 rotate-12 border border-accent/25" />
-        <div className="pointer-events-none absolute -left-16 bottom-28 h-56 w-56 -rotate-12 border border-white/15" />
-        <div className="relative z-10 mx-auto w-full max-w-[1160px] px-8">
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-            <div className="max-w-xl">
-              <div data-hero-anim>
-                <EyebrowRow label={copy.eyebrow} />
-              </div>
-              <h1 data-hero-anim className="mt-4 font-head text-[clamp(42px,7vw,72px)] font-bold leading-[0.95] tracking-tight text-ink [&_em]:not-italic [&_em]:text-accent">
-                {copy.heroTitle}<br /><em>{copy.heroAccent}</em>
-              </h1>
-              <p data-hero-anim className="mt-5 max-w-[42ch] text-base leading-relaxed text-body">
-                {copy.heroCopy}
-              </p>
-              <div data-hero-anim className="mt-8 flex flex-wrap items-center gap-5">
-                <button type="button" className="inline-flex items-center justify-center rounded-full bg-accent px-7 py-[17px] font-head text-[15px] font-semibold text-white shadow-[0_12px_30px_rgba(255,90,31,.35)] transition hover:opacity-95 disabled:cursor-default disabled:opacity-45" onClick={openDemo} disabled={demoLoading}>{demoLoading ? copy.openingDemo : copy.demo}</button>
-                <a href="#live-network" className="font-head text-sm font-semibold text-ink underline decoration-accent/60 underline-offset-4 transition hover:text-accent">{copy.seeFleet} &#8595;</a>
-              </div>
-            </div>
-            <div data-hero-anim className="rounded-xl border border-white/20 bg-[rgba(12,12,15,.55)] p-5 shadow-card backdrop-blur-md">
-              <p className="text-sm text-muted">{copy.appointment}</p>
-              <a href="tel:+19177536653" className="mt-2 inline-block font-head text-lg font-semibold text-ink underline decoration-accent/60 underline-offset-4 transition hover:text-accent">+1 (917) 753-6653</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      <TerminalStyleHero />
       <TerminalStyleLogoGrid />
-
-      {/* LIVE FLEET NETWORK */}
-      <section id="live-network" className="relative py-20">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="mx-auto max-w-2xl text-center">
-            <div className="flex justify-center"><EyebrowRow label={copy.whatWeDo} /></div>
-            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">{copy.engine}</h2>
-            <p className="mx-auto mt-4 max-w-[54ch] text-body">
-              {copy.engineCopy}
-            </p>
-          </div>
-          <div data-animate="scale"><FleetMotionBoard /></div>
-          <div data-animate className="mt-6"><GpsTrackingPanel /></div>
-          <div data-animate className="mt-6"><LiveStatsStrip /></div>
-        </div>
-      </section>
-
-      {/* PILLARS */}
-      <section className="relative py-20">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="mb-10">
-            <span className="font-head text-xs font-semibold uppercase tracking-wider text-muted">( Three things we get right )</span>
-            <h2 className="mt-3 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">We move fleets forward.</h2>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {FLEET_PILLARS.map((p) => (
-              <div key={p.index} data-animate>
-                <PillarCard index={p.index} title={p.title} desc={p.desc} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" className="relative py-20">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="grid items-center gap-10 lg:grid-cols-[1fr_minmax(220px,0.9fr)_1fr]">
-            <div className="flex flex-col gap-8">
-              <FeatureOrbitItem
-                number="01"
-                icon={<GpsIcon />}
-                title="GPS Tracking"
-                desc="Monitor your fleet's live location, set up geofences, and view location history from a single dashboard."
-                align="left"
-              />
-              <FeatureOrbitItem
-                number="03"
-                icon={<EldIcon />}
-                title="ELD Compliance"
-                desc="Automate hours-of-service tracking and stay fully compliant with ease."
-                align="left"
-              />
-            </div>
-
-            <div className="relative mx-auto flex max-w-sm items-center justify-center">
-              <div className="absolute h-40 w-40 rotate-45 border border-white/20 animate-[float-y_6s_ease-in-out_infinite]" />
-              <img
-                className="relative z-10 w-full rounded-lg object-contain drop-shadow-2xl"
-                src="https://trucknroll.com/uploads/uploads/_header/2320/SHOT01_251111_Truck_n_Roll_0090_shot01_v1.webp"
-                alt="Fleet management route visual"
-                loading="lazy"
-              />
-            </div>
-
-            <div className="flex flex-col gap-8">
-              <FeatureOrbitItem
-                number="02"
-                icon={<DvirIcon />}
-                title="Electronic DVIR"
-                desc="Streamline pre-trip and post-trip inspections to save time and improve safety."
-                align="right"
-              />
-              <FeatureOrbitItem
-                number="04"
-                icon={<IftaIcon />}
-                title="IFTA Reporting"
-                desc="Eliminate manual errors with precise, automated fuel tax reporting."
-                align="right"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* PLANNED AI CAPABILITIES */}
-      <section className="relative py-24" id="ai-road-intelligence">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <EyebrowRow label="PLANNED AI CAPABILITIES" />
-              <h2 className="mt-3.5 max-w-[570px] font-head text-[clamp(34px,4vw,54px)] font-semibold leading-tight text-ink">Make every mile work harder.</h2>
-            </div>
-            <p className="max-w-[430px] text-base leading-relaxed text-muted">We are building decision support that turns your fleet data into clear actions for lower fuel use, smarter routes, and stronger day-to-day operations.</p>
-          </div>
-          <div className="grid gap-3.5 md:grid-cols-3">
-            <article data-animate="left" className="relative min-h-[370px] overflow-hidden rounded-lg border border-border bg-card/90 p-7 backdrop-blur-sm">
-              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="fuel" /></span>
-              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
-              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Fuel intelligence</h3>
-              <p className="text-sm leading-relaxed text-muted">Forecast fuel consumption by vehicle, load, terrain, idle time, and driving patterns, then surface practical ways to reduce waste.</p>
-              <AiAnalyticsVisual type="fuel" />
-              <ul className="mt-5 grid gap-2 text-[13px] text-[#d8d9d4] [&_li]:before:mr-2 [&_li]:before:text-accent [&_li]:before:content-['→']"><li>Identify excessive idle time</li><li>Compare vehicle efficiency</li><li>Spot fuel-cost anomalies</li></ul>
-            </article>
-            <article data-animate="scale" className="relative min-h-[370px] overflow-hidden rounded-lg border border-accent/40 bg-[#1a1b1d]/90 p-7 shadow-[inset_0_3px_0_#ff4b2b] backdrop-blur-sm">
-              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="route" /></span>
-              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
-              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Route savings engine</h3>
-              <p className="text-sm leading-relaxed text-muted">Evaluate route alternatives against traffic, tolls, fuel burn, delivery windows, and vehicle restrictions to recommend the better run.</p>
-              <AiAnalyticsVisual type="route" />
-            </article>
-            <article data-animate="right" className="relative min-h-[370px] overflow-hidden rounded-lg border border-border bg-card/90 p-7 backdrop-blur-sm">
-              <span className="grid h-12 w-12 place-items-center border border-accent/30 bg-accent-soft text-accent"><AiCapabilityIcon type="assistant" /></span>
-              <span className="mt-8 block font-head text-[10px] font-bold tracking-[0.12em] text-green">IN DEVELOPMENT</span>
-              <h3 className="my-2.5 font-head text-[27px] font-semibold leading-tight text-ink">Operations assistant</h3>
-              <p className="text-sm leading-relaxed text-muted">Ask focused questions about your fleet and get a plain-language answer with a next best action for dispatch, safety, and maintenance.</p>
-              <AiAnalyticsVisual type="assistant" />
-              <ul className="mt-5 grid gap-2 text-[13px] text-[#d8d9d4] [&_li]:before:mr-2 [&_li]:before:text-accent [&_li]:before:content-['→']"><li>What is driving fuel use today?</li><li>Which load is most at risk?</li><li>Where can we save time this week?</li></ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS BAND */}
-      <section className="relative py-16">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FLEET_STATS_BAND.map((s) => (
-              <div data-animate className="flex min-h-[122px] flex-col justify-center rounded-[18px] border border-border bg-gradient-to-br from-card/80 to-dark/70 p-[18px] shadow-card backdrop-blur-md" key={s.label}>
-                <span className="font-head text-3xl font-bold text-ink">{s.num}</span>
-                <span className="mt-1 text-sm text-muted">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* GLOBAL MAP */}
-      <section className="relative py-20" id="global">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="mx-auto max-w-2xl text-center">
-            <div className="flex justify-center"><EyebrowRow label="GLOBAL COVERAGE" /></div>
-            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">Fleet management at world scale.</h2>
-            <p className="mx-auto mt-4 max-w-[54ch] text-body">
-              As you scroll, this live map highlights our cross-region operations and connected hubs
-              across North America, Europe, the Middle East, Asia-Pacific, and Latin America.
-            </p>
-          </div>
-
-          <div data-animate="scale" className="relative mt-6 min-h-[430px] overflow-hidden rounded-3xl border border-border-strong bg-gradient-to-br from-card/80 to-dark/70 shadow-card backdrop-blur-md">
-            <GlobalWorldMap />
-
-            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 52" preserveAspectRatio="none" aria-hidden="true">
-              {GLOBAL_ROUTES.map(([from, to], index) => {
-                const start = GLOBAL_HUBS[from]
-                const end = GLOBAL_HUBS[to]
-                return (
-                  <path
-                    key={`${from}-${to}`}
-                    d={buildArcPath(start, end)}
-                    className="fill-none stroke-accent/75 stroke-[0.45] stroke-linecap-round [stroke-dasharray:2_1.2] opacity-0 animate-[route-draw_1.2s_ease_forwards]"
-                    style={{ animationDelay: `${index * 0.18}s` }}
-                  />
-                )
-              })}
-            </svg>
-
-            {GLOBAL_HUBS.map((hub) => (
-              <div
-                key={hub.city}
-                className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-                style={{ left: `${hub.x}%`, top: `${hub.y}%` }}
-              >
-                <span className="h-2.5 w-2.5 rounded-full bg-green shadow-[0_0_0_0_rgba(51,209,122,0.56)] animate-[hub-pulse_1.8s_ease-out_infinite]" />
-                <small className="rounded-full border border-border-strong bg-dark/60 px-1.5 py-0.5 font-head text-[10px] uppercase tracking-wide text-ink/90">{hub.city}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* USE CASES */}
-      <section id="about" className="relative py-20">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div data-animate className="mx-auto max-w-2xl text-center">
-            <div className="flex justify-center"><EyebrowRow label="USE CASES" /></div>
-            <h2 className="mt-3.5 font-head text-[clamp(34px,4vw,52px)] font-semibold text-ink">Whatever happens on the road, you're ready.</h2>
-          </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FLEET_USE_CASES.map((u) => (
-              <div key={u.q} data-animate>
-                <UseCaseCard q={u.q} a={u.a} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* BENEFITS */}
-      <section className="relative py-20">
-        <div className="mx-auto max-w-[1160px] px-8">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="flex flex-col gap-4">
-              <div data-animate><BenefitCard title="Paperless DVIRs" desc="Say goodbye to paperwork with our digital inspection reports." /></div>
-              <div data-animate><BenefitCard title="Stress-Free Setup" desc="Get started quickly with our easy installation process." /></div>
-              <div data-animate><BenefitCard title="24/7 Customer Support" desc="Count on expert assistance whenever you need it, day or night." /></div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <div data-animate><BenefitCard title="Accurate IFTA Reporting" desc="Simplify fuel tax reporting with precision and ease." /></div>
-              <div data-animate><BenefitCard title="No Long-Term Contracts" desc="Enjoy flexibility and freedom with contract-free solutions." /></div>
-              <div data-animate><BenefitCard title="User-Friendly App" desc="Manage your fleet effortlessly with our intuitive mobile app." /></div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <TerminalStyleProductGrid />
+      <TerminalStyleYOSIntro />
+      <TerminalStyleCalculator />
+      <TerminalStylePlatform />
 
       {/* QUOTE — Terminal big image */}
       <TerminalStyleQuote />

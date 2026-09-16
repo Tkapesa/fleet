@@ -7,14 +7,9 @@ gsap.registerPlugin(ScrollTrigger)
 const QUOTE_IMG =
   'https://a.storyblok.com/f/337048/5112x3410/74c4e40128/quote-image.jpg/m/1920x0/filters:format(jpeg):quality(85)'
 
-/**
- * Terminal white cradle — same arc geometry as the site footer notch.
- * Top/bottom white tongues with concave corners; dark image ears at the sides.
- */
 function CradleMask({ side }) {
   const isTop = side === 'top'
 
-  // Closed white tongue (center recessed bar)
   const topTongue = [
     'M215.84,0',
     'A65.13,65.13 0 0 1 239.6,4.52',
@@ -27,7 +22,6 @@ function CradleMask({ side }) {
     'Z',
   ].join(' ')
 
-  // Mirrored for bottom
   const bottomTongue = [
     'M215.84,31',
     'A65.13,65.13 0 0 0 239.6,26.48',
@@ -66,9 +60,10 @@ export default function TerminalStyleQuote() {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         image,
-        { yPercent: -5 },
+        { yPercent: -8, scale: 1.06 },
         {
-          yPercent: 5,
+          yPercent: 8,
+          scale: 1,
           ease: 'none',
           scrollTrigger: {
             trigger: section,
@@ -91,8 +86,8 @@ export default function TerminalStyleQuote() {
       aria-label="Customer quote"
     >
       <div className="relative overflow-hidden bg-white">
-        <div className="relative min-h-[420px] sm:min-h-[520px] lg:min-h-[640px]">
-          <div ref={imageRef} className="absolute inset-[-8%] will-change-transform">
+        <div className="relative min-h-[360px] sm:min-h-[480px] lg:min-h-[640px]">
+          <div ref={imageRef} className="absolute inset-[-10%] will-change-transform">
             <img
               src={QUOTE_IMG}
               alt=""
@@ -102,21 +97,24 @@ export default function TerminalStyleQuote() {
             />
           </div>
 
-          <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
 
           <CradleMask side="top" />
           <CradleMask side="bottom" />
 
-          <div className="relative z-10 flex min-h-[420px] items-center justify-center px-6 py-24 text-center sm:min-h-[520px] sm:px-16 sm:py-28 lg:min-h-[640px] lg:px-24">
-            <div className="mx-auto max-w-[900px]">
-              <p className="text-[clamp(22px,3.2vw,38px)] font-semibold leading-[1.28] tracking-[-0.02em] text-white">
-                “We have not seen this kind of accuracy with computer-vision technology… this is a significant milestone
-                in the race to modernize the yard.”
-              </p>
-              <div className="mt-9 text-[15px] leading-[1.5] text-white sm:mt-11 sm:text-[16px]">
-                <p>Karen Jones</p>
-                <p>Ryder System, Inc.</p>
-              </div>
+          <div className="relative z-10 flex min-h-[360px] items-center justify-center px-5 py-20 text-center sm:min-h-[480px] sm:px-12 sm:py-24 lg:min-h-[640px] lg:px-24 lg:py-28">
+            <div data-animate="scale" className="mx-auto max-w-[900px]">
+              <blockquote className="m-0">
+                <p className="font-head text-[clamp(20px,4.5vw,38px)] font-semibold leading-[1.32] tracking-[-0.02em] text-white">
+                  &ldquo;We have not seen this kind of accuracy with computer-vision technology&hellip; this is a significant
+                  milestone in the race to modernize the yard.&rdquo;
+                </p>
+              </blockquote>
+              <footer className="mt-9 text-[15px] leading-[1.5] text-white/90 sm:mt-11 sm:text-[16px]">
+                <p className="font-medium text-white">Karen Jones</p>
+                <p className="mt-1 text-white/75">Head of New Product</p>
+                <p className="text-white/75">Ryder System, Inc.</p>
+              </footer>
             </div>
           </div>
         </div>
